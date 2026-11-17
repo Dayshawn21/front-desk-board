@@ -16,7 +16,8 @@ Work in progress. Built in daily steps.
 - [x] Conflict detection for overlapping appointments (side-by-side cards, banner)
 - [x] Check-in drawer: status steps, checklist, notes; Escape closes, focus is trapped
       while open and returns to the card on close
-- [ ] Patient flow view
+- [x] Patient flow tab: Expected → Arrived → In chair → Checked out, with one-click
+      status changes
 - [ ] Roles ("acting as" front desk / provider / office manager)
 - [ ] AI scheduling assist
 
