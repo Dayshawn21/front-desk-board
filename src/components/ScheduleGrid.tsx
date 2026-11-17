@@ -188,7 +188,7 @@ export function ScheduleGrid({ day, now }: ScheduleGridProps) {
           {showNow && (
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute right-0 left-14 z-20 h-0.5 bg-teal-700"
+              className="pointer-events-none absolute right-0 left-14 z-0 h-0.5 bg-teal-700"
               style={{
                 top: HEADER_PX + ((nowMinutes - open) / SLOT_MINUTES) * ROW_PX,
               }}
