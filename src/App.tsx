@@ -54,8 +54,8 @@ function App() {
           </div>
         ) : (
           <p className="text-sm">
-            {schedule.data.practice.name}: {schedule.data.appointments.length} appointments
-            across {schedule.data.chairs.length} chairs
+            {schedule.data.practice.name}: {schedule.data.appointments.length}{' '}
+            appointments across {schedule.data.chairs.length} chairs
           </p>
         )}
       </main>

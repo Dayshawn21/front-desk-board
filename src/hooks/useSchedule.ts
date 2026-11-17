@@ -4,7 +4,8 @@ import { fetchPractices, fetchSchedule } from '../api/schedule'
 // Query keys in one place so mutations (Day 2) can invalidate the right cache.
 export const queryKeys = {
   practices: ['practices'] as const,
-  schedule: (practiceId: string, date: string) => ['schedule', practiceId, date] as const,
+  schedule: (practiceId: string, date: string) =>
+    ['schedule', practiceId, date] as const,
 }
 
 export function usePractices() {
