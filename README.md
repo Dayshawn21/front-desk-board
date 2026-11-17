@@ -1,73 +1,41 @@
-# React + TypeScript + Vite
+# Front Desk Board (demo)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A small front-desk scheduling board for a **fictional** dental office, built to show
+front-end engineering skills: React, TypeScript, Tailwind, TanStack Query, and tests.
 
-Currently, two official plugins are available:
+> **Fake data only.** Every patient, practice, and provider is invented.
+> Phone numbers use the 555-01xx range reserved for fiction. No real health information.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Status
 
-## React Compiler
+Work in progress. Built in daily steps.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- [x] Schedule grid: chairs as columns, 15-minute rows, status labels
+- [x] Two practices with practice-scoped data (switcher in the header)
+- [x] Loading and error states (add `?fail` to the URL to see the error state)
+- [ ] Conflict detection for overlapping appointments
+- [ ] Check-in drawer with keyboard and focus handling
+- [ ] Patient flow view
+- [ ] Roles ("acting as" front desk / provider / office manager)
+- [ ] AI scheduling assist
 
-## Expanding the ESLint configuration
+## What is mocked
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **The API.** `src/api/schedule.ts` is an in-browser mock with fake latency. Data is
+  scoped by `practiceId` there; in a real system the server enforces that.
+- **The clock.** The demo always runs on Tue Nov 17, 2026 at 9:40 AM so it looks the same
+  whenever it's opened. Times are practice wall-clock strings with no timezone.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Run it
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+Requires Node 24 (see `.nvmrc`).
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+    npm install
+    npm run dev
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+## Checks
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+    npm run check   # typecheck, lint, format check, tests
+    npm run build
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-```
+CI runs the same checks on every push.
