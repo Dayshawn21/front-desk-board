@@ -14,8 +14,8 @@ Work in progress. Built in daily steps.
 - [x] Two practices with practice-scoped data (switcher in the header)
 - [x] Loading and error states (add `?fail` to the URL to see the error state)
 - [x] Conflict detection for overlapping appointments (side-by-side cards, banner)
-- [ ] Check-in drawer with keyboard and focus handling (status, checklist and notes work;
-      keyboard and focus handling in progress)
+- [x] Check-in drawer: status steps, checklist, notes; Escape closes, focus is trapped
+      while open and returns to the card on close
 - [ ] Patient flow view
 - [ ] Roles ("acting as" front desk / provider / office manager)
 - [ ] AI scheduling assist

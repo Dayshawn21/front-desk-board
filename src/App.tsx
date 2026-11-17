@@ -27,7 +27,10 @@ function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      <header className="flex flex-wrap items-end gap-4 border-b border-slate-200 bg-white px-6 py-4">
+      <header
+        inert={Boolean(selected)}
+        className="flex flex-wrap items-end gap-4 border-b border-slate-200 bg-white px-6 py-4"
+      >
         <div className="mr-auto">
           <h1 className="text-xl font-semibold">Front Desk Board</h1>
           <p className="text-sm text-slate-600">
@@ -54,7 +57,8 @@ function App() {
         </label>
       </header>
 
-      <main className="p-6">
+      {/* inert: while the drawer is open, nothing behind it can be focused or clicked */}
+      <main inert={Boolean(selected)} className="p-6">
         {schedule.isPending ? (
           <p role="status" className="text-sm text-slate-600">
             Loading schedule…

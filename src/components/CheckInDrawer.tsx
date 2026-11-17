@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
 import type { AppointmentPatch } from '../api/schedule'
 import { statusStyle, typeLabel } from '../lib/display'
 import { findConflicts } from '../lib/overlap'
@@ -12,6 +12,9 @@ const checklistItems: { key: keyof CheckInChecklist; label: string }[] = [
   { key: 'medicalHistoryReviewed', label: 'Medical history reviewed' },
   { key: 'copayCollected', label: 'Copay collected' },
 ]
+
+const FOCUSABLE =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 type CheckInDrawerProps = {
   day: ScheduleDay
@@ -34,6 +37,45 @@ export function CheckInDrawer({
   // different appointment opens, so the draft always starts from that appointment.
   const [checklist, setChecklist] = useState(appointment.checklist)
   const [notes, setNotes] = useState(appointment.notes)
+
+  const dialogRef = useRef<HTMLElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
+
+  // On open: remember what had focus (the card), move focus into the drawer.
+  // On close (unmount): give focus back to that card.
+  useEffect(() => {
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null
+    closeButtonRef.current?.focus()
+    return () => previouslyFocused?.focus()
+  }, [])
+
+  function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
+    if (event.key === 'Escape') {
+      event.stopPropagation()
+      onClose()
+      return
+    }
+    if (event.key !== 'Tab' || !dialogRef.current) return
+
+    // Focus trap: wrap from the last control to the first, and back.
+    const focusable = [
+      ...dialogRef.current.querySelectorAll<HTMLElement>(FOCUSABLE),
+    ]
+    if (focusable.length === 0) return
+    const first = focusable[0]
+    const last = focusable[focusable.length - 1]
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault()
+      last.focus()
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault()
+      first.focus()
+    }
+  }
 
   const patient = day.patients.find((p) => p.id === appointment.patientId)
   const chair = day.chairs.find((c) => c.id === appointment.chairId)
@@ -68,9 +110,11 @@ export function CheckInDrawer({
       />
 
       <aside
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="checkin-title"
+        onKeyDown={handleKeyDown}
         className="absolute inset-y-0 right-0 flex w-full max-w-md flex-col gap-5 overflow-y-auto bg-white p-6 shadow-xl"
       >
         <div className="flex items-start gap-3">
@@ -87,6 +131,7 @@ export function CheckInDrawer({
             </p>
           </div>
           <button
+            ref={closeButtonRef}
             type="button"
             aria-label="Close check-in"
             onClick={onClose}
@@ -140,9 +185,12 @@ export function CheckInDrawer({
           {action && (
             <button
               type="button"
-              disabled={isSaving}
-              onClick={() => onSave({ status: action.status })}
-              className="h-11 self-start rounded-lg bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+              // aria-disabled (not disabled) so the button keeps keyboard focus while saving
+              aria-disabled={isSaving}
+              onClick={() => {
+                if (!isSaving) onSave({ status: action.status })
+              }}
+              className="h-11 self-start rounded-lg bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-800 aria-disabled:opacity-60"
             >
               {isSaving ? 'Saving…' : action.label}
             </button>
