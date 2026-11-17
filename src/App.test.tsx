@@ -47,4 +47,23 @@ describe('App', () => {
       screen.queryByRole('button', { name: /jon kim/i }),
     ).not.toBeInTheDocument()
   })
+
+  it('flags overlapping appointments in the same chair', async () => {
+    renderWithQuery(<App />)
+
+    expect(
+      await screen.findByRole('button', {
+        name: /jon kim.*overlaps another appointment/i,
+      }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', {
+        name: /lena ortiz.*overlaps another appointment/i,
+      }),
+    ).toBeInTheDocument()
+    expect(screen.getByText(/1 scheduling conflict/i)).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: /ana diaz.*overlaps/i }),
+    ).not.toBeInTheDocument()
+  })
 })
