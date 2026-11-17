@@ -1,12 +1,29 @@
 import { useState } from 'react'
+
 import { ScheduleGrid } from './components/ScheduleGrid'
 import { DEMO_DATE, DEMO_NOW } from './config'
-import { usePractices, useSchedule } from './hooks/useSchedule'
+import {
+  usePractices,
+  useSchedule,
+  useUpdateAppointment,
+} from './hooks/useSchedule'
+import { CheckInDrawer } from './components/CheckInDrawer'
 
 function App() {
   const [practiceId, setPracticeId] = useState('maple')
+  const [selectedId, setSelectedId] = useState<string | null>(null)
   const practices = usePractices()
   const schedule = useSchedule(practiceId, DEMO_DATE)
+  const update = useUpdateAppointment(practiceId, DEMO_DATE)
+
+  // Read the selected appointment from the query, not a copy in state,
+  // so the drawer shows fresh data after every save.
+  const selected = schedule.data?.appointments.find((a) => a.id === selectedId)
+
+  const openDrawer = (id: string) => {
+    update.reset() // clear any error left over from a previous drawer
+    setSelectedId(id)
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -21,7 +38,10 @@ function App() {
           Practice
           <select
             value={practiceId}
-            onChange={(e) => setPracticeId(e.target.value)}
+            onChange={(e) => {
+              setSelectedId(null) // never keep one practice's drawer open on another
+              setPracticeId(e.target.value)
+            }}
             disabled={!practices.data}
             className="h-11 min-w-56 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900"
           >
@@ -54,9 +74,25 @@ function App() {
             </button>
           </div>
         ) : (
-          <ScheduleGrid day={schedule.data} now={DEMO_NOW} />
+          <ScheduleGrid
+            day={schedule.data}
+            now={DEMO_NOW}
+            onSelectAppointment={openDrawer}
+          />
         )}
       </main>
+
+      {schedule.data && selected && (
+        <CheckInDrawer
+          key={selected.id}
+          day={schedule.data}
+          appointment={selected}
+          isSaving={update.isPending}
+          saveError={update.error?.message ?? null}
+          onSave={(patch) => update.mutate({ id: selected.id, patch })}
+          onClose={() => setSelectedId(null)}
+        />
+      )}
     </div>
   )
 }

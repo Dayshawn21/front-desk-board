@@ -11,9 +11,14 @@ const HEADER_PX = 40
 type ScheduleGridProps = {
   day: ScheduleDay
   now?: string
+  onSelectAppointment?: (id: string) => void
 }
 
-export function ScheduleGrid({ day, now }: ScheduleGridProps) {
+export function ScheduleGrid({
+  day,
+  now,
+  onSelectAppointment,
+}: ScheduleGridProps) {
   const open = toMinutes(day.practice.openTime)
   const close = toMinutes(day.practice.closeTime)
   const slotCount = (close - open) / SLOT_MINUTES
@@ -136,6 +141,7 @@ export function ScheduleGrid({ day, now }: ScheduleGridProps) {
 
             return (
               <button
+                onClick={() => onSelectAppointment?.(appt.id)}
                 key={appt.id}
                 type="button"
                 aria-label={`${name}, ${typeLabel[appt.type]}, ${formatTime(start)} to ${formatTime(end)}, ${status.label}${hasConflict ? ', overlaps another appointment' : ''}`}
