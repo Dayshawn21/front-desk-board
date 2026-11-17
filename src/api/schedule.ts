@@ -1,5 +1,11 @@
-import { appointments, chairs, patients, practices } from '../mocks/seed'
-import type { Practice, ScheduleDay } from '../types'
+import * as seed from '../mocks/seed'
+import type {
+  Appointment,
+  Chair,
+  Patient,
+  Practice,
+  ScheduleDay,
+} from '../types'
 
 // Mock API. Simulates network latency and can be forced to fail.
 // Components call these functions only, never the seed data directly.
@@ -15,15 +21,41 @@ export class ApiError extends Error {
   }
 }
 
+// The mock "database": a private copy of the seed, so saves never change the seed itself.
+type Db = {
+  practices: Practice[]
+  chairs: Chair[]
+  patients: Patient[]
+  appointments: Appointment[]
+}
+
+function createDb(): Db {
+  return structuredClone({
+    practices: seed.practices,
+    chairs: seed.chairs,
+    patients: seed.patients,
+    appointments: seed.appointments,
+  })
+}
+
+let db = createDb()
+
+// Tests call this so every test starts from the same data.
+export function resetMockDb() {
+  db = createDb()
+}
+
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-// Add ?fail to the URL to see the error state, e.g. http://localhost:5173/?fail
-function shouldFail(): boolean {
+// Simulated failures for demos and tests:
+//   ?fail      → loading the schedule fails
+//   ?failSave  → saving a change fails
+function shouldFail(flag: 'fail' | 'failSave'): boolean {
   return (
     typeof window !== 'undefined' &&
-    new URLSearchParams(window.location.search).has('fail')
+    new URLSearchParams(window.location.search).has(flag)
   )
 }
 
@@ -36,7 +68,7 @@ function forPractice<T extends { practiceId: string }>(
 
 export async function fetchPractices(): Promise<Practice[]> {
   await sleep(LATENCY_MS)
-  return structuredClone(practices)
+  return structuredClone(db.practices)
 }
 
 export async function fetchSchedule(
@@ -45,11 +77,11 @@ export async function fetchSchedule(
 ): Promise<ScheduleDay> {
   await sleep(LATENCY_MS)
 
-  if (shouldFail()) {
+  if (shouldFail('fail')) {
     throw new ApiError('Could not load the schedule (simulated failure).', 503)
   }
 
-  const practice = practices.find((p) => p.id === practiceId)
+  const practice = db.practices.find((p) => p.id === practiceId)
   if (!practice) {
     throw new ApiError(`Unknown practice: ${practiceId}`, 404)
   }
@@ -57,10 +89,37 @@ export async function fetchSchedule(
   return structuredClone({
     practice,
     date,
-    chairs: forPractice(chairs, practiceId),
-    patients: forPractice(patients, practiceId),
-    appointments: forPractice(appointments, practiceId).filter((a) =>
+    chairs: forPractice(db.chairs, practiceId),
+    patients: forPractice(db.patients, practiceId),
+    appointments: forPractice(db.appointments, practiceId).filter((a) =>
       a.start.startsWith(date),
     ),
   })
+}
+
+export type AppointmentPatch = Partial<
+  Pick<Appointment, 'status' | 'checklist' | 'notes'>
+>
+
+export async function updateAppointment(
+  practiceId: string,
+  appointmentId: string,
+  patch: AppointmentPatch,
+): Promise<Appointment> {
+  await sleep(LATENCY_MS)
+
+  if (shouldFail('failSave')) {
+    throw new ApiError('Could not save changes (simulated failure).', 503)
+  }
+
+  // Tenant check: an appointment in another practice is treated as not found.
+  const appt = db.appointments.find(
+    (a) => a.id === appointmentId && a.practiceId === practiceId,
+  )
+  if (!appt) {
+    throw new ApiError(`Appointment not found: ${appointmentId}`, 404)
+  }
+
+  Object.assign(appt, structuredClone(patch))
+  return structuredClone(appt)
 }
