@@ -26,20 +26,10 @@ export type Patient = {
 }
 
 export type AppointmentType =
-  | 'cleaning'
-  | 'exam'
-  | 'filling'
-  | 'crown'
-  | 'consult'
-  | 'emergency'
+  'cleaning' | 'exam' | 'filling' | 'crown' | 'consult' | 'emergency'
 
 export type AppointmentStatus =
-  | 'scheduled'
-  | 'confirmed'
-  | 'arrived'
-  | 'in-chair'
-  | 'completed'
-  | 'cancelled'
+  'scheduled' | 'confirmed' | 'arrived' | 'in-chair' | 'completed' | 'cancelled'
 
 export type CheckInChecklist = {
   insuranceVerified: boolean
