@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { DEMO_DATE } from './config'
+import { ScheduleGrid } from './components/ScheduleGrid'
+import { DEMO_DATE, DEMO_NOW } from './config'
 import { usePractices, useSchedule } from './hooks/useSchedule'
 
 function App() {
@@ -53,10 +54,7 @@ function App() {
             </button>
           </div>
         ) : (
-          <p className="text-sm">
-            {schedule.data.practice.name}: {schedule.data.appointments.length}{' '}
-            appointments across {schedule.data.chairs.length} chairs
-          </p>
+          <ScheduleGrid day={schedule.data} now={DEMO_NOW} />
         )}
       </main>
     </div>
