@@ -9,7 +9,7 @@ import type {
 // FAKE DATA ONLY. Names are invented. Phone numbers use 555-01xx,
 // a range reserved for fictional use.
 
-export const DEMO_DATE = '2026-11-17'
+import { DEMO_DATE } from '../config'
 
 export const practices: Practice[] = [
   {
