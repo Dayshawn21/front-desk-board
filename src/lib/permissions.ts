@@ -28,7 +28,7 @@ const rules: Record<Permission, Role[]> = {
   'reopen-checkout': ['office-manager'],
   'edit-checklist': ['front-desk', 'office-manager'],
   'switch-practice': ['office-manager'],
-  book: [], // red-step stub
+  book: ['front-desk', 'office-manager'],
 }
 
 export function can(role: Role, permission: Permission): boolean {

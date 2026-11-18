@@ -1,3 +1,5 @@
+import { rangesOverlap } from '../lib/overlap'
+import { toMinutes } from '../lib/time'
 import * as seed from '../mocks/seed'
 import type {
   Appointment,
@@ -39,10 +41,12 @@ function createDb(): Db {
 }
 
 let db = createDb()
+let nextBookingId = 1
 
 // Tests call this so every test starts from the same data.
 export function resetMockDb() {
   db = createDb()
+  nextBookingId = 1
 }
 
 function sleep(ms: number) {
@@ -52,7 +56,8 @@ function sleep(ms: number) {
 // Simulated failures for demos and tests:
 //   ?fail      → loading the schedule fails
 //   ?failSave  → saving a change fails
-function shouldFail(flag: 'fail' | 'failSave'): boolean {
+//   ?failBook  → booking a new visit fails
+function shouldFail(flag: 'fail' | 'failSave' | 'failBook'): boolean {
   return (
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).has(flag)
@@ -131,8 +136,67 @@ export type NewAppointment = Pick<
 >
 
 export async function createAppointment(
-  _practiceId: string,
-  _input: NewAppointment,
+  practiceId: string,
+  input: NewAppointment,
 ): Promise<Appointment> {
-  throw new Error('createAppointment: not implemented')
+  await sleep(LATENCY_MS)
+
+  if (shouldFail('failBook')) {
+    throw new ApiError('Could not book the visit (simulated failure).', 503)
+  }
+
+  // Tenant checks: the patient and chair must belong to this practice.
+  const practice = db.practices.find((p) => p.id === practiceId)
+  const patient = db.patients.find(
+    (p) => p.id === input.patientId && p.practiceId === practiceId,
+  )
+  const chair = db.chairs.find(
+    (c) => c.id === input.chairId && c.practiceId === practiceId,
+  )
+  if (!practice || !patient || !chair) {
+    throw new ApiError('Patient or chair not found in this practice.', 404)
+  }
+
+  const start = toMinutes(input.start)
+  const end = toMinutes(input.end)
+  if (
+    end <= start ||
+    start < toMinutes(practice.openTime) ||
+    end > toMinutes(practice.closeTime)
+  ) {
+    throw new ApiError('That time is outside opening hours.', 400)
+  }
+
+  // The server re-checks the slot: someone may have booked it since the
+  // form showed it as free. Cancelled visits don't hold a chair.
+  const taken = db.appointments.some(
+    (a) =>
+      a.practiceId === practiceId &&
+      a.chairId === input.chairId &&
+      a.status !== 'cancelled' &&
+      a.start.slice(0, 10) === input.start.slice(0, 10) &&
+      rangesOverlap(a, input),
+  )
+  if (taken) {
+    throw new ApiError(
+      `That time was just booked in ${chair.name}. Pick another time.`,
+      409,
+    )
+  }
+
+  const appointment: Appointment = {
+    ...structuredClone(input),
+    id: `b-${nextBookingId++}`,
+    practiceId,
+    status: 'scheduled',
+    checklist: {
+      insuranceVerified: false,
+      formsComplete: false,
+      medicalHistoryReviewed: false,
+      copayCollected: false,
+    },
+    notes: '',
+  }
+  db.appointments.push(appointment)
+  return structuredClone(appointment)
 }
