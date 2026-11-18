@@ -1,9 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
+  createAppointment,
   fetchPractices,
   fetchSchedule,
   updateAppointment,
   type AppointmentPatch,
+  type NewAppointment,
 } from '../api/schedule'
 
 // Query keys in one place so mutations (Day 2) can invalidate the right cache.
@@ -36,6 +38,19 @@ export function useUpdateAppointment(practiceId: string, date: string) {
     // After a save, mark this practice's schedule stale so the grid,
     // the drawer and (later) the flow view all refetch the new data.
     onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.schedule(practiceId, date),
+      }),
+  })
+}
+
+export function useCreateAppointment(practiceId: string, date: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (input: NewAppointment) => createAppointment(practiceId, input),
+    // Refetch on success AND on error: a 409 means the schedule changed
+    // under us, so the suggested times need fresh data either way.
+    onSettled: () =>
       queryClient.invalidateQueries({
         queryKey: queryKeys.schedule(practiceId, date),
       }),

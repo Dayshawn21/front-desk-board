@@ -1,18 +1,22 @@
 import { useEffect, useRef, useState } from 'react'
 import { AccountMenu } from './components/AccountMenu'
+import { BookingDrawer } from './components/BookingDrawer'
 import { CheckInDrawer } from './components/CheckInDrawer'
 import { PatientFlow } from './components/PatientFlow'
 import { SignInPage } from './components/SignInPage'
 import { ScheduleGrid } from './components/ScheduleGrid'
-import { UndoToast } from './components/UndoToast'
+import { type ToastMessage, UndoToast } from './components/UndoToast'
 import { type ViewId, ViewTabs } from './components/ViewTabs'
+import type { NewAppointment } from './api/schedule'
 import { DEMO_DATE, DEMO_NOW } from './config'
 import {
   usePractices,
   useSchedule,
+  useCreateAppointment,
   useUpdateAppointment,
 } from './hooks/useSchedule'
-import { statusStyle } from './lib/display'
+import { statusStyle, typeLabel } from './lib/display'
+import { formatTime } from './lib/time'
 import { previousAction } from './lib/workflow'
 import { useAuth, useSession } from './session/SessionContext'
 import type { AppointmentStatus } from './types'
@@ -42,9 +46,13 @@ function Board() {
   const [view, setView] = useState<ViewId>('schedule')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [lastChange, setLastChange] = useState<StatusChange | null>(null)
+  const [isBooking, setIsBooking] = useState(false)
+  // A plain confirmation with no Undo (e.g. "Booked …").
+  const [notice, setNotice] = useState<ToastMessage | null>(null)
   const practices = usePractices()
   const schedule = useSchedule(practiceId, DEMO_DATE)
   const update = useUpdateAppointment(practiceId, DEMO_DATE)
+  const create = useCreateAppointment(practiceId, DEMO_DATE)
 
   // Read the selected appointment from the query, not a copy in state,
   // so the drawer shows fresh data after every save.
@@ -73,6 +81,7 @@ function Board() {
       {
         onSuccess: () => {
           changeCounter += 1
+          setNotice(null)
           setLastChange({
             key: changeCounter,
             appointmentId: id,
@@ -102,6 +111,35 @@ function Board() {
   const practiceName =
     practices.data?.find((p) => p.id === practiceId)?.name ?? ''
 
+  const openBooking = () => {
+    create.reset() // clear an error left over from an earlier attempt
+    setIsBooking(true)
+  }
+
+  const book = (input: NewAppointment) => {
+    create.mutate(input, {
+      onSuccess: (appt) => {
+        const patient = schedule.data?.patients.find(
+          (p) => p.id === appt.patientId,
+        )
+        const chair = schedule.data?.chairs.find((c) => c.id === appt.chairId)
+        const name = patient
+          ? `${patient.firstName} ${patient.lastName}`
+          : 'Visit'
+        changeCounter += 1
+        setLastChange(null)
+        setNotice({
+          key: changeCounter,
+          text: `Booked ${name}: ${typeLabel[appt.type]}, ${formatTime(appt.start)}, ${chair?.name ?? ''}`,
+        })
+        setIsBooking(false)
+      },
+    })
+  }
+
+  // Anything modal open? Then the page behind is inert.
+  const modalOpen = Boolean(selected) || isBooking
+
   const toastText = lastChange
     ? lastChange.kind === 'forward'
       ? `${lastChange.name}: ${statusStyle[lastChange.to].label}`
@@ -111,7 +149,7 @@ function Board() {
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header
-        inert={Boolean(selected)}
+        inert={modalOpen}
         className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-6"
       >
         <div>
@@ -138,6 +176,7 @@ function Board() {
                 onChange={(e) => {
                   setSelectedId(null) // never keep one practice's drawer open on another
                   setLastChange(null)
+                  setNotice(null)
                   update.reset()
                   setPracticeId(e.target.value)
                 }}
@@ -170,8 +209,20 @@ function Board() {
         </div>
       </header>
 
-      {/* inert: while the drawer is open, nothing behind it can be focused or clicked */}
-      <main inert={Boolean(selected)} className="p-6">
+      {/* inert: while a drawer is open, nothing behind it can be focused or clicked */}
+      <main inert={modalOpen} className="flex flex-col gap-4 p-6">
+        {can('book') && (
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={openBooking}
+              disabled={!schedule.data}
+              className="h-11 rounded-lg bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+            >
+              New appointment
+            </button>
+          </div>
+        )}
         <ViewTabs value={view} onChange={setView}>
           {schedule.isPending ? (
             <p role="status" className="text-sm text-slate-600">
@@ -234,11 +285,22 @@ function Board() {
         />
       )}
 
+      {schedule.data && isBooking && (
+        <BookingDrawer
+          day={schedule.data}
+          now={DEMO_NOW}
+          isSaving={create.isPending}
+          saveError={create.error?.message ?? null}
+          onBook={book}
+          onClose={() => setIsBooking(false)}
+        />
+      )}
+
       <UndoToast
         toast={
           lastChange && toastText
             ? { key: lastChange.key, text: toastText }
-            : null
+            : notice
         }
         undo={
           lastChange && canUndoLast && undoStep
@@ -249,7 +311,10 @@ function Board() {
               }
             : undefined
         }
-        onDismiss={() => setLastChange(null)}
+        onDismiss={() => {
+          setLastChange(null)
+          setNotice(null)
+        }}
       />
     </div>
   )

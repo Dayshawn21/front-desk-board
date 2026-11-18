@@ -29,13 +29,18 @@ Work in progress. Built in daily steps.
 - [x] Open-slot finder (`src/lib/slots.ts`): given a duration and an optional chair and
       time window, suggests the earliest free slots inside opening hours, skipping
       cancelled visits. Pure function, built test-first; the AI assist will call it
+- [x] Booking: "New appointment" (front desk and office manager) picks a patient, visit
+      type, length, and optional chair or time of day, shows the three earliest open
+      times from the slot finder, and books the one you choose. The mock server re-checks
+      the slot, so if someone else just took it you get a clear message and fresh times
+      (add `?failBook` to the URL to see a failed booking)
 - [ ] AI scheduling assist
 
 ## What is mocked
 
 - **The API.** `src/api/schedule.ts` is an in-browser mock with fake latency. Data is
-  scoped by `practiceId` there; in a real system the server enforces that. Saves live
-  in that tab's memory only, so two tabs or two users do not see each other's changes,
+  scoped by `practiceId` there; in a real system the server enforces that. Saves and new
+  bookings live in that tab's memory only, so two tabs or two users do not see each other's changes,
   and a page reload resets the data.
 - **Sign-in and roles.** Sign-in is pretend: you pick one of three fake staff users
   (`src/mocks/users.ts`) and there are no passwords. Anything checked in the browser can
