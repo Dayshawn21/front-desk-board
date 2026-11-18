@@ -6,7 +6,8 @@ export type Role = 'front-desk' | 'provider' | 'office-manager'
 export type StaffUser = {
   id: string
   name: string
-  role: Role
+  title: string // job title shown to people, e.g. "Front Desk Coordinator"
+  role: Role // what they're allowed to do (see src/lib/permissions.ts)
   practiceId: string // home practice; only the office manager can switch away
 }
 

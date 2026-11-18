@@ -6,9 +6,15 @@ import { renderWithQuery } from './test/render'
 
 const STORAGE_KEY = 'front-desk-board.userId'
 
-const signedInUser = () => screen.getByRole('group', { name: /signed in as/i })
+const signedInUser = () => screen.getByRole('button', { name: /account menu/i })
 const practiceSwitcher = () =>
   screen.queryByRole('combobox', { name: /practice/i })
+
+// Sign out lives in the account menu, so open it first.
+async function signOut(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByRole('button', { name: /account menu/i }))
+  await user.click(screen.getByRole('button', { name: /sign out/i }))
+}
 
 async function signInAs(name: RegExp) {
   const user = userEvent.setup()
@@ -83,7 +89,7 @@ describe('sign out', () => {
     renderWithQuery(<App />, { signedOut: true })
     const user = await signInAs(/rosa jimenez/i)
 
-    await user.click(screen.getByRole('button', { name: /sign out/i }))
+    await signOut(user)
 
     expect(screen.getByRole('heading', { name: /sign in/i })).toHaveFocus()
     expect(screen.queryByRole('tab')).not.toBeInTheDocument()
@@ -92,7 +98,7 @@ describe('sign out', () => {
   it('lets a different user sign in afterwards', async () => {
     renderWithQuery(<App />, { signedOut: true })
     const user = await signInAs(/rosa jimenez/i)
-    await user.click(screen.getByRole('button', { name: /sign out/i }))
+    await signOut(user)
 
     await signInAs(/theo grant/i)
 
@@ -104,7 +110,7 @@ describe('sign out', () => {
     renderWithQuery(<App />, { signedOut: true })
     const user = await signInAs(/theo grant/i)
     await user.selectOptions(screen.getByLabelText(/^practice/i), 'riverbend')
-    await user.click(screen.getByRole('button', { name: /sign out/i }))
+    await signOut(user)
 
     await signInAs(/rosa jimenez/i)
 
@@ -118,7 +124,7 @@ describe('sign out', () => {
     const user = await signInAs(/rosa jimenez/i)
     expect(client.getQueryCache().getAll().length).toBeGreaterThan(0)
 
-    await user.click(screen.getByRole('button', { name: /sign out/i }))
+    await signOut(user)
 
     expect(client.getQueryCache().getAll()).toHaveLength(0)
   })
@@ -133,7 +139,7 @@ describe('remembered sign-in (this tab only)', () => {
     renderWithQuery(<App />, { restoreSession: true })
 
     expect(
-      await screen.findByRole('group', { name: /signed in as/i }),
+      await screen.findByRole('button', { name: /account menu/i }),
     ).toHaveTextContent(/theo grant/i)
   })
 
@@ -142,7 +148,7 @@ describe('remembered sign-in (this tab only)', () => {
     const user = await signInAs(/rosa jimenez/i)
     expect(sessionStorage.getItem(STORAGE_KEY)).toBe('u-rosa')
 
-    await user.click(screen.getByRole('button', { name: /sign out/i }))
+    await signOut(user)
 
     expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull()
   })

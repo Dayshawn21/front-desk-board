@@ -7,18 +7,21 @@ export const users: StaffUser[] = [
   {
     id: 'u-rosa',
     name: 'Rosa Jimenez',
+    title: 'Front Desk Coordinator',
     role: 'front-desk',
     practiceId: 'maple',
   },
   {
     id: 'u-okafor',
     name: 'Dr. Amara Okafor',
+    title: 'General Dentist',
     role: 'provider',
     practiceId: 'maple',
   },
   {
     id: 'u-theo',
     name: 'Theo Grant',
+    title: 'Office Manager',
     role: 'office-manager',
     practiceId: 'maple',
   },
