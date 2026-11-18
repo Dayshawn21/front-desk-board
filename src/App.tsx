@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { AccountMenu } from './components/AccountMenu'
 import { CheckInDrawer } from './components/CheckInDrawer'
 import { PatientFlow } from './components/PatientFlow'
 import { SignInPage } from './components/SignInPage'
@@ -11,7 +12,7 @@ import {
   useSchedule,
   useUpdateAppointment,
 } from './hooks/useSchedule'
-import { roleLabel, statusStyle } from './lib/display'
+import { statusStyle } from './lib/display'
 import { previousAction } from './lib/workflow'
 import { useAuth, useSession } from './session/SessionContext'
 import type { AppointmentStatus } from './types'
@@ -161,27 +162,11 @@ function Board() {
             </div>
           )}
 
-          <div className="flex items-center gap-3 sm:border-l sm:border-slate-200 sm:pl-5">
-            <div
-              role="group"
-              aria-label="Signed in as"
-              className="flex flex-col gap-0.5"
-            >
-              <span className="text-sm font-medium text-slate-900">
-                {user.name}
-              </span>
-              <span className="text-xs text-slate-600">
-                {roleLabel[user.role]}
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={signOut}
-              className="h-11 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium whitespace-nowrap text-slate-900 hover:bg-slate-100"
-            >
-              Sign out
-            </button>
-          </div>
+          <AccountMenu
+            user={user}
+            practiceName={practiceName}
+            onSignOut={signOut}
+          />
         </div>
       </header>
 

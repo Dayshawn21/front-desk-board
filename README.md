@@ -20,8 +20,10 @@ Work in progress. Built in daily steps.
       status changes
 - [x] Roles: front desk / provider / office manager; actions a role can't take are
       hidden, and only the office manager can switch practices
-- [x] Demo sign-in: pick one of three fake staff users; Sign out returns to the sign-in
-      page and clears cached data; a reload keeps you signed in (this tab only)
+- [x] Demo sign-in: pick one of three fake staff users; a reload keeps you signed in
+      (this tab only)
+- [x] Account menu: shows name, job title, and practice, with Sign out (returns to the
+      sign-in page and clears cached data); closes on Escape, outside click, or focus leaving
 - [x] Undo: every status change shows a toast with Undo, and the drawer can move a visit
       back one step; reopening a checked-out visit is office-manager only
 - [x] Open-slot finder (`src/lib/slots.ts`): given a duration and an optional chair and
