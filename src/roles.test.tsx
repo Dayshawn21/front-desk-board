@@ -1,4 +1,4 @@
-import { screen, waitFor, within } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import App from './App'
@@ -18,20 +18,6 @@ describe('roles', () => {
     expect(practice).toBeDisabled()
     expect(practice).toHaveAccessibleDescription(
       /only the office manager can switch practices/i,
-    )
-  })
-
-  it('unlocks the practice switcher after switching to office manager', async () => {
-    const user = userEvent.setup()
-    await renderAs('front-desk')
-
-    await user.selectOptions(
-      screen.getByLabelText(/acting as/i),
-      'office-manager',
-    )
-
-    await waitFor(() =>
-      expect(screen.getByLabelText(/^practice/i)).toBeEnabled(),
     )
   })
 

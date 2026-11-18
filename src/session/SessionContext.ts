@@ -1,25 +1,41 @@
 import { createContext, useContext } from 'react'
 import { can as canForRole, type Permission } from '../lib/permissions'
-import type { Role } from '../types'
+import type { StaffUser } from '../types'
 
-// Who is using the board and which practice they're looking at.
-// In a real app this would come from the signed-in user; here an
-// "Acting as" switcher sets it, and the README says so.
-export type Session = {
+// Who is signed in and which practice they're looking at.
+// Sign-in is mocked: you pick one of three demo users (README says so).
+export type SessionState = {
+  user: StaffUser | null
   practiceId: string
-  role: Role
+  signIn: (userId: string) => void
+  signOut: () => void
   setPracticeId: (id: string) => void
-  setRole: (role: Role) => void
 }
 
-export const SessionContext = createContext<Session | null>(null)
+export const SessionContext = createContext<SessionState | null>(null)
 
-export function useSession() {
+function useSessionState() {
   const session = useContext(SessionContext)
   if (!session) {
-    throw new Error('useSession must be used inside <SessionProvider>')
+    throw new Error('Session hooks must be used inside <SessionProvider>')
+  }
+  return session
+}
+
+// Works signed in or out: for the sign-in page and the top-level App.
+export function useAuth() {
+  const { user, signIn, signOut } = useSessionState()
+  return { user, signIn, signOut }
+}
+
+// For screens behind sign-in. Throws if nobody is signed in, so the board
+// can never render with a missing role.
+export function useSession() {
+  const { user, ...rest } = useSessionState()
+  if (!user) {
+    throw new Error('useSession needs a signed-in user')
   }
   // Bound to the current role, so components can write can('seat').
-  const can = (permission: Permission) => canForRole(session.role, permission)
-  return { ...session, can }
+  const can = (permission: Permission) => canForRole(user.role, permission)
+  return { ...rest, user, role: user.role, can }
 }

@@ -1,6 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { CheckInDrawer } from './components/CheckInDrawer'
 import { PatientFlow } from './components/PatientFlow'
+import { SignInPage } from './components/SignInPage'
 import { ScheduleGrid } from './components/ScheduleGrid'
 import { UndoToast } from './components/UndoToast'
 import { type ViewId, ViewTabs } from './components/ViewTabs'
@@ -12,10 +13,8 @@ import {
 } from './hooks/useSchedule'
 import { roleLabel, statusStyle } from './lib/display'
 import { previousAction } from './lib/workflow'
-import { useSession } from './session/SessionContext'
-import type { AppointmentStatus, Role } from './types'
-
-const roles = Object.keys(roleLabel) as Role[]
+import { useAuth, useSession } from './session/SessionContext'
+import type { AppointmentStatus } from './types'
 
 // The most recent status change, kept so the toast can offer to undo it.
 type StatusChange = {
@@ -29,8 +28,16 @@ type StatusChange = {
 
 let changeCounter = 0
 
+// Signed out: the sign-in page. Signed in: the board, keyed by user so a
+// new sign-in starts with fresh screen state (no drawer or toast left over).
 function App() {
-  const { practiceId, setPracticeId, role, setRole, can } = useSession()
+  const { user } = useAuth()
+  return user ? <Board key={user.id} /> : <SignInPage />
+}
+
+function Board() {
+  const { user, practiceId, setPracticeId, signOut, can } = useSession()
+  const headingRef = useRef<HTMLHeadingElement>(null)
   const [view, setView] = useState<ViewId>('schedule')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [lastChange, setLastChange] = useState<StatusChange | null>(null)
@@ -88,6 +95,9 @@ function App() {
     undoStep.status === lastChange.from &&
     can(undoStep.permission)
 
+  // Same as the sign-in page: after the page swaps, focus starts at its heading.
+  useEffect(() => headingRef.current?.focus(), [])
+
   const toastText = lastChange
     ? lastChange.kind === 'forward'
       ? `${lastChange.name}: ${statusStyle[lastChange.to].label}`
@@ -101,7 +111,13 @@ function App() {
         className="flex flex-wrap items-start gap-4 border-b border-slate-200 bg-white px-6 py-4"
       >
         <div className="mr-auto">
-          <h1 className="text-xl font-semibold">Front Desk Board</h1>
+          <h1
+            ref={headingRef}
+            tabIndex={-1}
+            className="text-xl font-semibold outline-none"
+          >
+            Front Desk Board
+          </h1>
           <p className="text-sm text-slate-600">
             Tuesday, Nov 17 · Demo data only, no real patients
           </p>
@@ -136,20 +152,20 @@ function App() {
             </p>
           )}
         </div>
-        <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Acting as (demo)
-          <select
-            value={role}
-            onChange={(e) => setRole(e.target.value as Role)}
-            className="h-11 min-w-44 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900"
+        <div className="flex items-center gap-3 self-end">
+          <p className="text-sm text-slate-600">
+            Signed in as{' '}
+            <span className="font-medium text-slate-900">{user.name}</span> ·{' '}
+            {roleLabel[user.role]}
+          </p>
+          <button
+            type="button"
+            onClick={signOut}
+            className="h-11 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium whitespace-nowrap text-slate-900 hover:bg-slate-100"
           >
-            {roles.map((r) => (
-              <option key={r} value={r}>
-                {roleLabel[r]}
-              </option>
-            ))}
-          </select>
-        </label>
+            Sign out
+          </button>
+        </div>
       </header>
 
       {/* inert: while the drawer is open, nothing behind it can be focused or clicked */}

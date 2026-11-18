@@ -18,8 +18,10 @@ Work in progress. Built in daily steps.
       while open and returns to the card on close
 - [x] Patient flow tab: Expected → Arrived → In chair → Checked out, with one-click
       status changes
-- [x] Roles: "Acting as" front desk / provider / office manager; actions a role can't
-      take are hidden, and only the office manager can switch practices
+- [x] Roles: front desk / provider / office manager; actions a role can't take are
+      hidden, and only the office manager can switch practices
+- [x] Demo sign-in: pick one of three fake staff users; Sign out returns to the sign-in
+      page and clears cached data; a reload keeps you signed in (this tab only)
 - [x] Undo: every status change shows a toast with Undo, and the drawer can move a visit
       back one step; reopening a checked-out visit is office-manager only
 - [x] Open-slot finder (`src/lib/slots.ts`): given a duration and an optional chair and
@@ -33,9 +35,12 @@ Work in progress. Built in daily steps.
   scoped by `practiceId` there; in a real system the server enforces that. Saves live
   in that tab's memory only, so two tabs or two users do not see each other's changes,
   and a page reload resets the data.
-- **Sign-in and roles.** There is no login. The "Acting as" dropdown picks a role so the
-  demo can show each view. Role rules (`src/lib/permissions.ts`) only hide buttons in the
-  UI; a real server would enforce the same rules on every request.
+- **Sign-in and roles.** Sign-in is pretend: you pick one of three fake staff users
+  (`src/mocks/users.ts`) and there are no passwords. Anything checked in the browser can
+  be bypassed, so a real app would sign in through an identity provider and the server
+  would decide who you are. The chosen user is remembered in `sessionStorage` for that
+  tab. Role rules (`src/lib/permissions.ts`) only hide buttons in the UI; a real server
+  would enforce the same rules on every request.
 - **The clock.** The demo always runs on Tue Nov 17, 2026 at 9:40 AM so it looks the same
   whenever it's opened. Times are practice wall-clock strings with no timezone.
 
