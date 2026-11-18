@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { appointments as seedAppointments } from '../mocks/seed'
 import { can } from './permissions'
-import { flowSteps, groupByFlow, nextAction, previousAction } from './workflow'
+import {
+  cancelAction,
+  flowSteps,
+  groupByFlow,
+  nextAction,
+  previousAction,
+} from './workflow'
 
 describe('nextAction', () => {
   it('walks a visit through every front-desk step in order', () => {
@@ -124,5 +130,28 @@ describe('groupByFlow', () => {
     const cancelled = { ...maple[0], id: 'x', status: 'cancelled' as const }
     const ids = Object.values(groupByFlow([cancelled])).flat()
     expect(ids).toHaveLength(0)
+  })
+})
+
+describe('cancelAction', () => {
+  it('lets a visit be cancelled before the patient arrives', () => {
+    for (const status of ['scheduled', 'confirmed'] as const) {
+      expect(cancelAction(status)).toEqual({
+        label: 'Cancel visit',
+        status: 'cancelled',
+        permission: 'cancel',
+      })
+    }
+  })
+
+  it('does not cancel a visit that has started, finished, or is cancelled', () => {
+    for (const status of [
+      'arrived',
+      'in-chair',
+      'completed',
+      'cancelled',
+    ] as const) {
+      expect(cancelAction(status)).toBeNull()
+    }
   })
 })

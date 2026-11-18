@@ -165,3 +165,29 @@ describe('createAppointment', () => {
     })
   })
 })
+
+describe('restoring a cancelled visit', () => {
+  it('refuses if its time was booked in the meantime (409)', async () => {
+    // a-04: Owen Hart, Chair 1, 11:15 to 12:00
+    await updateAppointment('maple', 'a-04', { status: 'cancelled' })
+    await createAppointment('maple', {
+      patientId: 'p-ana',
+      chairId: 'maple-c1',
+      start: `${DATE}T11:15:00`,
+      end: `${DATE}T11:45:00`,
+      type: 'exam',
+    })
+
+    await expect(
+      updateAppointment('maple', 'a-04', { status: 'scheduled' }),
+    ).rejects.toMatchObject({ status: 409, message: /already booked/i })
+  })
+
+  it('restores it when the time is still free', async () => {
+    await updateAppointment('maple', 'a-04', { status: 'cancelled' })
+
+    await expect(
+      updateAppointment('maple', 'a-04', { status: 'scheduled' }),
+    ).resolves.toMatchObject({ status: 'scheduled' })
+  })
+})
