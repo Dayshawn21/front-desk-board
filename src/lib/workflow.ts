@@ -50,9 +50,32 @@ export type UndoAction = {
   permission: Permission
 }
 
-// Stub for TDD: the tests are written first and must fail against this.
-export function previousAction(_status: AppointmentStatus): UndoAction | null {
-  throw new Error('Not implemented')
+export function previousAction(status: AppointmentStatus): UndoAction | null {
+  switch (status) {
+    case 'confirmed':
+      return {
+        label: 'Undo confirm',
+        status: 'scheduled',
+        permission: 'confirm',
+      }
+    case 'arrived':
+      return {
+        label: 'Undo check-in',
+        status: 'confirmed',
+        permission: 'check-in',
+      }
+    case 'in-chair':
+      return { label: 'Undo seating', status: 'arrived', permission: 'seat' }
+    case 'completed':
+      return {
+        label: 'Reopen visit',
+        status: 'in-chair',
+        permission: 'reopen-checkout',
+      }
+    case 'scheduled':
+    case 'cancelled':
+      return null
+  }
 }
 
 // Columns of the patient flow board. "Expected" covers scheduled and confirmed
