@@ -123,3 +123,16 @@ export async function updateAppointment(
   Object.assign(appt, structuredClone(patch))
   return structuredClone(appt)
 }
+
+// What the booking form sends. The server fills in id, status and checklist.
+export type NewAppointment = Pick<
+  Appointment,
+  'patientId' | 'chairId' | 'start' | 'end' | 'type'
+>
+
+export async function createAppointment(
+  _practiceId: string,
+  _input: NewAppointment,
+): Promise<Appointment> {
+  throw new Error('createAppointment: not implemented')
+}

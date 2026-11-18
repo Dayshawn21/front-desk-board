@@ -10,6 +10,7 @@ export const PERMISSIONS = [
   'reopen-checkout',
   'edit-checklist',
   'switch-practice',
+  'book',
 ] as const
 
 export type Permission = (typeof PERMISSIONS)[number]
@@ -27,6 +28,7 @@ const rules: Record<Permission, Role[]> = {
   'reopen-checkout': ['office-manager'],
   'edit-checklist': ['front-desk', 'office-manager'],
   'switch-practice': ['office-manager'],
+  book: [], // red-step stub
 }
 
 export function can(role: Role, permission: Permission): boolean {
