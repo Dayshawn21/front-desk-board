@@ -1,13 +1,18 @@
 import type { Role } from '../types'
 
-export type Permission =
-  | 'confirm'
-  | 'check-in'
-  | 'seat'
-  | 'check-out'
-  | 'reopen-checkout'
-  | 'edit-checklist'
-  | 'switch-practice'
+// One source for both the runtime list and the type.
+// `as const` keeps the exact strings; `[number]` turns the array into a union.
+export const PERMISSIONS = [
+  'confirm',
+  'check-in',
+  'seat',
+  'check-out',
+  'reopen-checkout',
+  'edit-checklist',
+  'switch-practice',
+] as const
+
+export type Permission = (typeof PERMISSIONS)[number]
 
 // The whole policy in one table: which roles hold each permission.
 // Record<Permission, …> makes TypeScript require a row for every permission.

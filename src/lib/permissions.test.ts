@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { Role } from '../types'
-import { can, type Permission } from './permissions'
+import { roleLabel } from './display'
+import { can, type Permission, PERMISSIONS } from './permissions'
+
+const ROLES = Object.keys(roleLabel) as Role[]
 
 // The full matrix: every role × every permission. This table IS the spec.
 const matrix: [Role, Permission, boolean][] = [
@@ -30,6 +33,13 @@ const matrix: [Role, Permission, boolean][] = [
 ]
 
 describe('can', () => {
+  // Guards the table itself: adding a role or permission without test rows fails here.
+  it('has exactly one row for every role × permission pair', () => {
+    const pairs = matrix.map(([role, permission]) => `${role}:${permission}`)
+    expect(new Set(pairs).size).toBe(pairs.length) // no duplicates
+    expect(pairs).toHaveLength(ROLES.length * PERMISSIONS.length)
+  })
+
   it.each(matrix)('%s → %s → %s', (role, permission, expected) => {
     expect(can(role, permission)).toBe(expected)
   })
