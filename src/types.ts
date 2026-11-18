@@ -2,6 +2,14 @@
 
 export type Role = 'front-desk' | 'provider' | 'office-manager'
 
+// A staff member who can sign in. Demo users only; see src/mocks/users.ts.
+export type StaffUser = {
+  id: string
+  name: string
+  role: Role
+  practiceId: string // home practice; only the office manager can switch away
+}
+
 export type Practice = {
   id: string
   name: string

@@ -1,11 +1,13 @@
 import '@testing-library/jest-dom/vitest'
 import { cleanup } from '@testing-library/react'
-import { afterEach } from 'vitest'
+import { afterEach, vi } from 'vitest'
 import { resetMockDb } from '../api/schedule'
 
-// Unmount rendered components and restore the mock database after each test,
-// so tests can't affect each other.
+// Unmount rendered components, restore the mock database, and forget any
+// remembered sign-in after each test, so tests can't affect each other.
 afterEach(() => {
   cleanup()
   resetMockDb()
+  sessionStorage.clear()
+  vi.restoreAllMocks()
 })
