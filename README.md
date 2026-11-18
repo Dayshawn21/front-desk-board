@@ -60,8 +60,11 @@ Work in progress. Built in daily steps.
 
 ## What I'd do next
 
-- **Cancel reasons and no-shows.** Record why a visit was cancelled (patient called,
-  late cancel, no-show) and add a separate No-show status for reporting.
+- **Cancel reasons, a confirm step, and no-shows.** Cancelling uses Undo today, not an
+  "Are you sure?" popup, because it's frequent and fully reversible here. Once a cancel
+  texts the patient or charges a late fee it can't be undone, so it should get a confirm
+  step inside the drawer that also asks for the reason (patient called, late cancel). Add
+  a separate No-show status for reporting.
 - **Drag on the schedule.** Drag down a column to pick a time range, and drag a visit to
   move it, with Undo, the same server re-check as booking, and a "Move to…" option in the
   check-in drawer so nothing needs dragging (WCAG 2.5.7).
