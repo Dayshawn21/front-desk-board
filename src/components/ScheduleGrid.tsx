@@ -1,7 +1,7 @@
 import { statusStyle, typeLabel } from '../lib/display'
 import { assignLanes } from '../lib/lanes'
 import { findConflicts } from '../lib/overlap'
-import { formatTime, toMinutes } from '../lib/time'
+import { formatTime, toClock, toMinutes } from '../lib/time'
 import type { ScheduleDay } from '../types'
 
 const SLOT_MINUTES = 15
@@ -12,12 +12,15 @@ type ScheduleGridProps = {
   day: ScheduleDay
   now?: string
   onSelectAppointment?: (id: string) => void
+  // When set, empty future spots can be clicked to start a booking there.
+  onSelectSlot?: (chairId: string, time: string) => void
 }
 
 export function ScheduleGrid({
   day,
   now,
   onSelectAppointment,
+  onSelectSlot,
 }: ScheduleGridProps) {
   const open = toMinutes(day.practice.openTime)
   const close = toMinutes(day.practice.closeTime)
@@ -122,6 +125,33 @@ export function ScheduleGrid({
               </div>
             )
           })}
+
+          {/* Click targets for booking. Mouse and touch only: they're hidden
+              from screen readers and not in the Tab order (100+ stops would
+              bury the visits). Keyboard users book with "New appointment".
+              Cards render after these, so a visit always wins the click. */}
+          {onSelectSlot &&
+            day.chairs.flatMap((chair, c) =>
+              Array.from({ length: slotCount }, (_, i) => {
+                const minutes = open + i * SLOT_MINUTES
+                if (nowMinutes !== null && minutes < nowMinutes) return null
+                const time = toClock(minutes)
+                return (
+                  <div
+                    key={`${chair.id}-${time}`}
+                    data-testid={`slot-${chair.id}-${time}`}
+                    aria-hidden="true"
+                    onClick={() => onSelectSlot(chair.id, time)}
+                    className="group cursor-pointer hover:bg-teal-50"
+                    style={{ gridColumn: c + 2, gridRow: i + 2 }}
+                  >
+                    <span className="hidden px-2 text-[11px] leading-8 font-medium text-teal-800 group-hover:block">
+                      + Book {formatTime(minutes)}
+                    </span>
+                  </div>
+                )
+              }),
+            )}
 
           {/* Appointment cards */}
           {day.appointments.map((appt) => {

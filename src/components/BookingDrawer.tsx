@@ -18,7 +18,8 @@ const defaultLength: Record<AppointmentType, number> = {
 const LENGTHS = [15, 30, 45, 60, 90]
 const NOON = '12:00'
 
-type TimeOfDay = 'any' | 'morning' | 'afternoon'
+// 'from' = start at the spot clicked on the schedule.
+type TimeOfDay = 'any' | 'morning' | 'afternoon' | 'from'
 
 type BookingDrawerProps = {
   day: ScheduleDay
@@ -27,6 +28,9 @@ type BookingDrawerProps = {
   saveError: string | null
   onBook: (input: NewAppointment) => void
   onClose: () => void
+  // Filled in when the panel opens from a spot on the schedule.
+  initialChairId?: string
+  initialFrom?: string // "HH:MM"
 }
 
 const slotKey = (slot: OpenSlot) => `${slot.chairId}|${slot.start}`
@@ -38,12 +42,16 @@ export function BookingDrawer({
   saveError,
   onBook,
   onClose,
+  initialChairId = '',
+  initialFrom,
 }: BookingDrawerProps) {
   const [patientId, setPatientId] = useState('')
   const [type, setType] = useState<AppointmentType>('exam')
   const [length, setLength] = useState(defaultLength.exam)
-  const [chairId, setChairId] = useState('')
-  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>('any')
+  const [chairId, setChairId] = useState(initialChairId)
+  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(
+    initialFrom ? 'from' : 'any',
+  )
   const [pickedKey, setPickedKey] = useState<string | null>(null)
   const [showErrors, setShowErrors] = useState(false)
 
@@ -57,7 +65,12 @@ export function BookingDrawer({
   // The slot finder does the scheduling; this form only collects the request.
   // Never suggest a time that has already passed on the demo clock.
   const nowClock = now.slice(11, 16)
-  const windowStart = timeOfDay === 'afternoon' ? NOON : undefined
+  const windowStart =
+    timeOfDay === 'afternoon'
+      ? NOON
+      : timeOfDay === 'from'
+        ? initialFrom
+        : undefined
   const earliest =
     windowStart && windowStart > nowClock ? windowStart : nowClock
   const latest = timeOfDay === 'morning' ? NOON : undefined
@@ -242,6 +255,9 @@ export function BookingDrawer({
                 <option value="any">Any time</option>
                 <option value="morning">Morning</option>
                 <option value="afternoon">Afternoon</option>
+                {initialFrom && (
+                  <option value="from">From {formatTime(initialFrom)}</option>
+                )}
               </select>
             </label>
           </div>

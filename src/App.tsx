@@ -47,6 +47,12 @@ function Board() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [lastChange, setLastChange] = useState<StatusChange | null>(null)
   const [isBooking, setIsBooking] = useState(false)
+  // Set when booking starts from a spot on the schedule.
+  const [bookingStart, setBookingStart] = useState<{
+    chairId: string
+    time: string
+  } | null>(null)
+  const newAppointmentRef = useRef<HTMLButtonElement>(null)
   // A plain confirmation with no Undo (e.g. "Booked …").
   const [notice, setNotice] = useState<ToastMessage | null>(null)
   const practices = usePractices()
@@ -111,8 +117,12 @@ function Board() {
   const practiceName =
     practices.data?.find((p) => p.id === practiceId)?.name ?? ''
 
-  const openBooking = () => {
+  const openBooking = (start: { chairId: string; time: string } | null) => {
     create.reset() // clear an error left over from an earlier attempt
+    // A schedule spot can't take focus, so park focus on the New appointment
+    // button first: when the panel closes, focus comes back to it.
+    if (start) newAppointmentRef.current?.focus()
+    setBookingStart(start)
     setIsBooking(true)
   }
 
@@ -215,7 +225,8 @@ function Board() {
           <div className="flex justify-end">
             <button
               type="button"
-              onClick={openBooking}
+              ref={newAppointmentRef}
+              onClick={() => openBooking(null)}
               disabled={!schedule.data}
               className="h-11 rounded-lg bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
             >
@@ -258,6 +269,11 @@ function Board() {
                   day={schedule.data}
                   now={DEMO_NOW}
                   onSelectAppointment={openDrawer}
+                  onSelectSlot={
+                    can('book')
+                      ? (chairId, time) => openBooking({ chairId, time })
+                      : undefined
+                  }
                 />
               ) : (
                 <PatientFlow
@@ -293,6 +309,8 @@ function Board() {
           saveError={create.error?.message ?? null}
           onBook={book}
           onClose={() => setIsBooking(false)}
+          initialChairId={bookingStart?.chairId}
+          initialFrom={bookingStart?.time}
         />
       )}
 

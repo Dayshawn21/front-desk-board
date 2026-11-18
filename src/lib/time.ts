@@ -11,6 +11,13 @@ export function toMinutes(value: string): number {
   return hours * 60 + minutes
 }
 
+// 135 -> "02:15" (24h, zero-padded), the format used for times of day.
+export function toClock(total: number): string {
+  const hours = String(Math.floor(total / 60)).padStart(2, '0')
+  const minutes = String(total % 60).padStart(2, '0')
+  return `${hours}:${minutes}`
+}
+
 export function formatTime(value: string | number): string {
   const total = typeof value === 'number' ? value : toMinutes(value)
   const hours = Math.floor(total / 60)

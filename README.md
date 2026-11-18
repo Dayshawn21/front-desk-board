@@ -34,6 +34,9 @@ Work in progress. Built in daily steps.
       times from the slot finder, and books the one you choose. The mock server re-checks
       the slot, so if someone else just took it you get a clear message and fresh times
       (add `?failBook` to the URL to see a failed booking)
+- [x] Click an empty spot on the schedule to book there: the panel opens with that chair
+      and start time filled in. Mouse and touch only; keyboard users use the New
+      appointment button, which does the same thing
 - [ ] AI scheduling assist
 
 ## What is mocked
@@ -53,6 +56,9 @@ Work in progress. Built in daily steps.
 
 ## What I'd do next
 
+- **Drag on the schedule.** Drag down a column to pick a time range, and drag a visit to
+  move it, with Undo, the same server re-check as booking, and a "Move to…" option in the
+  check-in drawer so nothing needs dragging (WCAG 2.5.7).
 - **Headless UI primitives.** The dialog focus trap, tabs, and toast are hand-built and
   tested here on purpose. In production I'd use headless primitives (Radix or React
   Aria, or shadcn/ui on top of Radix) so the team isn't maintaining focus logic.

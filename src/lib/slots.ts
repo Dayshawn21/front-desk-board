@@ -1,6 +1,6 @@
 import type { ScheduleDay } from '../types'
 import { rangesOverlap } from './overlap'
-import { toMinutes } from './time'
+import { toClock, toMinutes } from './time'
 
 // What a person (or, on Day 4, the AI parser) asks for.
 // Times in the window are practice wall-clock "HH:MM".
@@ -17,12 +17,6 @@ export type OpenSlot = { chairId: string; start: string; end: string }
 // Slots start on the same 15-minute grid as the schedule rows.
 const STEP_MINUTES = 15
 const DEFAULT_LIMIT = 3
-
-function toHHMM(total: number): string {
-  const hours = String(Math.floor(total / 60)).padStart(2, '0')
-  const minutes = String(total % 60).padStart(2, '0')
-  return `${hours}:${minutes}`
-}
 
 // Suggests open slots for one practice day. Pure and deterministic: the
 // same day and request always give the same answer. It only suggests;
@@ -68,7 +62,7 @@ export function findOpenSlots(
     open + Math.ceil((from - open) / STEP_MINUTES) * STEP_MINUTES
 
   const active = day.appointments.filter((a) => a.status !== 'cancelled')
-  const at = (minutes: number) => `${day.date}T${toHHMM(minutes)}:00`
+  const at = (minutes: number) => `${day.date}T${toClock(minutes)}:00`
 
   const slots: OpenSlot[] = []
   for (
