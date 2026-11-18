@@ -22,6 +22,9 @@ Work in progress. Built in daily steps.
       take are hidden, and only the office manager can switch practices
 - [x] Undo: every status change shows a toast with Undo, and the drawer can move a visit
       back one step; reopening a checked-out visit is office-manager only
+- [x] Open-slot finder (`src/lib/slots.ts`): given a duration and an optional chair and
+      time window, suggests the earliest free slots inside opening hours, skipping
+      cancelled visits. Pure function, built test-first; the AI assist will call it
 - [ ] AI scheduling assist
 
 ## What is mocked
@@ -38,6 +41,9 @@ Work in progress. Built in daily steps.
 
 ## What I'd do next
 
+- **Headless UI primitives.** The dialog focus trap, tabs, and toast are hand-built and
+  tested here on purpose. In production I'd use headless primitives (Radix or React
+  Aria, or shadcn/ui on top of Radix) so the team isn't maintaining focus logic.
 - **Multi-user updates.** Have the server push change events (WebSocket or SSE) and
   invalidate the affected practice's schedule query, so every open screen updates.
 - **Safe concurrent edits.** Add a `version` to each appointment; a save sent with an

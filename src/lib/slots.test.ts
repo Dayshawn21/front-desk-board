@@ -164,6 +164,16 @@ describe('findOpenSlots', () => {
     expect(findOpenSlots(fullDay, { durationMinutes: 45 })).toEqual([])
   })
 
+  it('returns an empty list for a window entirely outside opening hours', () => {
+    expect(
+      findOpenSlots(day(), {
+        durationMinutes: 30,
+        earliest: '06:00',
+        latest: '07:00',
+      }),
+    ).toEqual([])
+  })
+
   it('rejects a duration that is not a positive whole number of minutes', () => {
     expect(() => findOpenSlots(day(), { durationMinutes: 0 })).toThrow(
       /duration/i,
