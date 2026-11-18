@@ -41,6 +41,20 @@ export function nextAction(status: AppointmentStatus): NextAction | null {
   }
 }
 
+// Moving a visit one step back, to fix a mistake.
+// Undoing a step needs the same permission as taking it, except reopening a
+// checked-out visit, which needs 'reopen-checkout' (billing may have started).
+export type UndoAction = {
+  label: string
+  status: AppointmentStatus
+  permission: Permission
+}
+
+// Stub for TDD: the tests are written first and must fail against this.
+export function previousAction(_status: AppointmentStatus): UndoAction | null {
+  throw new Error('Not implemented')
+}
+
 // Columns of the patient flow board. "Expected" covers scheduled and confirmed
 // visits; cancelled visits are not on the board.
 export type FlowColumnId = 'expected' | 'arrived' | 'in-chair' | 'checked-out'

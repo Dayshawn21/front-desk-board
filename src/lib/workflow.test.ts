@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { appointments as seedAppointments } from '../mocks/seed'
-import { flowSteps, groupByFlow, nextAction } from './workflow'
+import { can } from './permissions'
+import { flowSteps, groupByFlow, nextAction, previousAction } from './workflow'
 
 describe('nextAction', () => {
   it('walks a visit through every front-desk step in order', () => {
@@ -35,6 +36,65 @@ describe('nextAction', () => {
     for (const [i, step] of flowSteps.slice(0, -1).entries()) {
       expect(nextAction(step)?.status).toBe(flowSteps[i + 1])
     }
+  })
+})
+
+describe('previousAction', () => {
+  it('moves each visit one step back', () => {
+    expect(previousAction('confirmed')).toEqual({
+      label: 'Undo confirm',
+      status: 'scheduled',
+      permission: 'confirm',
+    })
+    expect(previousAction('arrived')).toEqual({
+      label: 'Undo check-in',
+      status: 'confirmed',
+      permission: 'check-in',
+    })
+    expect(previousAction('in-chair')).toEqual({
+      label: 'Undo seating',
+      status: 'arrived',
+      permission: 'seat',
+    })
+    expect(previousAction('completed')).toEqual({
+      label: 'Reopen visit',
+      status: 'in-chair',
+      permission: 'reopen-checkout',
+    })
+  })
+
+  it('has nothing to undo for a scheduled or cancelled visit', () => {
+    expect(previousAction('scheduled')).toBeNull()
+    expect(previousAction('cancelled')).toBeNull()
+  })
+
+  it('undoes exactly what the forward step did', () => {
+    for (const step of flowSteps.slice(0, -1)) {
+      const forward = nextAction(step)!
+      expect(previousAction(forward.status)?.status).toBe(step)
+    }
+  })
+
+  it('needs the same permission as the forward step, except reopening a checkout', () => {
+    for (const step of ['scheduled', 'confirmed', 'arrived'] as const) {
+      const forward = nextAction(step)!
+      expect(previousAction(forward.status)?.permission).toBe(
+        forward.permission,
+      )
+    }
+    expect(previousAction('completed')?.permission).not.toBe(
+      nextAction('in-chair')?.permission,
+    )
+  })
+
+  it('lets front desk undo a check-in but not reopen a checked-out visit', () => {
+    expect(can('front-desk', previousAction('arrived')!.permission)).toBe(true)
+    expect(can('front-desk', previousAction('completed')!.permission)).toBe(
+      false,
+    )
+    expect(can('office-manager', previousAction('completed')!.permission)).toBe(
+      true,
+    )
   })
 })
 
