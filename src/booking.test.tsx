@@ -187,3 +187,61 @@ describe('booking a visit', () => {
     ).not.toBeInTheDocument()
   })
 })
+
+describe('booking from the schedule (click an empty spot)', () => {
+  const slotCell = (chairId: string, time: string) =>
+    screen.queryByTestId(`slot-${chairId}-${time}`)
+
+  it('opens New appointment with that chair and start time filled in', async () => {
+    const user = await renderAs()
+
+    await user.click(slotCell('maple-c1', '14:15')!)
+
+    const dialog = screen.getByRole('dialog', { name: /new appointment/i })
+    expect(within(dialog).getByLabelText(/^chair/i)).toHaveValue('maple-c1')
+    expect(within(dialog).getByLabelText(/time of day/i)).toHaveDisplayValue(
+      /from 2:15 PM/i,
+    )
+    expect(times(dialog)).toEqual([
+      expect.stringMatching(/2:15 PM.*2:45 PM.*chair 1/i),
+      expect.stringMatching(/2:30 PM.*chair 1/i),
+      expect.stringMatching(/2:45 PM.*chair 1/i),
+    ])
+    expect(within(dialog).getByLabelText(/patient/i)).toHaveFocus()
+  })
+
+  it('suggests the next times that fit when the clicked spot is too short', async () => {
+    const user = await renderAs()
+
+    // Chair 1 has a visit at 1:00 PM, so a 30-minute exam can't start at 12:45.
+    await user.click(slotCell('maple-c1', '12:45')!)
+
+    const dialog = screen.getByRole('dialog', { name: /new appointment/i })
+    expect(times(dialog)[0]).toMatch(/1:45 PM.*chair 1/i)
+  })
+
+  it('has no clickable spots before now (9:40 AM)', async () => {
+    await renderAs()
+
+    expect(slotCell('maple-c3', '08:00')).not.toBeInTheDocument()
+    expect(slotCell('maple-c3', '09:30')).not.toBeInTheDocument()
+    expect(slotCell('maple-c3', '09:45')).toBeInTheDocument()
+  })
+
+  it('has no clickable spots for a role that cannot book', async () => {
+    await renderAs('provider')
+
+    expect(screen.queryAllByTestId(/^slot-/)).toHaveLength(0)
+  })
+
+  it('returns focus to the New appointment button when the panel closes', async () => {
+    const user = await renderAs()
+    await user.click(slotCell('maple-c1', '14:15')!)
+
+    await user.keyboard('{Escape}')
+
+    expect(
+      screen.getByRole('button', { name: /new appointment/i }),
+    ).toHaveFocus()
+  })
+})
