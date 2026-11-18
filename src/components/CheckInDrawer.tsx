@@ -1,9 +1,10 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
 import type { AppointmentPatch } from '../api/schedule'
-import { statusStyle, typeLabel } from '../lib/display'
+import { roleLabel, statusStyle, typeLabel } from '../lib/display'
 import { findConflicts } from '../lib/overlap'
 import { formatTime } from '../lib/time'
 import { flowSteps, nextAction } from '../lib/workflow'
+import { useSession } from '../session/SessionContext'
 import type { Appointment, CheckInChecklist, ScheduleDay } from '../types'
 
 const checklistItems: { key: keyof CheckInChecklist; label: string }[] = [
@@ -38,8 +39,11 @@ export function CheckInDrawer({
   const [checklist, setChecklist] = useState(appointment.checklist)
   const [notes, setNotes] = useState(appointment.notes)
 
+  const { role, can } = useSession()
+
   const dialogRef = useRef<HTMLElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
+  const statusHeadingRef = useRef<HTMLHeadingElement>(null)
 
   // On open: remember what had focus (the card), move focus into the drawer.
   // On close (unmount): give focus back to that card.
@@ -51,6 +55,15 @@ export function CheckInDrawer({
     closeButtonRef.current?.focus()
     return () => previouslyFocused?.focus()
   }, [])
+
+  // After a status change the next-step button can disappear (e.g. front desk
+  // checks a patient in, but only a provider can seat them). If that drops focus
+  // out of the drawer, put it on the status heading, which also reads the new status.
+  useEffect(() => {
+    if (!dialogRef.current?.contains(document.activeElement)) {
+      statusHeadingRef.current?.focus()
+    }
+  }, [appointment.status])
 
   function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (event.key === 'Escape') {
@@ -93,6 +106,8 @@ export function CheckInDrawer({
   })
 
   const action = nextAction(appointment.status)
+  const canAdvance = action !== null && can(action.permission)
+  const canEdit = can('edit-checklist')
   const currentStep = flowSteps.indexOf(appointment.status)
   const doneCount = checklistItems.filter((item) => checklist[item.key]).length
   const isDirty =
@@ -164,7 +179,12 @@ export function CheckInDrawer({
           aria-labelledby="status-heading"
           className="flex flex-col gap-3"
         >
-          <h3 id="status-heading" className="text-sm font-semibold">
+          <h3
+            ref={statusHeadingRef}
+            id="status-heading"
+            tabIndex={-1}
+            className="text-sm font-semibold"
+          >
             Status: {statusStyle[appointment.status].label}
           </h3>
           <ol className="grid grid-cols-5 gap-1">
@@ -182,7 +202,12 @@ export function CheckInDrawer({
               </li>
             ))}
           </ol>
-          {action && (
+          {action && !canAdvance && (
+            <p className="text-sm text-slate-700">
+              Next step: {action.label}. Not available to {roleLabel[role]}.
+            </p>
+          )}
+          {action && canAdvance && (
             <button
               type="button"
               // aria-disabled (not disabled) so the button keeps keyboard focus while saving
@@ -204,7 +229,14 @@ export function CheckInDrawer({
             onSave({ checklist, notes })
           }}
         >
-          <fieldset className="flex flex-col gap-1">
+          {!canEdit && (
+            <p className="text-sm text-slate-700">
+              Read only for {roleLabel[role]}. The front desk updates the
+              checklist.
+            </p>
+          )}
+          {/* A disabled fieldset disables every checkbox inside it. */}
+          <fieldset disabled={!canEdit} className="flex flex-col gap-1">
             <legend className="mb-2 text-sm font-semibold">
               Checklist · {doneCount} of {checklistItems.length}
             </legend>
@@ -234,18 +266,21 @@ export function CheckInDrawer({
               id="checkin-notes"
               rows={3}
               value={notes}
+              readOnly={!canEdit}
               onChange={(e) => setNotes(e.target.value)}
-              className="rounded-lg border border-slate-300 p-2.5 text-sm"
+              className="rounded-lg border border-slate-300 p-2.5 text-sm read-only:bg-slate-50"
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={!isDirty || isSaving}
-            className="h-11 self-start rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-60"
-          >
-            Save checklist and notes
-          </button>
+          {canEdit && (
+            <button
+              type="submit"
+              disabled={!isDirty || isSaving}
+              className="h-11 self-start rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-60"
+            >
+              Save checklist and notes
+            </button>
+          )}
         </form>
 
         {saveError && (

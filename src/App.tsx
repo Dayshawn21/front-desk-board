@@ -9,9 +9,14 @@ import {
   useSchedule,
   useUpdateAppointment,
 } from './hooks/useSchedule'
+import { roleLabel } from './lib/display'
+import { useSession } from './session/SessionContext'
+import type { Role } from './types'
+
+const roles = Object.keys(roleLabel) as Role[]
 
 function App() {
-  const [practiceId, setPracticeId] = useState('maple')
+  const { practiceId, setPracticeId, role, setRole, can } = useSession()
   const [view, setView] = useState<ViewId>('schedule')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const practices = usePractices()
@@ -34,7 +39,7 @@ function App() {
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header
         inert={Boolean(selected)}
-        className="flex flex-wrap items-end gap-4 border-b border-slate-200 bg-white px-6 py-4"
+        className="flex flex-wrap items-start gap-4 border-b border-slate-200 bg-white px-6 py-4"
       >
         <div className="mr-auto">
           <h1 className="text-xl font-semibold">Front Desk Board</h1>
@@ -42,21 +47,45 @@ function App() {
             Tuesday, Nov 17 · Demo data only, no real patients
           </p>
         </div>
+        <div className="flex flex-col gap-1">
+          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
+            Practice
+            <select
+              value={practiceId}
+              onChange={(e) => {
+                setSelectedId(null) // never keep one practice's drawer open on another
+                update.reset()
+                setPracticeId(e.target.value)
+              }}
+              disabled={!practices.data || !can('switch-practice')}
+              aria-describedby={
+                can('switch-practice') ? undefined : 'practice-locked'
+              }
+              className="h-11 min-w-56 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 disabled:bg-slate-100"
+            >
+              {practices.data?.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          {!can('switch-practice') && (
+            <p id="practice-locked" className="text-xs text-slate-600">
+              Only the office manager can switch practices.
+            </p>
+          )}
+        </div>
         <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-          Practice
+          Acting as (demo)
           <select
-            value={practiceId}
-            onChange={(e) => {
-              setSelectedId(null) // never keep one practice's drawer open on another
-              update.reset()
-              setPracticeId(e.target.value)
-            }}
-            disabled={!practices.data}
-            className="h-11 min-w-56 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900"
+            value={role}
+            onChange={(e) => setRole(e.target.value as Role)}
+            className="h-11 min-w-44 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900"
           >
-            {practices.data?.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.name}
+            {roles.map((r) => (
+              <option key={r} value={r}>
+                {roleLabel[r]}
               </option>
             ))}
           </select>

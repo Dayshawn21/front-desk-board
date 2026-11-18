@@ -1,4 +1,10 @@
-import type { AppointmentStatus, AppointmentType } from '../types'
+import type { AppointmentStatus, AppointmentType, Role } from '../types'
+
+export const roleLabel: Record<Role, string> = {
+  'front-desk': 'Front desk',
+  provider: 'Provider',
+  'office-manager': 'Office manager',
+}
 
 export const typeLabel: Record<AppointmentType, string> = {
   cleaning: 'Cleaning',

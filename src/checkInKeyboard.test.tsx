@@ -3,15 +3,19 @@ import userEvent, { type UserEvent } from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import App from './App'
 import { renderWithQuery } from './test/render'
+import type { Role } from './types'
 
-async function openJonKimWithKeyboard(user: UserEvent) {
-  renderWithQuery(<App />)
-  const card = await screen.findByRole('button', { name: /jon kim/i })
+async function openWithKeyboard(user: UserEvent, name: RegExp, role?: Role) {
+  renderWithQuery(<App />, { role })
+  const card = await screen.findByRole('button', { name })
   card.focus()
   await user.keyboard('{Enter}')
-  const dialog = screen.getByRole('dialog', { name: /jon kim/i })
+  const dialog = screen.getByRole('dialog', { name })
   return { card, dialog }
 }
+
+const openJonKimWithKeyboard = (user: UserEvent, role?: Role) =>
+  openWithKeyboard(user, /jon kim/i, role)
 
 describe('check-in drawer keyboard support', () => {
   it('moves focus into the drawer when it opens', async () => {
@@ -70,7 +74,8 @@ describe('check-in drawer keyboard support', () => {
 
   it('keeps focus on the status button while it saves', async () => {
     const user = userEvent.setup()
-    const { dialog } = await openJonKimWithKeyboard(user)
+    // Office manager can take every step, so the button stays after the save.
+    const { dialog } = await openJonKimWithKeyboard(user, 'office-manager')
 
     const statusButton = within(dialog).getByRole('button', {
       name: /seat in chair/i,
@@ -80,6 +85,21 @@ describe('check-in drawer keyboard support', () => {
 
     expect(
       await within(dialog).findByRole('button', { name: /check out/i }),
+    ).toHaveFocus()
+  })
+
+  it('moves focus to the status heading when the next step is not allowed', async () => {
+    const user = userEvent.setup()
+    const { dialog } = await openWithKeyboard(user, /lena ortiz/i) // front desk
+
+    within(dialog)
+      .getByRole('button', { name: /check in/i })
+      .focus()
+    await user.keyboard('{Enter}')
+
+    // Front desk can't seat, so the button is gone; focus must not fall out of the drawer.
+    expect(
+      await within(dialog).findByRole('heading', { name: /status: arrived/i }),
     ).toHaveFocus()
   })
 })

@@ -18,7 +18,8 @@ Work in progress. Built in daily steps.
       while open and returns to the card on close
 - [x] Patient flow tab: Expected → Arrived → In chair → Checked out, with one-click
       status changes
-- [ ] Roles ("acting as" front desk / provider / office manager)
+- [x] Roles: "Acting as" front desk / provider / office manager; actions a role can't
+      take are hidden, and only the office manager can switch practices
 - [ ] AI scheduling assist
 
 ## What is mocked
@@ -27,6 +28,9 @@ Work in progress. Built in daily steps.
   scoped by `practiceId` there; in a real system the server enforces that. Saves live
   in that tab's memory only, so two tabs or two users do not see each other's changes,
   and a page reload resets the data.
+- **Sign-in and roles.** There is no login. The "Acting as" dropdown picks a role so the
+  demo can show each view. Role rules (`src/lib/permissions.ts`) only hide buttons in the
+  UI; a real server would enforce the same rules on every request.
 - **The clock.** The demo always runs on Tue Nov 17, 2026 at 9:40 AM so it looks the same
   whenever it's opened. Times are practice wall-clock strings with no timezone.
 

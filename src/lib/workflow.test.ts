@@ -7,18 +7,22 @@ describe('nextAction', () => {
     expect(nextAction('scheduled')).toEqual({
       label: 'Mark confirmed',
       status: 'confirmed',
+      permission: 'confirm',
     })
     expect(nextAction('confirmed')).toEqual({
       label: 'Check in',
       status: 'arrived',
+      permission: 'check-in',
     })
     expect(nextAction('arrived')).toEqual({
       label: 'Seat in chair',
       status: 'in-chair',
+      permission: 'seat',
     })
     expect(nextAction('in-chair')).toEqual({
       label: 'Check out',
       status: 'completed',
+      permission: 'check-out',
     })
   })
 

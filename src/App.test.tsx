@@ -33,7 +33,8 @@ describe('App', () => {
 
   it("switching practice shows only that practice's patients", async () => {
     const user = userEvent.setup()
-    renderWithQuery(<App />)
+    // Only the office manager may switch practices.
+    renderWithQuery(<App />, { role: 'office-manager' })
     await screen.findByRole('button', { name: /jon kim/i })
 
     const practiceSelect = screen.getByLabelText(/practice/i)

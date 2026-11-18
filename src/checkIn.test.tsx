@@ -4,11 +4,14 @@ import { afterEach, describe, expect, it } from 'vitest'
 import App from './App'
 import { renderWithQuery } from './test/render'
 
-async function openJonKim(user: UserEvent) {
-  renderWithQuery(<App />)
-  await user.click(await screen.findByRole('button', { name: /jon kim/i }))
-  return screen.getByRole('dialog', { name: /jon kim/i })
+async function openPatient(user: UserEvent, name: RegExp) {
+  renderWithQuery(<App />) // front desk, the default role
+  await user.click(await screen.findByRole('button', { name }))
+  return screen.getByRole('dialog', { name })
 }
+
+const openJonKim = (user: UserEvent) => openPatient(user, /jon kim/i)
+const openLenaOrtiz = (user: UserEvent) => openPatient(user, /lena ortiz/i)
 
 describe('check-in drawer', () => {
   afterEach(() => {
@@ -31,17 +34,19 @@ describe('check-in drawer', () => {
 
   it('advances the status, and the grid updates', async () => {
     const user = userEvent.setup()
-    const dialog = await openJonKim(user)
+    const dialog = await openLenaOrtiz(user)
 
-    await user.click(
-      within(dialog).getByRole('button', { name: /seat in chair/i }),
-    )
+    await user.click(within(dialog).getByRole('button', { name: /check in/i }))
 
     expect(
-      await screen.findByRole('button', { name: /jon kim.*in chair/i }),
+      await screen.findByRole('button', { name: /lena ortiz.*arrived/i }),
     ).toBeInTheDocument()
+    // Seating is a provider step, so front desk sees an explanation, not a button.
     expect(
-      within(dialog).getByRole('button', { name: /check out/i }),
+      within(dialog).queryByRole('button', { name: /seat in chair/i }),
+    ).not.toBeInTheDocument()
+    expect(
+      within(dialog).getByText(/not available to front desk/i),
     ).toBeInTheDocument()
   })
 
@@ -83,11 +88,9 @@ describe('check-in drawer', () => {
   it('shows an error when saving fails', async () => {
     window.history.replaceState(null, '', '/?failSave')
     const user = userEvent.setup()
-    const dialog = await openJonKim(user)
+    const dialog = await openLenaOrtiz(user)
 
-    await user.click(
-      within(dialog).getByRole('button', { name: /seat in chair/i }),
-    )
+    await user.click(within(dialog).getByRole('button', { name: /check in/i }))
 
     expect(await within(dialog).findByRole('alert')).toHaveTextContent(
       /could not save/i,

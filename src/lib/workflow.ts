@@ -1,4 +1,5 @@
 import type { Appointment, AppointmentStatus } from '../types'
+import type { Permission } from './permissions'
 
 // The visit's path through the front desk, in order. "cancelled" is outside the path.
 export const flowSteps: AppointmentStatus[] = [
@@ -9,18 +10,31 @@ export const flowSteps: AppointmentStatus[] = [
   'completed',
 ]
 
-export type NextAction = { label: string; status: AppointmentStatus }
+// The next step for a visit, and the permission a role needs to take it.
+export type NextAction = {
+  label: string
+  status: AppointmentStatus
+  permission: Permission
+}
 
 export function nextAction(status: AppointmentStatus): NextAction | null {
   switch (status) {
     case 'scheduled':
-      return { label: 'Mark confirmed', status: 'confirmed' }
+      return {
+        label: 'Mark confirmed',
+        status: 'confirmed',
+        permission: 'confirm',
+      }
     case 'confirmed':
-      return { label: 'Check in', status: 'arrived' }
+      return { label: 'Check in', status: 'arrived', permission: 'check-in' }
     case 'arrived':
-      return { label: 'Seat in chair', status: 'in-chair' }
+      return { label: 'Seat in chair', status: 'in-chair', permission: 'seat' }
     case 'in-chair':
-      return { label: 'Check out', status: 'completed' }
+      return {
+        label: 'Check out',
+        status: 'completed',
+        permission: 'check-out',
+      }
     case 'completed':
     case 'cancelled':
       return null

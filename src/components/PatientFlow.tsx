@@ -1,4 +1,4 @@
-import { typeLabel } from '../lib/display'
+import { roleLabel, typeLabel } from '../lib/display'
 import { findConflicts } from '../lib/overlap'
 import { formatTime } from '../lib/time'
 import {
@@ -7,6 +7,7 @@ import {
   groupByFlow,
   nextAction,
 } from '../lib/workflow'
+import { useSession } from '../session/SessionContext'
 import type { AppointmentStatus, ScheduleDay } from '../types'
 
 // Full class strings so Tailwind can find them (see display.ts).
@@ -30,6 +31,7 @@ export function PatientFlow({
   onOpen,
   onAdvance,
 }: PatientFlowProps) {
+  const { role, can } = useSession()
   const groups = groupByFlow(day.appointments)
   const conflicts = findConflicts(day.appointments)
   const patientsById = new Map(day.patients.map((p) => [p.id, p]))
@@ -117,7 +119,13 @@ export function PatientFlow({
                         <p className="text-xs text-slate-700">
                           Checklist {done} of 4
                         </p>
-                        {action && (
+                        {action && !can(action.permission) && (
+                          <p className="text-xs text-slate-600">
+                            Next: {action.label} (not available to{' '}
+                            {roleLabel[role]})
+                          </p>
+                        )}
+                        {action && can(action.permission) && (
                           <button
                             type="button"
                             // The visible label repeats on every card, so the accessible
