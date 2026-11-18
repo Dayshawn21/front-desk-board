@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { CheckInDrawer } from './components/CheckInDrawer'
 import { PatientFlow } from './components/PatientFlow'
 import { ScheduleGrid } from './components/ScheduleGrid'
+import { UndoToast } from './components/UndoToast'
 import { type ViewId, ViewTabs } from './components/ViewTabs'
 import { DEMO_DATE, DEMO_NOW } from './config'
 import {
@@ -9,16 +10,30 @@ import {
   useSchedule,
   useUpdateAppointment,
 } from './hooks/useSchedule'
-import { roleLabel } from './lib/display'
+import { roleLabel, statusStyle } from './lib/display'
+import { previousAction } from './lib/workflow'
 import { useSession } from './session/SessionContext'
-import type { Role } from './types'
+import type { AppointmentStatus, Role } from './types'
 
 const roles = Object.keys(roleLabel) as Role[]
+
+// The most recent status change, kept so the toast can offer to undo it.
+type StatusChange = {
+  key: number
+  appointmentId: string
+  name: string
+  from: AppointmentStatus
+  to: AppointmentStatus
+  kind: 'forward' | 'undo'
+}
+
+let changeCounter = 0
 
 function App() {
   const { practiceId, setPracticeId, role, setRole, can } = useSession()
   const [view, setView] = useState<ViewId>('schedule')
   const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [lastChange, setLastChange] = useState<StatusChange | null>(null)
   const practices = usePractices()
   const schedule = useSchedule(practiceId, DEMO_DATE)
   const update = useUpdateAppointment(practiceId, DEMO_DATE)
@@ -34,6 +49,50 @@ function App() {
     update.reset() // clear any error left over from an earlier save
     setSelectedId(id)
   }
+
+  // Every status change (drawer, board, or the toast's Undo) goes through here,
+  // so each one gets a toast and can be undone the same way.
+  const changeStatus = (id: string, to: AppointmentStatus) => {
+    const appt = schedule.data?.appointments.find((a) => a.id === id)
+    if (!appt) return
+    const patient = schedule.data?.patients.find((p) => p.id === appt.patientId)
+    const name = patient ? `${patient.firstName} ${patient.lastName}` : 'Visit'
+    const from = appt.status
+    const kind = previousAction(from)?.status === to ? 'undo' : 'forward'
+
+    update.mutate(
+      { id, patch: { status: to } },
+      {
+        onSuccess: () => {
+          changeCounter += 1
+          setLastChange({
+            key: changeCounter,
+            appointmentId: id,
+            name,
+            from,
+            to,
+            kind,
+          })
+        },
+      },
+    )
+  }
+
+  // Offer Undo only for a forward step the current role is allowed to reverse.
+  // (Front desk can check a patient out, but only the office manager can reopen.)
+  const undoStep =
+    lastChange?.kind === 'forward' ? previousAction(lastChange.to) : null
+  const canUndoLast =
+    lastChange !== null &&
+    undoStep !== null &&
+    undoStep.status === lastChange.from &&
+    can(undoStep.permission)
+
+  const toastText = lastChange
+    ? lastChange.kind === 'forward'
+      ? `${lastChange.name}: ${statusStyle[lastChange.to].label}`
+      : `${lastChange.name}: moved back to ${statusStyle[lastChange.to].label}`
+    : null
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
@@ -54,6 +113,7 @@ function App() {
               value={practiceId}
               onChange={(e) => {
                 setSelectedId(null) // never keep one practice's drawer open on another
+                setLastChange(null)
                 update.reset()
                 setPracticeId(e.target.value)
               }}
@@ -135,9 +195,7 @@ function App() {
                   day={schedule.data}
                   savingId={savingId}
                   onOpen={openDrawer}
-                  onAdvance={(id, status) =>
-                    update.mutate({ id, patch: { status } })
-                  }
+                  onAdvance={changeStatus}
                 />
               )}
             </div>
@@ -153,9 +211,28 @@ function App() {
           isSaving={update.isPending}
           saveError={update.error?.message ?? null}
           onSave={(patch) => update.mutate({ id: selected.id, patch })}
+          onChangeStatus={(status) => changeStatus(selected.id, status)}
           onClose={() => setSelectedId(null)}
         />
       )}
+
+      <UndoToast
+        toast={
+          lastChange && toastText
+            ? { key: lastChange.key, text: toastText }
+            : null
+        }
+        undo={
+          lastChange && canUndoLast && undoStep
+            ? {
+                label: `${undoStep.label} for ${lastChange.name}`,
+                onUndo: () =>
+                  changeStatus(lastChange.appointmentId, lastChange.from),
+              }
+            : undefined
+        }
+        onDismiss={() => setLastChange(null)}
+      />
     </div>
   )
 }

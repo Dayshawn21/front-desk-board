@@ -12,7 +12,11 @@ describe('App', () => {
   it('shows a loading state, then the schedule', async () => {
     renderWithQuery(<App />)
 
-    expect(screen.getByRole('status')).toHaveTextContent(/loading schedule/i)
+    // getByText, not getByRole('status'): the undo toast's live region is also a status.
+    expect(screen.getByText(/loading schedule/i)).toHaveAttribute(
+      'role',
+      'status',
+    )
     expect(
       await screen.findByRole('button', { name: /jon kim, filling/i }),
     ).toBeInTheDocument()

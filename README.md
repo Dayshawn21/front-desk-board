@@ -20,6 +20,8 @@ Work in progress. Built in daily steps.
       status changes
 - [x] Roles: "Acting as" front desk / provider / office manager; actions a role can't
       take are hidden, and only the office manager can switch practices
+- [x] Undo: every status change shows a toast with Undo, and the drawer can move a visit
+      back one step; reopening a checked-out visit is office-manager only
 - [ ] AI scheduling assist
 
 ## What is mocked

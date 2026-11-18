@@ -3,9 +3,14 @@ import type { AppointmentPatch } from '../api/schedule'
 import { roleLabel, statusStyle, typeLabel } from '../lib/display'
 import { findConflicts } from '../lib/overlap'
 import { formatTime } from '../lib/time'
-import { flowSteps, nextAction } from '../lib/workflow'
+import { flowSteps, nextAction, previousAction } from '../lib/workflow'
 import { useSession } from '../session/SessionContext'
-import type { Appointment, CheckInChecklist, ScheduleDay } from '../types'
+import type {
+  Appointment,
+  AppointmentStatus,
+  CheckInChecklist,
+  ScheduleDay,
+} from '../types'
 
 const checklistItems: { key: keyof CheckInChecklist; label: string }[] = [
   { key: 'insuranceVerified', label: 'Insurance verified' },
@@ -23,6 +28,7 @@ type CheckInDrawerProps = {
   isSaving: boolean
   saveError: string | null
   onSave: (patch: AppointmentPatch) => void
+  onChangeStatus: (status: AppointmentStatus) => void
   onClose: () => void
 }
 
@@ -32,6 +38,7 @@ export function CheckInDrawer({
   isSaving,
   saveError,
   onSave,
+  onChangeStatus,
   onClose,
 }: CheckInDrawerProps) {
   // Local draft of the form. The parent remounts this component (key={id}) when a
@@ -108,6 +115,8 @@ export function CheckInDrawer({
   const action = nextAction(appointment.status)
   const canAdvance = action !== null && can(action.permission)
   const canEdit = can('edit-checklist')
+  const undo = previousAction(appointment.status)
+  const canUndo = undo !== null && can(undo.permission)
   const currentStep = flowSteps.indexOf(appointment.status)
   const doneCount = checklistItems.filter((item) => checklist[item.key]).length
   const isDirty =
@@ -207,18 +216,34 @@ export function CheckInDrawer({
               Next step: {action.label}. Not available to {roleLabel[role]}.
             </p>
           )}
-          {action && canAdvance && (
-            <button
-              type="button"
-              // aria-disabled (not disabled) so the button keeps keyboard focus while saving
-              aria-disabled={isSaving}
-              onClick={() => {
-                if (!isSaving) onSave({ status: action.status })
-              }}
-              className="h-11 self-start rounded-lg bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-800 aria-disabled:opacity-60"
-            >
-              {isSaving ? 'Saving…' : action.label}
-            </button>
+          {(canAdvance || canUndo) && (
+            <div className="flex flex-wrap gap-2">
+              {action && canAdvance && (
+                <button
+                  type="button"
+                  // aria-disabled (not disabled) so the button keeps keyboard focus while saving
+                  aria-disabled={isSaving}
+                  onClick={() => {
+                    if (!isSaving) onChangeStatus(action.status)
+                  }}
+                  className="h-11 rounded-lg bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-800 aria-disabled:opacity-60"
+                >
+                  {isSaving ? 'Saving…' : action.label}
+                </button>
+              )}
+              {undo && canUndo && (
+                <button
+                  type="button"
+                  aria-disabled={isSaving}
+                  onClick={() => {
+                    if (!isSaving) onChangeStatus(undo.status)
+                  }}
+                  className="h-11 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50 aria-disabled:opacity-60"
+                >
+                  {undo.label}
+                </button>
+              )}
+            </div>
           )}
         </section>
 
