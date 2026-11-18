@@ -116,6 +116,8 @@ export function groupByFlow(
 
 // Cancelling is only for visits that haven't started (the patient hasn't
 // arrived). It's a status, not a delete: the record stays for history.
-export function cancelAction(_status: AppointmentStatus): NextAction | null {
-  return null // red-step stub
+export function cancelAction(status: AppointmentStatus): NextAction | null {
+  return status === 'scheduled' || status === 'confirmed'
+    ? { label: 'Cancel visit', status: 'cancelled', permission: 'cancel' }
+    : null
 }

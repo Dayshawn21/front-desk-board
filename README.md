@@ -37,6 +37,10 @@ Work in progress. Built in daily steps.
 - [x] Click an empty spot on the schedule to book there: the panel opens with that chair
       and start time filled in. Mouse and touch only; keyboard users use the New
       appointment button, which does the same thing
+- [x] Cancel visit: front desk and office manager can cancel a scheduled or confirmed
+      visit from the drawer. It's a status, not a delete, so the record stays. The visit
+      leaves the grid (listed as "Cancelled today") and its time can be booked again;
+      the toast's Undo restores it unless that time was booked in the meantime
 - [ ] AI scheduling assist
 
 ## What is mocked
@@ -56,6 +60,8 @@ Work in progress. Built in daily steps.
 
 ## What I'd do next
 
+- **Cancel reasons and no-shows.** Record why a visit was cancelled (patient called,
+  late cancel, no-show) and add a separate No-show status for reporting.
 - **Drag on the schedule.** Drag down a column to pick a time range, and drag a visit to
   move it, with Undo, the same server re-check as booking, and a "Move to…" option in the
   check-in drawer so nothing needs dragging (WCAG 2.5.7).

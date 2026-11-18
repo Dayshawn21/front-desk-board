@@ -34,8 +34,13 @@ export function ScheduleGrid({
   const columnByChair = new Map(day.chairs.map((c, i) => [c.id, i + 2]))
   const apptsById = new Map(day.appointments.map((a) => [a.id, a]))
 
-  const conflicts = findConflicts(day.appointments)
-  const lanes = assignLanes(day.appointments)
+  // Cancelled visits leave the grid so their time shows as open; they're
+  // listed above it instead. (The record still exists.)
+  const active = day.appointments.filter((a) => a.status !== 'cancelled')
+  const cancelled = day.appointments.filter((a) => a.status === 'cancelled')
+
+  const conflicts = findConflicts(active)
+  const lanes = assignLanes(active)
 
   const patientName = (patientId: string) => {
     const p = patientsById.get(patientId)
@@ -74,6 +79,15 @@ export function ScheduleGrid({
             <p key={line}>{line}</p>
           ))}
         </div>
+      )}
+
+      {cancelled.length > 0 && (
+        <p className="text-sm text-slate-600">
+          <span className="font-medium text-slate-700">Cancelled today:</span>{' '}
+          {cancelled
+            .map((a) => `${patientName(a.patientId)} (${formatTime(a.start)})`)
+            .join(', ')}
+        </p>
       )}
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
@@ -154,7 +168,7 @@ export function ScheduleGrid({
             )}
 
           {/* Appointment cards */}
-          {day.appointments.map((appt) => {
+          {active.map((appt) => {
             const patient = patientsById.get(appt.patientId)
             const column = columnByChair.get(appt.chairId)
             if (!patient || !column) return null // skip rows that point at missing data

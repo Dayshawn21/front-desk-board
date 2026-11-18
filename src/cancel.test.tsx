@@ -67,10 +67,12 @@ describe('cancel visit', () => {
 
     await user.keyboard('{Escape}')
 
+    // The card's label starts with the name ("Owen Hart, Filling, …"); the
+    // toast's "Undo cancel for Owen Hart" button doesn't count.
     expect(
-      screen.queryByRole('button', { name: /owen hart/i }),
+      screen.queryByRole('button', { name: /^owen hart,/i }),
     ).not.toBeInTheDocument()
-    expect(screen.getByText(/cancelled today/i)).toHaveTextContent(
+    expect(screen.getByText(/cancelled today/i).closest('p')).toHaveTextContent(
       /owen hart.*11:15 AM/i,
     )
     // Its card is gone, so focus goes to the page heading, not nowhere.

@@ -125,6 +125,30 @@ export async function updateAppointment(
     throw new ApiError(`Appointment not found: ${appointmentId}`, 404)
   }
 
+  // Restoring a cancelled visit: its time may have been booked since.
+  const restoring =
+    appt.status === 'cancelled' &&
+    patch.status !== undefined &&
+    patch.status !== 'cancelled'
+  if (restoring) {
+    const taken = db.appointments.some(
+      (a) =>
+        a.id !== appt.id &&
+        a.practiceId === practiceId &&
+        a.chairId === appt.chairId &&
+        a.status !== 'cancelled' &&
+        a.start.slice(0, 10) === appt.start.slice(0, 10) &&
+        rangesOverlap(a, appt),
+    )
+    if (taken) {
+      const chair = db.chairs.find((c) => c.id === appt.chairId)
+      throw new ApiError(
+        `That time is already booked in ${chair?.name ?? 'this chair'}, so the visit can't be restored.`,
+        409,
+      )
+    }
+  }
+
   Object.assign(appt, structuredClone(patch))
   return structuredClone(appt)
 }

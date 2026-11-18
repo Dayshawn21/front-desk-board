@@ -28,7 +28,9 @@ type StatusChange = {
   name: string
   from: AppointmentStatus
   to: AppointmentStatus
-  kind: 'forward' | 'undo'
+  // forward: a normal step; undo: one step back; cancel: visit cancelled;
+  // restore: a cancel was undone
+  kind: 'forward' | 'undo' | 'cancel' | 'restore'
 }
 
 let changeCounter = 0
@@ -80,7 +82,14 @@ function Board() {
     const patient = schedule.data?.patients.find((p) => p.id === appt.patientId)
     const name = patient ? `${patient.firstName} ${patient.lastName}` : 'Visit'
     const from = appt.status
-    const kind = previousAction(from)?.status === to ? 'undo' : 'forward'
+    const kind: StatusChange['kind'] =
+      to === 'cancelled'
+        ? 'cancel'
+        : from === 'cancelled'
+          ? 'restore'
+          : previousAction(from)?.status === to
+            ? 'undo'
+            : 'forward'
 
     update.mutate(
       { id, patch: { status: to } },
@@ -101,10 +110,19 @@ function Board() {
     )
   }
 
-  // Offer Undo only for a forward step the current role is allowed to reverse.
-  // (Front desk can check a patient out, but only the office manager can reopen.)
+  // Offer Undo only for a forward step or a cancel the current role is allowed
+  // to reverse. (Front desk can check a patient out, but only the office
+  // manager can reopen.) Undoing a cancel restores the status it had before.
   const undoStep =
-    lastChange?.kind === 'forward' ? previousAction(lastChange.to) : null
+    lastChange?.kind === 'forward'
+      ? previousAction(lastChange.to)
+      : lastChange?.kind === 'cancel'
+        ? {
+            label: 'Undo cancel',
+            status: lastChange.from,
+            permission: 'cancel' as const,
+          }
+        : null
   const canUndoLast =
     lastChange !== null &&
     undoStep !== null &&
@@ -151,9 +169,12 @@ function Board() {
   const modalOpen = Boolean(selected) || isBooking
 
   const toastText = lastChange
-    ? lastChange.kind === 'forward'
-      ? `${lastChange.name}: ${statusStyle[lastChange.to].label}`
-      : `${lastChange.name}: moved back to ${statusStyle[lastChange.to].label}`
+    ? {
+        forward: `${lastChange.name}: ${statusStyle[lastChange.to].label}`,
+        undo: `${lastChange.name}: moved back to ${statusStyle[lastChange.to].label}`,
+        cancel: `${lastChange.name}: cancelled`,
+        restore: `${lastChange.name}: restored as ${statusStyle[lastChange.to].label}`,
+      }[lastChange.kind]
     : null
 
   return (

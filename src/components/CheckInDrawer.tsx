@@ -4,7 +4,12 @@ import { useModalDialog } from '../hooks/useModalDialog'
 import { roleLabel, statusStyle, typeLabel } from '../lib/display'
 import { findConflicts } from '../lib/overlap'
 import { formatTime } from '../lib/time'
-import { flowSteps, nextAction, previousAction } from '../lib/workflow'
+import {
+  cancelAction,
+  flowSteps,
+  nextAction,
+  previousAction,
+} from '../lib/workflow'
 import { useSession } from '../session/SessionContext'
 import type {
   Appointment,
@@ -84,6 +89,8 @@ export function CheckInDrawer({
   const canEdit = can('edit-checklist')
   const undo = previousAction(appointment.status)
   const canUndo = undo !== null && can(undo.permission)
+  const cancel = cancelAction(appointment.status)
+  const canCancel = cancel !== null && can(cancel.permission)
   const currentStep = flowSteps.indexOf(appointment.status)
   const doneCount = checklistItems.filter((item) => checklist[item.key]).length
   const isDirty =
@@ -282,6 +289,23 @@ export function CheckInDrawer({
           >
             {saveError}
           </p>
+        )}
+
+        {/* Kept apart from the next-step button so it's hard to hit by mistake.
+            No "Are you sure?": the toast offers Undo instead. */}
+        {cancel && canCancel && (
+          <div className="mt-auto border-t border-slate-200 pt-4">
+            <button
+              type="button"
+              aria-disabled={isSaving}
+              onClick={() => {
+                if (!isSaving) onChangeStatus(cancel.status)
+              }}
+              className="h-11 rounded-lg border border-red-300 px-4 text-sm font-semibold text-red-700 hover:bg-red-50 aria-disabled:opacity-60"
+            >
+              {cancel.label}
+            </button>
+          </div>
         )}
       </aside>
     </div>

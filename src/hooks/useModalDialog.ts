@@ -7,7 +7,8 @@ const FOCUSABLE =
 // - on open, focus moves to `initialFocusRef`
 // - Tab and Shift+Tab wrap inside the panel (focus trap)
 // - Escape calls onClose
-// - on close, focus goes back to whatever opened the panel
+// - on close, focus goes back to whatever opened the panel, or to the page
+//   heading if that is gone (e.g. the visit's card left the grid)
 // The page behind is made `inert` by App, so it can't be clicked or focused.
 export function useModalDialog<T extends HTMLElement>(
   initialFocusRef: RefObject<HTMLElement | null>,
@@ -21,7 +22,10 @@ export function useModalDialog<T extends HTMLElement>(
         ? document.activeElement
         : null
     initialFocusRef.current?.focus()
-    return () => previouslyFocused?.focus()
+    return () => {
+      if (previouslyFocused?.isConnected) previouslyFocused.focus()
+      else document.querySelector<HTMLElement>('h1[tabindex="-1"]')?.focus()
+    }
   }, [initialFocusRef])
 
   function onKeyDown(event: KeyboardEvent<HTMLElement>) {
