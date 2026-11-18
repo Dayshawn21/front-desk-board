@@ -1,10 +1,14 @@
-import { screen, waitFor } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import App from './App'
 import { renderWithQuery } from './test/render'
 
 const STORAGE_KEY = 'front-desk-board.userId'
+
+const signedInUser = () => screen.getByRole('group', { name: /signed in as/i })
+const practiceSwitcher = () =>
+  screen.queryByRole('combobox', { name: /practice/i })
 
 async function signInAs(name: RegExp) {
   const user = userEvent.setup()
@@ -42,10 +46,8 @@ describe('sign in', () => {
     renderWithQuery(<App />, { signedOut: true })
     await signInAs(/rosa jimenez/i)
 
-    expect(screen.getByText(/signed in as/i)).toHaveTextContent(
-      /rosa jimenez.*front desk/i,
-    )
-    expect(screen.getByLabelText(/^practice/i)).toBeDisabled()
+    expect(signedInUser()).toHaveTextContent(/rosa jimenez.*front desk/i)
+    expect(practiceSwitcher()).not.toBeInTheDocument()
     expect(
       screen.getByRole('heading', { level: 1, name: /front desk board/i }),
     ).toHaveFocus()
@@ -62,7 +64,7 @@ describe('sign in', () => {
     renderWithQuery(<App />, { signedOut: true })
     await signInAs(/theo grant/i)
 
-    expect(screen.getByLabelText(/^practice/i)).toBeEnabled()
+    expect(practiceSwitcher()).toBeEnabled()
   })
 
   it('gives a provider the provider actions', async () => {
@@ -94,8 +96,8 @@ describe('sign out', () => {
 
     await signInAs(/theo grant/i)
 
-    expect(screen.getByText(/signed in as/i)).toHaveTextContent(/theo grant/i)
-    expect(screen.getByLabelText(/^practice/i)).toBeEnabled()
+    expect(signedInUser()).toHaveTextContent(/theo grant/i)
+    expect(practiceSwitcher()).toBeEnabled()
   })
 
   it('starts the next user back at their home practice', async () => {
@@ -106,7 +108,9 @@ describe('sign out', () => {
 
     await signInAs(/rosa jimenez/i)
 
-    expect(screen.getByLabelText(/^practice/i)).toHaveValue('maple')
+    expect(
+      within(screen.getByRole('banner')).getByText('Maple Street Dental'),
+    ).toBeInTheDocument()
   })
 
   it("drops the cached schedule so the next user can't see stale data", async () => {
@@ -128,9 +132,9 @@ describe('remembered sign-in (this tab only)', () => {
 
     renderWithQuery(<App />, { restoreSession: true })
 
-    expect(await screen.findByText(/signed in as/i)).toHaveTextContent(
-      /theo grant/i,
-    )
+    expect(
+      await screen.findByRole('group', { name: /signed in as/i }),
+    ).toHaveTextContent(/theo grant/i)
   })
 
   it('forgets the user after sign out', async () => {
@@ -161,7 +165,7 @@ describe('remembered sign-in (this tab only)', () => {
     await signInAs(/rosa jimenez/i)
 
     await waitFor(() =>
-      expect(screen.getByText(/signed in as/i)).toBeInTheDocument(),
+      expect(signedInUser()).toHaveTextContent(/rosa jimenez/i),
     )
   })
 })

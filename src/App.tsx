@@ -98,6 +98,9 @@ function Board() {
   // Same as the sign-in page: after the page swaps, focus starts at its heading.
   useEffect(() => headingRef.current?.focus(), [])
 
+  const practiceName =
+    practices.data?.find((p) => p.id === practiceId)?.name ?? ''
+
   const toastText = lastChange
     ? lastChange.kind === 'forward'
       ? `${lastChange.name}: ${statusStyle[lastChange.to].label}`
@@ -108,9 +111,9 @@ function Board() {
     <div className="min-h-screen bg-slate-50 text-slate-900">
       <header
         inert={Boolean(selected)}
-        className="flex flex-wrap items-start gap-4 border-b border-slate-200 bg-white px-6 py-4"
+        className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-6"
       >
-        <div className="mr-auto">
+        <div>
           <h1
             ref={headingRef}
             tabIndex={-1}
@@ -122,49 +125,63 @@ function Board() {
             Tuesday, Nov 17 · Demo data only, no real patients
           </p>
         </div>
-        <div className="flex flex-col gap-1">
-          <label className="flex flex-col gap-1 text-xs font-medium text-slate-600">
-            Practice
-            <select
-              value={practiceId}
-              onChange={(e) => {
-                setSelectedId(null) // never keep one practice's drawer open on another
-                setLastChange(null)
-                update.reset()
-                setPracticeId(e.target.value)
-              }}
-              disabled={!practices.data || !can('switch-practice')}
-              aria-describedby={
-                can('switch-practice') ? undefined : 'practice-locked'
-              }
-              className="h-11 min-w-56 rounded-lg border border-slate-300 bg-white px-3 text-sm text-slate-900 disabled:bg-slate-100"
-            >
-              {practices.data?.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-          </label>
-          {!can('switch-practice') && (
-            <p id="practice-locked" className="text-xs text-slate-600">
-              Only the office manager can switch practices.
-            </p>
+
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+          {/* Only the office manager can switch, so only they get a control.
+              Everyone else sees their practice as plain text. */}
+          {can('switch-practice') ? (
+            <label className="flex flex-col gap-0.5 text-xs font-medium text-slate-600">
+              Practice
+              <select
+                value={practiceId}
+                onChange={(e) => {
+                  setSelectedId(null) // never keep one practice's drawer open on another
+                  setLastChange(null)
+                  update.reset()
+                  setPracticeId(e.target.value)
+                }}
+                disabled={!practices.data}
+                className="h-11 min-w-52 rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-900"
+              >
+                {practices.data?.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <div className="flex flex-col gap-0.5">
+              <span className="text-xs font-medium text-slate-600">
+                Practice
+              </span>
+              <span className="text-sm font-medium text-slate-900">
+                {practiceName}
+              </span>
+            </div>
           )}
-        </div>
-        <div className="flex items-center gap-3 self-end">
-          <p className="text-sm text-slate-600">
-            Signed in as{' '}
-            <span className="font-medium text-slate-900">{user.name}</span> ·{' '}
-            {roleLabel[user.role]}
-          </p>
-          <button
-            type="button"
-            onClick={signOut}
-            className="h-11 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium whitespace-nowrap text-slate-900 hover:bg-slate-100"
-          >
-            Sign out
-          </button>
+
+          <div className="flex items-center gap-3 sm:border-l sm:border-slate-200 sm:pl-5">
+            <div
+              role="group"
+              aria-label="Signed in as"
+              className="flex flex-col gap-0.5"
+            >
+              <span className="text-sm font-medium text-slate-900">
+                {user.name}
+              </span>
+              <span className="text-xs text-slate-600">
+                {roleLabel[user.role]}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={signOut}
+              className="h-11 rounded-lg border border-slate-300 bg-white px-4 text-sm font-medium whitespace-nowrap text-slate-900 hover:bg-slate-100"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </header>
 

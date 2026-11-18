@@ -11,14 +11,14 @@ async function renderAs(role: Role) {
 }
 
 describe('roles', () => {
-  it('locks the practice switcher for everyone but the office manager', async () => {
+  it('shows the practice as plain text for everyone but the office manager', async () => {
     await renderAs('front-desk')
 
-    const practice = screen.getByLabelText(/^practice/i)
-    expect(practice).toBeDisabled()
-    expect(practice).toHaveAccessibleDescription(
-      /only the office manager can switch practices/i,
-    )
+    const header = screen.getByRole('banner')
+    expect(within(header).getByText('Maple Street Dental')).toBeInTheDocument()
+    expect(
+      within(header).queryByRole('combobox', { name: /practice/i }),
+    ).not.toBeInTheDocument()
   })
 
   it('front desk cannot seat a patient', async () => {
