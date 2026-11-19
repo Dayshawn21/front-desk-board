@@ -8,6 +8,7 @@ import { resetMockDb } from '../api/schedule'
 afterEach(() => {
   cleanup()
   resetMockDb()
-  sessionStorage.clear()
+  // Server tests run in Node, where there is no sessionStorage.
+  if (typeof sessionStorage !== 'undefined') sessionStorage.clear()
   vi.restoreAllMocks()
 })
