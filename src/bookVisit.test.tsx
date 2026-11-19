@@ -5,10 +5,12 @@ import App from './App'
 import { createAppointment, fetchSchedule } from './api/schedule'
 import { DEMO_DATE, DEMO_NOW } from './config'
 import { patientTimes } from './lib/patientBooking'
+import { findOpenSlots } from './lib/slots'
+import { signInWithForm } from './test/patient'
 import { renderWithQuery } from './test/render'
 
-// The patient's page is public: no staff sign-in. The patient signs in
-// first (the demo patient sign-in), then sees the booking form.
+// The patient's page needs no staff sign-in. The patient signs in first
+// (email and password), then sees the booking form.
 function openSignedOut(path = '/book/maple') {
   window.history.pushState(null, '', path)
   const user = userEvent.setup()
@@ -16,10 +18,13 @@ function openSignedOut(path = '/book/maple') {
   return { user, ...view }
 }
 
-async function openBookingPage(path = '/book/maple', patient = 'Ana Diaz') {
+async function openBookingPage(
+  path = '/book/maple',
+  email = 'ana.diaz@example.com',
+) {
   const { user } = openSignedOut(path)
   await screen.findByRole('heading', { name: 'Sign in to book' })
-  await user.click(screen.getByRole('button', { name: patient }))
+  await signInWithForm(user, email)
   await screen.findByRole('heading', { name: 'Book a visit' })
   return user
 }
@@ -44,8 +49,11 @@ describe('book a visit (patient page)', () => {
     expect(
       screen.queryByRole('heading', { name: 'Sign in' }),
     ).not.toBeInTheDocument()
-    // It says the patient list is pretend.
-    expect(screen.getByText(/made-up patients/i)).toBeInTheDocument()
+    // A sign-in form, not a list of patients to pick from.
+    expect(screen.getByLabelText('Email')).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Ana Diaz' }),
+    ).not.toBeInTheDocument()
   })
 
   it('books for whoever signed in, with no patient list on the form', async () => {
@@ -63,7 +71,7 @@ describe('book a visit (patient page)', () => {
   it('goes straight to the form when already signed in', async () => {
     const first = openSignedOut()
     await screen.findByRole('heading', { name: 'Sign in to book' })
-    await first.user.click(screen.getByRole('button', { name: 'Ana Diaz' }))
+    await signInWithForm(first.user, 'ana.diaz@example.com')
     await screen.findByRole('heading', { name: 'Book a visit' })
     first.unmount()
 
@@ -78,19 +86,31 @@ describe('book a visit (patient page)', () => {
     const user = await openBookingPage()
     await user.click(screen.getByRole('button', { name: 'Sign out' }))
     expect(
-      screen.getByRole('heading', { name: 'Sign in to book' }),
+      await screen.findByRole('heading', { name: 'Sign in to book' }),
     ).toHaveFocus()
   })
 
   it('opens the other practice from its own link', async () => {
-    openSignedOut('/book/riverbend')
-    await screen.findByRole('heading', { name: 'Sign in to book' })
+    await openBookingPage('/book/riverbend', 'kofi.mensah@example.com')
     expect(screen.getByText('Riverbend Family Dental')).toBeInTheDocument()
+  })
+
+  it("won't book at an office that isn't the patient's", async () => {
+    // Ana is a Maple Street patient.
+    const { user } = openSignedOut('/book/riverbend')
+    await screen.findByRole('heading', { name: 'Sign in to book' })
+    await signInWithForm(user, 'ana.diaz@example.com')
+
     expect(
-      screen.getByRole('button', { name: 'Hana Sato' }),
-    ).toBeInTheDocument()
+      await screen.findByRole('heading', {
+        name: "You're a patient at Maple Street Dental",
+      }),
+    ).toHaveFocus()
     expect(
-      screen.queryByRole('button', { name: 'Ana Diaz' }),
+      screen.getByRole('link', { name: 'Book at Maple Street Dental' }),
+    ).toHaveAttribute('href', '/book/maple')
+    expect(
+      screen.queryByRole('group', { name: 'What do you need?' }),
     ).not.toBeInTheDocument()
   })
 
@@ -151,7 +171,7 @@ describe('book a visit (patient page)', () => {
     expect(screen.getByText(/Cleaning for Ana Diaz/)).toBeInTheDocument()
     expect(
       screen.getByRole('link', { name: 'See your visits' }),
-    ).toHaveAttribute('href', '/patient/maple')
+    ).toHaveAttribute('href', '/patient')
 
     // It's on the practice's schedule, waiting for the desk to confirm.
     const day = await fetchSchedule('maple', DEMO_DATE)
@@ -173,19 +193,25 @@ describe('book a visit (patient page)', () => {
     const user = await openBookingPage()
     await choose(user, /^Checkup/)
     const day = await fetchSchedule('maple', DEMO_DATE)
-    const [first] = patientTimes(day, 30, DEMO_NOW)
     await user.click(
       within(timeGroup()).getByRole('radio', { name: '11:30 AM' }),
     )
 
-    // Meanwhile, the front desk books that exact chair and time.
-    await createAppointment('maple', {
-      patientId: 'p-grace',
-      chairId: first.chairId,
-      start: first.start,
-      end: first.end,
-      type: 'exam',
-    })
+    // Meanwhile, the front desk fills every chair that was free at 11:30.
+    const freeAt1130 = findOpenSlots(day, {
+      durationMinutes: 30,
+      limit: Infinity,
+    }).filter((slot) => slot.start === `${DEMO_DATE}T11:30:00`)
+    expect(freeAt1130.length).toBeGreaterThan(0)
+    for (const slot of freeAt1130) {
+      await createAppointment('maple', {
+        patientId: 'p-grace',
+        chairId: slot.chairId,
+        start: slot.start,
+        end: slot.end,
+        type: 'exam',
+      })
+    }
     await user.click(screen.getByRole('button', { name: 'Book 11:30 AM' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
@@ -255,6 +281,7 @@ describe('choosing a practice at /book', () => {
       screen.queryByRole('heading', { name: 'Sign in' }),
     ).not.toBeInTheDocument()
   })
+
   it('links to the patient sign-in, for someone who already has a visit', async () => {
     window.history.pushState(null, '', '/book')
     renderWithQuery(<App />, { signedOut: true })
@@ -264,15 +291,5 @@ describe('choosing a practice at /book', () => {
     expect(
       within(main).getByRole('link', { name: /sign in to see your visits/i }),
     ).toHaveAttribute('href', '/patient')
-  })
-
-  it("doesn't link to itself on the patient sign-in's office list", async () => {
-    window.history.pushState(null, '', '/patient')
-    renderWithQuery(<App />, { signedOut: true })
-    await screen.findByRole('heading', { name: 'Choose your dental office' })
-
-    expect(
-      screen.queryByRole('link', { name: /sign in to see your visits/i }),
-    ).not.toBeInTheDocument()
   })
 })

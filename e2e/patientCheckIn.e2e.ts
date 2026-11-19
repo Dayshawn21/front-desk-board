@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { signInAsPatient } from './patientSignIn'
 
 // The front desk opens a visit's check-in link (as if sent to the patient's
 // phone); the patient ticks their forms and taps "I'm here"; the board, in
@@ -21,6 +22,12 @@ test('a patient checks in from their phone and the board shows them arrived', as
   await expect(phone).toHaveURL(/\/check-in\/maple\/a-11$/)
   await board.keyboard.press('Escape')
 
+  // The link alone shows nothing: the patient signs in first.
+  await expect(
+    phone.getByRole('heading', { name: 'Sign in to check in' }),
+  ).toBeVisible()
+  await expect(phone.getByText(/Ravi/)).toHaveCount(0)
+  await signInAsPatient(phone, 'ravi.menon@example.com')
   await expect(phone.getByRole('heading', { name: 'Check in' })).toBeVisible()
   await phone
     .getByRole('checkbox', { name: "I've filled in my visit forms" })
@@ -39,4 +46,20 @@ test('a patient checks in from their phone and the board shows them arrived', as
       .getByRole('dialog', { name: /Ravi Menon/ })
       .getByRole('checkbox', { name: 'Forms complete' }),
   ).toBeChecked()
+})
+
+test("a signed-in patient can't open another patient's check-in page", async ({
+  page,
+}) => {
+  await page.goto('/patient')
+  await signInAsPatient(page, 'owen.hart@example.com')
+  await expect(page.getByRole('heading', { name: 'Your visits' })).toBeVisible()
+
+  // Ravi Menon's link, typed in by hand.
+  await page.goto('/check-in/maple/a-11')
+  await expect(
+    page.getByRole('heading', { name: "We couldn't find that visit" }),
+  ).toBeVisible()
+  await expect(page.getByText(/Ravi/)).toHaveCount(0)
+  await expect(page.getByRole('button', { name: "I'm here" })).toHaveCount(0)
 })

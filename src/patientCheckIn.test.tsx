@@ -4,15 +4,26 @@ import { describe, expect, it } from 'vitest'
 import App from './App'
 import { fetchSchedule, updateAppointment } from './api/schedule'
 import { DEMO_DATE } from './config'
+import { signInWithForm } from './test/patient'
 import { renderWithQuery } from './test/render'
 
-// The patient's phone: a public page per visit, no staff sign-in.
+// The patient's phone: a page per visit, behind the patient sign-in.
 // a-11 is Ravi Menon's cleaning, 10:15 AM in Chair 3 (Dr. Lindqvist),
 // Scheduled, with only "Insurance verified" ticked.
-function openCheckIn(path = '/check-in/maple/a-11') {
+function openSignedOut(path = '/check-in/maple/a-11') {
   window.history.pushState(null, '', path)
   const user = userEvent.setup()
   renderWithQuery(<App />, { signedOut: true })
+  return user
+}
+
+async function openCheckIn(
+  path = '/check-in/maple/a-11',
+  email = 'ravi.menon@example.com',
+) {
+  const user = openSignedOut(path)
+  await screen.findByRole('heading', { name: 'Sign in to check in' })
+  await signInWithForm(user, email)
   return user
 }
 
@@ -22,8 +33,39 @@ async function visit(id: string) {
 }
 
 describe('patient check-in from a phone', () => {
+  it('asks the patient to sign in first, and shows nothing about the visit', async () => {
+    openSignedOut()
+    expect(
+      await screen.findByRole('heading', { name: 'Sign in to check in' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Ravi/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/10:15/)).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: "I'm here" }),
+    ).not.toBeInTheDocument()
+  })
+
+  it("won't show another patient's visit, even signed in", async () => {
+    // Owen signs in, then opens Ravi's check-in link.
+    await openCheckIn('/check-in/maple/a-11', 'owen.hart@example.com')
+    expect(
+      await screen.findByRole('heading', {
+        name: "We couldn't find that visit",
+      }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/Ravi/)).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: "I'm here" }),
+    ).not.toBeInTheDocument()
+    // A way to their own visits instead.
+    expect(
+      screen.getByRole('link', { name: 'See your visits' }),
+    ).toHaveAttribute('href', '/patient')
+    expect((await visit('a-11'))?.status).toBe('scheduled')
+  })
+
   it('shows the visit and the details on file', async () => {
-    openCheckIn()
+    await openCheckIn()
 
     expect(
       await screen.findByRole('heading', { name: 'Check in' }),
@@ -42,13 +84,13 @@ describe('patient check-in from a phone', () => {
   })
 
   it('says when there is no insurance on file', async () => {
-    openCheckIn('/check-in/maple/a-07') // Lena Ortiz, self-pay
+    await openCheckIn('/check-in/maple/a-07', 'lena.ortiz@example.com') // self-pay
     const details = await screen.findByRole('region', { name: 'Your details' })
     expect(details).toHaveTextContent('None on file')
   })
 
   it('lets the patient tick their forms, and saves each tick right away', async () => {
-    const user = openCheckIn()
+    const user = await openCheckIn()
     const forms = await screen.findByRole('checkbox', {
       name: "I've filled in my visit forms",
     })
@@ -70,7 +112,8 @@ describe('patient check-in from a phone', () => {
   })
 
   it('starts with the ticks already saved', async () => {
-    openCheckIn('/check-in/maple/a-07') // forms and history already done
+    // Lena Ortiz: forms and history already done
+    await openCheckIn('/check-in/maple/a-07', 'lena.ortiz@example.com')
     expect(
       await screen.findByRole('checkbox', {
         name: "I've filled in my visit forms",
@@ -79,14 +122,14 @@ describe('patient check-in from a phone', () => {
   })
 
   it("only lets the patient tick their own items, not the desk's", async () => {
-    openCheckIn()
+    await openCheckIn()
     await screen.findByRole('heading', { name: 'Check in' })
     expect(screen.getAllByRole('checkbox')).toHaveLength(2)
     expect(screen.queryByText(/copay/i)).not.toBeInTheDocument()
   })
 
   it('marks them Arrived on "I\'m here", and says so', async () => {
-    const user = openCheckIn()
+    const user = await openCheckIn()
     await user.click(
       await screen.findByRole('checkbox', {
         name: /I've reviewed my health history/,
@@ -108,7 +151,7 @@ describe('patient check-in from a phone', () => {
 
   it('shows "checked in" for a patient who already arrived', async () => {
     await updateAppointment('maple', 'a-11', { status: 'arrived' })
-    openCheckIn()
+    await openCheckIn()
     expect(
       await screen.findByRole('heading', { name: "You're checked in" }),
     ).toBeInTheDocument()
@@ -122,7 +165,7 @@ describe('patient check-in from a phone', () => {
       status: 'cancelled',
       cancelReason: 'patient-cancelled',
     })
-    openCheckIn()
+    await openCheckIn()
     expect(
       await screen.findByRole('heading', { name: 'This visit was cancelled' }),
     ).toBeInTheDocument()
@@ -132,7 +175,7 @@ describe('patient check-in from a phone', () => {
   })
 
   it("says so when the visit or practice doesn't exist", async () => {
-    openCheckIn('/check-in/maple/nope')
+    await openCheckIn('/check-in/maple/nope')
     expect(
       await screen.findByRole('heading', {
         name: "We couldn't find that visit",
@@ -141,7 +184,7 @@ describe('patient check-in from a phone', () => {
   })
 
   it("doesn't show another practice's visit", async () => {
-    openCheckIn('/check-in/riverbend/a-11')
+    await openCheckIn('/check-in/riverbend/a-11')
     expect(
       await screen.findByRole('heading', {
         name: "We couldn't find that visit",
@@ -150,7 +193,7 @@ describe('patient check-in from a phone', () => {
   })
 
   it('keeps the button and says what to do when the save fails', async () => {
-    const user = openCheckIn('/check-in/maple/a-11?failSave')
+    const user = await openCheckIn('/check-in/maple/a-11?failSave')
     await user.click(await screen.findByRole('button', { name: "I'm here" }))
     expect(await screen.findByRole('alert')).toHaveTextContent(
       "We couldn't check you in. Please try again, or tell the front desk.",

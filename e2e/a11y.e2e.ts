@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
+import { signInAsPatient } from './patientSignIn'
 
 // Automated accessibility checks (axe-core) on each main screen, in a real
 // browser so colour contrast and layout are measured. axe finds roughly a
@@ -192,7 +193,7 @@ test.describe('on a phone', () => {
 // width, in light and (in the chromium-dark project) dark.
 async function bookCheckup(page: Page) {
   await page.goto('/book/maple')
-  await page.getByRole('button', { name: 'Grace Liu' }).click()
+  await signInAsPatient(page, 'grace.liu@example.com')
   await page.getByRole('radio', { name: /^Checkup/ }).check()
   // Click the visible label: the radio itself is visually hidden.
   await page
@@ -236,6 +237,7 @@ test.describe('patient pages', () => {
 
     test('check in from a phone', async ({ page }) => {
       await page.goto('/check-in/maple/a-11')
+      await signInAsPatient(page, 'ravi.menon@example.com')
       await page
         .getByRole('checkbox', { name: "I've filled in my visit forms" })
         .check()
@@ -246,6 +248,7 @@ test.describe('patient pages', () => {
 
     test('checked in', async ({ page }) => {
       await page.goto('/check-in/maple/a-11')
+      await signInAsPatient(page, 'ravi.menon@example.com')
       await page.getByRole('button', { name: "I'm here" }).click()
       await expect(
         page.getByRole('heading', { name: "You're checked in" }),
@@ -264,15 +267,24 @@ test.describe('patient pages', () => {
     })
 
     test('patient sign-in', async ({ page }) => {
-      await page.goto('/patient/maple')
+      await page.goto('/patient')
       await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
       await expectNoSideways(page)
       await expectNoViolations(page)
     })
 
+    test('patient sign-in with a wrong password', async ({ page }) => {
+      await page.goto('/patient')
+      await page.getByLabel('Email').fill('owen.hart@example.com')
+      await page.getByLabel('Password').fill('wrong-password')
+      await page.getByRole('button', { name: 'Sign in' }).click()
+      await expect(page.getByRole('alert')).toBeVisible()
+      await expectNoViolations(page)
+    })
+
     test('your visits', async ({ page }) => {
-      await page.goto('/patient/maple')
-      await page.getByRole('button', { name: 'Owen Hart' }).click()
+      await page.goto('/patient')
+      await signInAsPatient(page, 'owen.hart@example.com')
       await expect(
         page.getByRole('heading', { name: 'Your visits' }),
       ).toBeVisible()

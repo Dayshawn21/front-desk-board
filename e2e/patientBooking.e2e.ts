@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { signInAsPatient } from './patientSignIn'
 
 // A patient books online in one tab; the front desk's board, open in
 // another tab of the same browser, shows the visit without a reload.
@@ -13,7 +14,7 @@ test('a patient books online and the visit appears on the front desk board', asy
 
   const patient = await context.newPage()
   await patient.goto('/book/maple')
-  await patient.getByRole('button', { name: 'Grace Liu' }).click()
+  await signInAsPatient(patient, 'grace.liu@example.com')
   await expect(
     patient.getByRole('heading', { name: 'Book a visit' }),
   ).toBeVisible()
@@ -54,8 +55,7 @@ test('a patient signs in, books, and sees the visit in their list', async ({
   await page.goto('/')
   await page.getByRole('link', { name: /sign in as a patient/i }).click()
   await expect(page).toHaveURL(/\/patient$/)
-  await page.getByRole('link', { name: /Maple Street Dental/ }).click()
-  await page.getByRole('button', { name: 'Owen Hart' }).click()
+  await signInAsPatient(page, 'owen.hart@example.com')
   await expect(page.getByRole('heading', { name: 'Your visits' })).toBeVisible()
   const visits = page.getByRole('list', { name: 'Your visits today' })
   await expect(visits.getByRole('listitem')).toHaveCount(1)

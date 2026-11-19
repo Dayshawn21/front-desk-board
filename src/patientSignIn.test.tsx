@@ -4,9 +4,10 @@ import { describe, expect, it } from 'vitest'
 import App from './App'
 import { updateAppointment } from './api/schedule'
 import { renderWithQuery } from './test/render'
+import { signInWithForm } from './test/patient'
 
-// The patient's sign-in is a demo: pick one of the office's made-up
-// patients, no password. It's remembered for this tab, like the staff one.
+// Patients sign in at /patient with an email and password (demo logins,
+// checked by the mock server). Signed in, they see only their own visits.
 function openAt(path: string) {
   window.history.pushState(null, '', path)
   const user = userEvent.setup()
@@ -14,71 +15,78 @@ function openAt(path: string) {
   return { user, ...view }
 }
 
-async function signInAs(
-  user: ReturnType<typeof userEvent.setup>,
-  name: string,
-) {
-  await screen.findByRole('heading', { name: /^Sign in/ })
-  await user.click(screen.getByRole('button', { name }))
-}
-
-describe('choosing an office at /patient', () => {
-  it('lists every office, each linking to its patient sign-in', async () => {
+describe('the patient sign-in page', () => {
+  it('is a real sign-in form, with no list of patients', async () => {
     openAt('/patient')
-    expect(
-      await screen.findByRole('heading', { name: 'Choose your dental office' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('link', { name: /Maple Street Dental/ }),
-    ).toHaveAttribute('href', '/patient/maple')
-    expect(
-      screen.getByRole('link', { name: /Riverbend Family Dental/ }),
-    ).toHaveAttribute('href', '/patient/riverbend')
-    expect(
-      within(screen.getByRole('banner')).getByText('Patient sign-in'),
-    ).toBeInTheDocument()
-  })
-})
-
-describe('signing in as a patient', () => {
-  it("lists only that office's made-up patients, with no password", async () => {
-    openAt('/patient/maple')
     expect(
       await screen.findByRole('heading', { name: 'Sign in' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Maple Street Dental')).toBeInTheDocument()
+    expect(screen.getByLabelText('Email')).toHaveAttribute('type', 'email')
+    expect(screen.getByLabelText('Email')).toHaveAttribute(
+      'autocomplete',
+      'username',
+    )
+    expect(screen.getByLabelText('Password')).toHaveAttribute(
+      'type',
+      'password',
+    )
+    expect(screen.getByLabelText('Password')).toHaveAttribute(
+      'autocomplete',
+      'current-password',
+    )
     expect(
-      screen.getByRole('button', { name: 'Owen Hart' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByRole('button', { name: 'Hana Sato' }),
+      screen.queryByRole('button', { name: 'Owen Hart' }),
     ).not.toBeInTheDocument()
-    expect(screen.getAllByRole('button', { name: /\w+ \w+/ })).toHaveLength(15)
-    // Says plainly it's pretend.
-    expect(screen.getByText(/made-up patients/i)).toBeInTheDocument()
-    expect(screen.getByText(/no password/i)).toBeInTheDocument()
+    // One demo login, so visitors can try it.
+    expect(screen.getByText(/owen\.hart@example\.com/)).toBeInTheDocument()
   })
 
+  it('says so when the email or password is wrong, and stays signed out', async () => {
+    const { user } = openAt('/patient')
+    await signInWithForm(user, 'owen.hart@example.com', 'wrong-password')
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      "That email and password don't match.",
+    )
+    expect(screen.getByRole('heading', { name: 'Sign in' })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: 'Your visits' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('asks for both fields before sending', async () => {
+    const { user } = openAt('/patient')
+    await user.click(await screen.findByRole('button', { name: 'Sign in' }))
+    expect(screen.getByLabelText('Email')).toBeRequired()
+    expect(screen.getByLabelText('Password')).toBeRequired()
+    expect(
+      screen.queryByRole('heading', { name: 'Your visits' }),
+    ).not.toBeInTheDocument()
+  })
+})
+
+describe('your visits', () => {
   it("shows the patient's visits today, with a check-in link", async () => {
-    const { user } = openAt('/patient/maple')
-    await signInAs(user, 'Owen Hart')
+    const { user } = openAt('/patient')
+    await signInWithForm(user, 'owen.hart@example.com')
 
     const heading = await screen.findByRole('heading', { name: 'Your visits' })
     expect(heading).toHaveFocus()
     expect(screen.getByText(/Hi Owen/)).toBeInTheDocument()
+    expect(screen.getByText('Maple Street Dental')).toBeInTheDocument()
 
     const visits = screen.getByRole('list', { name: 'Your visits today' })
-    const [visit] = within(visits).getAllByRole('listitem')
-    expect(visit).toHaveTextContent('Booked')
+    const items = within(visits).getAllByRole('listitem')
+    expect(items).toHaveLength(1)
+    expect(items[0]).toHaveTextContent('Booked')
     expect(
-      within(visit).getByRole('link', { name: /^Check in/ }),
+      within(items[0]).getByRole('link', { name: /^Check in/ }),
     ).toHaveAttribute('href', '/check-in/maple/a-04')
 
     expect(screen.getByRole('link', { name: 'Book a visit' })).toHaveAttribute(
       'href',
       '/book/maple',
     )
-    // Who's signed in, and a way out, in the page header.
     const header = screen.getByRole('banner')
     expect(within(header).getByText('Owen Hart')).toBeInTheDocument()
     expect(
@@ -87,16 +95,15 @@ describe('signing in as a patient', () => {
   })
 
   it('shows a finished visit as done, with nothing to check in', async () => {
-    const { user } = openAt('/patient/maple')
-    await signInAs(user, 'Ana Diaz')
+    const { user } = openAt('/patient')
+    await signInWithForm(user, 'ana.diaz@example.com')
 
     const visits = await screen.findByRole('list', {
       name: 'Your visits today',
     })
-    const [visit] = within(visits).getAllByRole('listitem')
-    expect(visit).toHaveTextContent('Done')
+    expect(visits).toHaveTextContent('Done')
     expect(
-      within(visit).queryByRole('link', { name: /^Check in/ }),
+      within(visits).queryByRole('link', { name: /^Check in/ }),
     ).not.toBeInTheDocument()
   })
 
@@ -105,8 +112,8 @@ describe('signing in as a patient', () => {
       status: 'cancelled',
       cancelReason: 'patient-cancelled',
     })
-    const { user } = openAt('/patient/maple')
-    await signInAs(user, 'Owen Hart')
+    const { user } = openAt('/patient')
+    await signInWithForm(user, 'owen.hart@example.com')
 
     const visits = await screen.findByRole('list', {
       name: 'Your visits today',
@@ -117,46 +124,44 @@ describe('signing in as a patient', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('works for a patient of the other office too', async () => {
+    const { user } = openAt('/patient')
+    await signInWithForm(user, 'kofi.mensah@example.com')
+    await screen.findByRole('heading', { name: 'Your visits' })
+    expect(screen.getByText('Riverbend Family Dental')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Book a visit' })).toHaveAttribute(
+      'href',
+      '/book/riverbend',
+    )
+  })
+
   it('remembers the sign-in on reload, and forgets it on sign out', async () => {
-    const first = openAt('/patient/maple')
-    await signInAs(first.user, 'Owen Hart')
+    const first = openAt('/patient')
+    await signInWithForm(first.user, 'owen.hart@example.com')
     await screen.findByRole('heading', { name: 'Your visits' })
     first.unmount()
 
     // Like a reload: the same tab, a fresh app.
-    const second = openAt('/patient/maple')
+    const second = openAt('/patient')
     expect(
       await screen.findByRole('heading', { name: 'Your visits' }),
     ).toBeInTheDocument()
 
     await second.user.click(screen.getByRole('button', { name: 'Sign out' }))
-    expect(screen.getByRole('heading', { name: 'Sign in' })).toHaveFocus()
+    expect(
+      await screen.findByRole('heading', { name: 'Sign in' }),
+    ).toHaveFocus()
     second.unmount()
 
-    openAt('/patient/maple')
+    openAt('/patient')
     expect(
       await screen.findByRole('heading', { name: 'Sign in' }),
-    ).toBeInTheDocument()
-  })
-
-  it("is per office: a Maple patient isn't signed in at Riverbend", async () => {
-    const first = openAt('/patient/maple')
-    await signInAs(first.user, 'Owen Hart')
-    await screen.findByRole('heading', { name: 'Your visits' })
-    first.unmount()
-
-    openAt('/patient/riverbend')
-    expect(
-      await screen.findByRole('heading', { name: 'Sign in' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.getByRole('button', { name: 'Hana Sato' }),
     ).toBeInTheDocument()
   })
 
   it("doesn't touch the staff sign-in", async () => {
-    const first = openAt('/patient/maple')
-    await signInAs(first.user, 'Owen Hart')
+    const first = openAt('/patient')
+    await signInWithForm(first.user, 'owen.hart@example.com')
     await screen.findByRole('heading', { name: 'Your visits' })
     first.unmount()
 
@@ -165,14 +170,5 @@ describe('signing in as a patient', () => {
     expect(
       screen.getByRole('link', { name: /sign in as a patient/i }),
     ).toHaveAttribute('href', '/patient')
-  })
-
-  it("says so when the office doesn't exist", async () => {
-    openAt('/patient/nowhere')
-    expect(
-      await screen.findByRole('heading', {
-        name: "We couldn't find that practice",
-      }),
-    ).toBeInTheDocument()
   })
 })
