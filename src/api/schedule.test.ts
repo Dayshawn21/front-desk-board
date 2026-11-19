@@ -34,6 +34,23 @@ describe('updateAppointment', () => {
     expect(saved.notes).toBe('Running 5 min late.')
   })
 
+  it('changes only the checklist boxes a patch names', async () => {
+    // a-11 starts with only insuranceVerified ticked.
+    await updateAppointment('maple', 'a-11', {
+      checklist: { formsComplete: true },
+    })
+    const saved = await updateAppointment('maple', 'a-11', {
+      checklist: { copayCollected: true },
+    })
+
+    expect(saved.checklist).toEqual({
+      insuranceVerified: true,
+      formsComplete: true,
+      medicalHistoryReviewed: false,
+      copayCollected: true,
+    })
+  })
+
   it('saves why a visit was cancelled, and clears it on restore', async () => {
     const cancelled = await updateAppointment('maple', 'a-04', {
       status: 'cancelled',

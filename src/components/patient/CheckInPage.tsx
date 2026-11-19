@@ -96,8 +96,8 @@ function CheckInView({
   const chair = day.chairs.find((c) => c.id === appointment.chairId)
 
   // The patient's ticks live here while the page is open; each one is saved
-  // right away. Every save merges them into the LATEST checklist from the
-  // server, so a tick the desk made in another tab isn't overwritten.
+  // right away. Saves send only the patient's boxes, and the server merges
+  // them, so the desk's ticks (insurance, copay) are never overwritten.
   const [ticks, setTicks] = useState<PatientTicks>({
     formsComplete: appointment.checklist.formsComplete,
     medicalHistoryReviewed: appointment.checklist.medicalHistoryReviewed,
@@ -126,14 +126,13 @@ function CheckInView({
   }, [checkedIn])
 
   const tick = (key: keyof PatientTicks, value: boolean) => {
-    const next = { ...ticks, [key]: value }
-    setTicks(next)
+    setTicks({ ...ticks, [key]: value })
     setError(null)
     setSaveState('saving')
     update.mutate(
       {
         id: appointment.id,
-        patch: { checklist: { ...appointment.checklist, ...next } },
+        patch: { checklist: { [key]: value } },
       },
       {
         onSuccess: () => setSaveState('saved'),
@@ -153,7 +152,7 @@ function CheckInView({
         id: appointment.id,
         patch: {
           status: 'arrived',
-          checklist: { ...appointment.checklist, ...ticks },
+          checklist: ticks,
         },
       },
       {

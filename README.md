@@ -121,7 +121,8 @@ Built in six daily steps.
       the ticks in its checklist; insurance and the copay stay with the desk. Cancelled,
       no-show, and already-arrived visits each get their own message. The check-in
       drawer of a scheduled or confirmed visit shows the link with **Copy link** and
-      **Open check-in page**
+      **Open check-in page**. An open drawer shows the patient's ticks as they come in,
+      and the desk's ticks never undo them (each tick sends only its own box)
 - [x] End-to-end tests (Playwright) in a real browser: book a visit and check a patient
       in, the double-booking banner, click-to-book, and the AI assist (fill, warn about
       another day, rate limit). The AI tests fake the server route, so CI never calls
@@ -271,9 +272,11 @@ an interrupted run picks up where it stopped.
 - **Multi-user updates from a server.** Tabs in one browser already update each other
   (see What is mocked). With a real backend, the server would push change events
   (WebSocket or SSE) naming the practice, and only that practice's query would refetch.
-- **Safe concurrent edits.** Add a `version` to each appointment; a save sent with an
-  old version gets a 409 Conflict and the UI offers to reload, instead of silently
-  overwriting another person's change.
+- **Safe concurrent edits.** Checklist ticks already can't clash: a tick sends only its
+  own box and the server merges it, so the desk and the patient's phone can tick at
+  the same time. Notes and status still save last-write-wins. Next: a `version` on each
+  appointment, so a save sent with an old version gets a 409 Conflict and the UI offers
+  to reload instead of silently overwriting another person's change.
 
 ## Where things are
 

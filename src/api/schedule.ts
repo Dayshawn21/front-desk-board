@@ -4,6 +4,7 @@ import * as seed from '../mocks/seed'
 import type {
   Appointment,
   Chair,
+  CheckInChecklist,
   Patient,
   Practice,
   ScheduleDay,
@@ -178,9 +179,12 @@ export async function fetchSchedule(
   })
 }
 
+// A checklist patch names only the boxes it changes; the server merges them
+// into the stored checklist. So two people ticking different boxes at once
+// (the desk in the drawer, the patient on their phone) never undo each other.
 export type AppointmentPatch = Partial<
-  Pick<Appointment, 'status' | 'checklist' | 'notes' | 'cancelReason'>
->
+  Pick<Appointment, 'status' | 'notes' | 'cancelReason'>
+> & { checklist?: Partial<CheckInChecklist> }
 
 export async function updateAppointment(
   practiceId: string,
@@ -231,7 +235,9 @@ export async function updateAppointment(
     }
   }
 
-  Object.assign(appt, structuredClone(patch))
+  const { checklist, ...rest } = structuredClone(patch)
+  Object.assign(appt, rest)
+  if (checklist) appt.checklist = { ...appt.checklist, ...checklist }
   saveDb(db)
   return structuredClone(appt)
 }

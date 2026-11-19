@@ -58,20 +58,43 @@ export function CheckInDrawer({
   onChangeStatus,
   onClose,
 }: CheckInDrawerProps) {
-  // Local copy of the form, so typing stays instant. The parent remounts
-  // this component (key={id}) when a different appointment opens, so it
-  // always starts from that appointment. There is no Save button: a tick
-  // saves right away, notes save when you leave the box or close the drawer,
-  // so closing can never throw work away.
-  const [checklist, setChecklist] = useState(appointment.checklist)
+  // Notes: a local copy, so typing stays instant. The parent remounts this
+  // component (key={id}) when a different appointment opens, so it always
+  // starts from that appointment. There is no Save button: a tick saves
+  // right away, notes save when you leave the box or close the drawer, so
+  // closing can never throw work away.
   const [notes, setNotes] = useState(appointment.notes)
+
+  // Checklist: no copy. It shows the server's checklist (which refetches
+  // when the patient ticks on their phone in another tab), with only the
+  // ticks still being saved laid on top, so a box doesn't flicker back
+  // while its save is in flight.
+  const [savingTicks, setSavingTicks] = useState<Partial<CheckInChecklist>>({})
+  const checklist = { ...appointment.checklist, ...savingTicks }
+
+  const tick = (key: keyof CheckInChecklist, value: boolean) => {
+    setSavingTicks((ticks) => ({ ...ticks, [key]: value }))
+    // Send only this box: the server merges it, so a box someone else ticked
+    // (even one this tab hasn't seen yet) isn't overwritten.
+    save({ checklist: { [key]: value } }).finally(() =>
+      // The save is done and the schedule has refetched (the mutation waits
+      // for that), or it failed: either way, show the server's value again.
+      // If the box was clicked again meanwhile, that later save clears it.
+      setSavingTicks((ticks) => {
+        if (ticks[key] !== value) return ticks
+        const rest = { ...ticks }
+        delete rest[key]
+        return rest
+      }),
+    )
+  }
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>(
     'idle',
   )
 
   const save = (patch: AppointmentPatch) => {
     setSaveState('saving')
-    onSave(patch).then(
+    return onSave(patch).then(
       () => setSaveState('saved'),
       () => setSaveState('idle'), // the error shows as saveError below
     )
@@ -319,11 +342,7 @@ export function CheckInDrawer({
                 <input
                   type="checkbox"
                   checked={checklist[item.key]}
-                  onChange={(e) => {
-                    const next = { ...checklist, [item.key]: e.target.checked }
-                    setChecklist(next)
-                    save({ checklist: next })
-                  }}
+                  onChange={(e) => tick(item.key, e.target.checked)}
                   className="size-4 accent-teal-700"
                 />
                 {item.label}
