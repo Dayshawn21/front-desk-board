@@ -6,7 +6,10 @@
 //   /book/<practice>  a patient books a visit online (/book: the first practice)
 //   anything else     the staff board
 
-export type Route = { page: 'board' } | { page: 'book'; practiceId: string }
+export type Route =
+  | { page: 'board' }
+  | { page: 'book'; practiceId: string }
+  | { page: 'check-in'; practiceId: string; visitId: string }
 
 // Where a bare /book goes: the demo's first practice.
 const DEFAULT_PRACTICE_ID = 'maple'
@@ -21,4 +24,11 @@ export function parseRoute(pathname: string): Route {
 
 export function bookingPath(practiceId: string): string {
   return `/book/${encodeURIComponent(practiceId)}`
+}
+
+// Stub; implemented in the next commit.
+export function checkInPath(practiceId: string, visitId: string): string {
+  void practiceId
+  void visitId
+  return '/'
 }

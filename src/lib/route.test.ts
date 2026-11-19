@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { bookingPath, parseRoute } from './route'
+import { bookingPath, checkInPath, parseRoute } from './route'
 
 describe('parseRoute', () => {
   it('sends the root, and anything unknown, to the staff board', () => {
@@ -37,6 +37,35 @@ describe('bookingPath', () => {
     expect(parseRoute(bookingPath('riverbend'))).toEqual({
       page: 'book',
       practiceId: 'riverbend',
+    })
+  })
+})
+
+describe('check-in links', () => {
+  it("reads a visit's check-in page", () => {
+    expect(parseRoute('/check-in/maple/a-07')).toEqual({
+      page: 'check-in',
+      practiceId: 'maple',
+      visitId: 'a-07',
+    })
+    expect(parseRoute('/check-in/maple/a-07/')).toEqual({
+      page: 'check-in',
+      practiceId: 'maple',
+      visitId: 'a-07',
+    })
+  })
+
+  it('needs both the practice and the visit', () => {
+    expect(parseRoute('/check-in')).toEqual({ page: 'board' })
+    expect(parseRoute('/check-in/maple')).toEqual({ page: 'board' })
+  })
+
+  it('checkInPath builds the link parseRoute reads', () => {
+    expect(checkInPath('maple', 'b-1')).toBe('/check-in/maple/b-1')
+    expect(parseRoute(checkInPath('riverbend', 'a-16'))).toEqual({
+      page: 'check-in',
+      practiceId: 'riverbend',
+      visitId: 'a-16',
     })
   })
 })

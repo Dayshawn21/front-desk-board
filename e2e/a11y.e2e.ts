@@ -234,6 +234,26 @@ test.describe('patient pages', () => {
       await expectNoViolations(page)
     })
 
+    test('check in from a phone', async ({ page }) => {
+      await page.goto('/check-in/maple/a-11')
+      await page
+        .getByRole('checkbox', { name: "I've filled in my visit forms" })
+        .check()
+      await expect(page.getByText('Saved')).toBeVisible()
+      await expectNoSideways(page)
+      await expectNoViolations(page)
+    })
+
+    test('checked in', async ({ page }) => {
+      await page.goto('/check-in/maple/a-11')
+      await page.getByRole('button', { name: "I'm here" }).click()
+      await expect(
+        page.getByRole('heading', { name: "You're checked in" }),
+      ).toBeVisible()
+      await expectNoSideways(page)
+      await expectNoViolations(page)
+    })
+
     test('a practice that does not exist', async ({ page }) => {
       await page.goto('/book/nowhere')
       await expect(
