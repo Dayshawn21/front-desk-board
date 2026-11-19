@@ -47,16 +47,41 @@ Work in progress. Built in daily steps.
       time or books. Measured with an eval (below)
 - [x] End-to-end tests (Playwright) in a real browser: book a visit and check a patient
       in, the double-booking banner, and click-to-book
-- [x] Automated accessibility checks (axe-core, WCAG 2.2 AA rules) on the sign-in page,
+- [x] Automated accessibility checks (axe-core: WCAG 2.2 AA rules plus best practices) on
+      the sign-in page,
       schedule (desktop and phone width), patient flow, check-in drawer, New appointment
       panel, account menu, and toast. axe catches only part of WCAG; keyboard and focus
       behaviour is covered by the other tests
 - [x] Lighthouse on the live site, including the signed-in board (a scripted user
       flow that signs in, then opens the check-in drawer). Accessibility, Best
       Practices, and SEO are 100 on every screen; the sign-in page scores 100 for
-      Performance on phone and desktop. One thing to improve: on Lighthouse's slowed-down
-      phone, the click from sign-in to the board takes 420 ms to respond (70 ms on
-      desktop), mostly rendering and layout of the whole board at once
+      Performance on phone and desktop. On Lighthouse's slowed-down phone the click from
+      sign-in to the board took 420 ms to respond (70 ms on desktop); see Performance
+      below for what profiling showed
+
+## Performance
+
+Measured, then decided. Numbers are from Chrome with the CPU slowed 4×, the same
+slowdown Lighthouse uses for phones, as medians of 12 interleaved runs.
+
+- **Signing in.** The click responds in about 150–190 ms here, against a local
+  production build. Lighthouse's run on the live site said 420 ms; I haven't pinned down
+  that gap (different setup and throttling method). React's render of
+  the whole board is about 60 ms. The rest is the browser's style and layout, which it
+  must do once before painting the new board.
+- **Focus on the heading.** Lighthouse flags a "forced reflow": after sign-in the app
+  moves focus to the page heading (so screen-reader users start at the top), and
+  `focus()` makes the browser lay out the page right away. Removing it cut JavaScript
+  time by ~70 ms but added the same amount of native work later, so the total didn't
+  change. It stays.
+- **No memoization.** With a ~60 ms render and nothing re-rendering in a loop, `memo`
+  and `useMemo` would add code without a measurable gain. Fewer DOM nodes didn't help
+  either: the provider view (no clickable empty slots, 250 elements vs 426) was no faster.
+- **No code splitting yet.** Lazy-loading the two drawers would save about 7 KB gzipped
+  of ~93 KB, so it isn't worth the extra loading state. I'd split code once a drawer
+  pulls in a heavy dependency (a date picker, a rich-text editor), or split the whole
+  board from the sign-in page if first load mattered more; Lighthouse estimates ~50 KB
+  of the bundle is unused on the sign-in page.
 
 ## AI booking assist
 
