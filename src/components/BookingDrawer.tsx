@@ -1,6 +1,13 @@
 import { type FormEvent, useId, useRef, useState } from 'react'
 import type { NewAppointment } from '../api/schedule'
 import { useModalDialog } from '../hooks/useModalDialog'
+import { useParseBooking } from '../hooks/useSchedule'
+import {
+  contextFromDay,
+  LENGTHS,
+  type SanitizedDraft,
+  sanitizeDraft,
+} from '../lib/assist'
 import { typeLabel } from '../lib/display'
 import { findOpenSlots, type OpenSlot } from '../lib/slots'
 import { formatTime } from '../lib/time'
@@ -15,7 +22,6 @@ const defaultLength: Record<AppointmentType, number> = {
   consult: 30,
   emergency: 30,
 }
-const LENGTHS = [15, 30, 45, 60, 90]
 const NOON = '12:00'
 
 // 'from' = start at the spot clicked on the schedule.
@@ -49,9 +55,21 @@ export function BookingDrawer({
   const [type, setType] = useState<AppointmentType>('exam')
   const [length, setLength] = useState(defaultLength.exam)
   const [chairId, setChairId] = useState(initialChairId)
+  const [fromTime, setFromTime] = useState(initialFrom)
   const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>(
     initialFrom ? 'from' : 'any',
   )
+
+  // AI assist: free text in, form fields out. It never picks a time or books.
+  const ai = useParseBooking(day.practice.id)
+  const [aiText, setAiText] = useState('')
+  const [aiAskedFor, setAiAskedFor] = useState('')
+  const [aiInputError, setAiInputError] = useState<string | null>(null)
+  const [aiResult, setAiResult] = useState<{
+    filled: string[]
+    warnings: string[]
+    notUsed: string[]
+  } | null>(null)
   const [pickedKey, setPickedKey] = useState<string | null>(null)
   const [showErrors, setShowErrors] = useState(false)
 
@@ -69,7 +87,7 @@ export function BookingDrawer({
     timeOfDay === 'afternoon'
       ? NOON
       : timeOfDay === 'from'
-        ? initialFrom
+        ? fromTime
         : undefined
   const earliest =
     windowStart && windowStart > nowClock ? windowStart : nowClock
@@ -95,6 +113,57 @@ export function BookingDrawer({
 
   const patientError = showErrors && !patientId ? 'Choose a patient.' : null
   const timeError = showErrors && !picked ? 'Choose a time.' : null
+
+  // Fill only what the AI was sure about; leave everything else as it is.
+  function applyDraft(result: SanitizedDraft) {
+    // Re-check against the day on screen: our server already checked, but
+    // the form must only ever hold patients and chairs it can show.
+    const { draft, warnings } = sanitizeDraft(result.draft, contextFromDay(day))
+    const filled: string[] = []
+    if (draft.patientId) {
+      setPatientId(draft.patientId)
+      filled.push('patient')
+    }
+    if (draft.visitType) {
+      setType(draft.visitType)
+      setLength(draft.durationMinutes ?? defaultLength[draft.visitType])
+      filled.push('visit type')
+    }
+    if (draft.durationMinutes) {
+      setLength(draft.durationMinutes)
+      filled.push('length')
+    }
+    if (draft.chairId) {
+      setChairId(draft.chairId)
+      filled.push('chair')
+    }
+    if (draft.earliest) {
+      setFromTime(draft.earliest)
+      setTimeOfDay('from')
+      filled.push('start time')
+    } else if (draft.timeOfDay) {
+      setTimeOfDay(draft.timeOfDay)
+      filled.push('time of day')
+    }
+    setPickedKey(null)
+    setShowErrors(false)
+    setAiResult({
+      filled,
+      warnings: [...new Set([...result.warnings, ...warnings])],
+      notUsed: draft.notUsed,
+    })
+  }
+
+  function askAi(text: string) {
+    if (ai.isPending) return
+    if (!text.trim()) {
+      setAiInputError('Type a request first.')
+      return
+    }
+    setAiInputError(null)
+    setAiAskedFor(text)
+    ai.mutate(text, { onSuccess: applyDraft })
+  }
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault()
@@ -161,6 +230,86 @@ export function BookingDrawer({
               <path d="m6 6 12 12" />
             </svg>
           </button>
+        </div>
+
+        <div className="flex flex-col gap-2 rounded-lg border border-teal-200 bg-teal-50/60 p-3">
+          <label
+            htmlFor={`${ids}-ai-text`}
+            className="text-sm font-medium text-slate-800"
+          >
+            Describe the visit (AI assist)
+          </label>
+          <textarea
+            id={`${ids}-ai-text`}
+            rows={2}
+            maxLength={300}
+            value={aiText}
+            onChange={(e) => setAiText(e.target.value)}
+            placeholder="e.g. 60-minute cleaning for Ana Diaz this afternoon with Hygienist Patel"
+            className="rounded-lg border border-slate-300 bg-white p-2.5 text-sm"
+          />
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              aria-disabled={ai.isPending}
+              onClick={() => askAi(aiText)}
+              className="h-11 rounded-lg border border-teal-700 bg-white px-4 text-sm font-semibold text-teal-800 hover:bg-teal-50 aria-disabled:opacity-60"
+            >
+              {ai.isPending ? 'Reading…' : 'Fill in with AI'}
+            </button>
+            <span className="text-xs text-slate-600 tabular-nums">
+              {aiText.length}/300
+            </span>
+          </div>
+          {aiInputError && (
+            <p className="text-sm text-red-700">{aiInputError}</p>
+          )}
+          {ai.isPending && (
+            <p role="status" className="text-sm text-slate-700">
+              Reading the request…
+            </p>
+          )}
+          {ai.isError && (
+            <div
+              role="alert"
+              className="flex flex-wrap items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-2.5 text-sm text-red-800"
+            >
+              <span className="mr-auto">{ai.error.message}</span>
+              <button
+                type="button"
+                onClick={() => askAi(aiAskedFor)}
+                className="h-11 rounded-lg border border-red-300 bg-white px-3 font-medium"
+              >
+                Try again
+              </button>
+            </div>
+          )}
+          {aiResult && ai.isSuccess && (
+            <div
+              role="status"
+              className="flex flex-col gap-1 rounded-lg bg-white p-2.5 text-sm text-slate-700"
+            >
+              <p className="font-semibold text-slate-900">
+                AI-filled. Review before booking.
+              </p>
+              <p>
+                {aiResult.filled.length > 0
+                  ? `Filled in: ${aiResult.filled.join(', ')}.`
+                  : 'Nothing could be filled in from that request.'}
+              </p>
+              {aiResult.warnings.map((warning) => (
+                <p key={warning} className="text-amber-800">
+                  {warning}
+                </p>
+              ))}
+              {aiResult.notUsed.length > 0 && (
+                <p className="text-amber-800">
+                  Not used: {aiResult.notUsed.join(', ')} (bookings are for
+                  today only).
+                </p>
+              )}
+            </div>
+          )}
         </div>
 
         <form
@@ -255,8 +404,8 @@ export function BookingDrawer({
                 <option value="any">Any time</option>
                 <option value="morning">Morning</option>
                 <option value="afternoon">Afternoon</option>
-                {initialFrom && (
-                  <option value="from">From {formatTime(initialFrom)}</option>
+                {fromTime && (
+                  <option value="from">From {formatTime(fromTime)}</option>
                 )}
               </select>
             </label>

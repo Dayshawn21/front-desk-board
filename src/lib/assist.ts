@@ -1,4 +1,4 @@
-import type { AppointmentType } from '../types'
+import type { AppointmentType, ScheduleDay } from '../types'
 
 // The AI assist turns a free-text request into these form fields. It never
 // picks a time or books anything: findOpenSlots suggests times, a person books.
@@ -127,5 +127,24 @@ export function sanitizeDraft(
       notUsed,
     },
     warnings,
+  }
+}
+
+// The same context, built from the day the browser is showing. The booking
+// panel re-checks the server's answer against it before filling the form.
+export function contextFromDay(day: ScheduleDay): AssistContext {
+  return {
+    practiceName: day.practice.name,
+    openTime: day.practice.openTime,
+    closeTime: day.practice.closeTime,
+    patients: day.patients.map((p) => ({
+      id: p.id,
+      name: `${p.firstName} ${p.lastName}`,
+    })),
+    chairs: day.chairs.map((c) => ({
+      id: c.id,
+      name: c.name,
+      provider: c.provider,
+    })),
   }
 }

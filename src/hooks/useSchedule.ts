@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { parseBookingText } from '../api/assist'
 import {
   createAppointment,
   fetchPractices,
@@ -54,5 +55,13 @@ export function useCreateAppointment(practiceId: string, date: string) {
       queryClient.invalidateQueries({
         queryKey: queryKeys.schedule(practiceId, date),
       }),
+  })
+}
+
+// AI assist: free text -> form fields. Not cached (each request is new) and
+// not retried automatically, since each try calls Claude and costs money.
+export function useParseBooking(practiceId: string) {
+  return useMutation({
+    mutationFn: (text: string) => parseBookingText(practiceId, text),
   })
 }
