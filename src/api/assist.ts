@@ -22,6 +22,10 @@ export async function parseBookingText(
     // Not JSON (e.g. a proxy error page). Fall through to the generic message.
   }
 
+  // Vercel's firewall rate limit answers 429 before our route runs.
+  if (response.status === 429) {
+    throw new ApiError('Too many requests. Wait a minute and try again.', 429)
+  }
   if (!response.ok) {
     const message =
       typeof body === 'object' &&
