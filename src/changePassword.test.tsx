@@ -116,4 +116,25 @@ describe('change password', () => {
       screen.queryByRole('heading', { name: 'Password changed' }),
     ).not.toBeInTheDocument()
   })
+
+  it('locks after too many wrong tries, and offers a reset', async () => {
+    const { user } = openAt('/patient/change-password')
+    await signInWithForm(user, 'owen.hart@example.com')
+    for (let i = 0; i < 5; i++) {
+      await fillIn(user, { current: 'not my password' })
+      await screen.findByText("Your current password isn't right.")
+    }
+    await fillIn(user)
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(
+      'Too many tries. Try again in 15 minutes, or reset your password.',
+    )
+    expect(
+      within(alert).getByRole('link', { name: 'Reset your password' }),
+    ).toHaveAttribute('href', '/patient/forgot-password')
+    expect(
+      screen.queryByRole('heading', { name: 'Password changed' }),
+    ).not.toBeInTheDocument()
+  })
 })

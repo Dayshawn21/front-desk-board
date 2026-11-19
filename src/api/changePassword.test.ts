@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { DEMO_DATE } from '../config'
 import { DEMO_PATIENT_PASSWORD } from '../mocks/patientLogins'
 import {
@@ -82,5 +82,109 @@ describe('changing the password while signed in', () => {
         )
       ).status,
     ).toBe(401)
+  })
+})
+
+describe('the change-password rate limit', () => {
+  // 5 wrong current passwords per patient in 15 minutes, then a lock.
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  async function wrongTries(token: string, times: number) {
+    for (let i = 0; i < times; i++) {
+      expect(
+        (await apiError(changeMyPassword(token, 'guess', 'brand new pass')))
+          .status,
+      ).toBe(400)
+    }
+  }
+
+  it('locks after 5 wrong tries, even with the right password', async () => {
+    const token = await signIn()
+    await wrongTries(token, 5)
+
+    const locked = await apiError(
+      changeMyPassword(token, DEMO_PATIENT_PASSWORD, 'brand new pass'),
+    )
+    expect(locked.status).toBe(429)
+    expect(locked.message).toBe(
+      'Too many tries. Try again in 15 minutes, or reset your password.',
+    )
+    // Nothing changed.
+    await expect(signIn()).resolves.toEqual(expect.any(String))
+  })
+
+  it('says how long is left, and unlocks after 15 minutes', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-17T10:00:00Z'))
+    const token = await signIn()
+    await wrongTries(token, 5)
+
+    vi.setSystemTime(new Date('2026-11-17T10:05:30Z'))
+    expect(
+      (await apiError(changeMyPassword(token, 'guess', 'brand new pass')))
+        .message,
+    ).toMatch(/Try again in 10 minutes/)
+
+    vi.setSystemTime(new Date('2026-11-17T10:15:01Z'))
+    await expect(
+      changeMyPassword(token, DEMO_PATIENT_PASSWORD, 'brand new pass'),
+    ).resolves.toBeUndefined()
+  })
+
+  it("doesn't count tries made while locked", async () => {
+    vi.useFakeTimers({ toFake: ['Date'] })
+    vi.setSystemTime(new Date('2026-11-17T10:00:00Z'))
+    const token = await signIn()
+    await wrongTries(token, 5)
+    vi.setSystemTime(new Date('2026-11-17T10:10:00Z'))
+    await apiError(changeMyPassword(token, 'guess', 'brand new pass')) // 429
+    // The lock still ends 15 minutes after the 5th wrong try.
+    vi.setSystemTime(new Date('2026-11-17T10:15:01Z'))
+    await expect(
+      changeMyPassword(token, DEMO_PATIENT_PASSWORD, 'brand new pass'),
+    ).resolves.toBeUndefined()
+  })
+
+  it('counts per patient, not per session', async () => {
+    const first = await signIn()
+    await wrongTries(first, 5)
+    // Signing in again doesn't start a fresh count.
+    const second = await signIn()
+    expect(
+      (
+        await apiError(
+          changeMyPassword(second, DEMO_PATIENT_PASSWORD, 'brand new pass'),
+        )
+      ).status,
+    ).toBe(429)
+    // Another patient isn't affected.
+    const ravi = (
+      await patientSignIn('ravi.menon@example.com', DEMO_PATIENT_PASSWORD)
+    ).token
+    await expect(
+      changeMyPassword(ravi, DEMO_PATIENT_PASSWORD, 'brand new pass'),
+    ).resolves.toBeUndefined()
+  })
+
+  it('a successful change clears the count', async () => {
+    const token = await signIn()
+    await wrongTries(token, 4)
+    await changeMyPassword(token, DEMO_PATIENT_PASSWORD, 'brand new pass')
+    await wrongTries(token, 4)
+    await expect(
+      changeMyPassword(token, 'brand new pass', 'another new pass'),
+    ).resolves.toBeUndefined()
+  })
+
+  it("doesn't count a refused new password as a wrong guess", async () => {
+    const token = await signIn()
+    for (let i = 0; i < 6; i++) {
+      await apiError(changeMyPassword(token, DEMO_PATIENT_PASSWORD, 'short'))
+    }
+    await expect(
+      changeMyPassword(token, DEMO_PATIENT_PASSWORD, 'brand new pass'),
+    ).resolves.toBeUndefined()
   })
 })
