@@ -6,6 +6,7 @@ import { CheckInPage } from './components/patient/CheckInPage'
 import { ChoosePracticePage } from './components/patient/ChoosePracticePage'
 import { PatientHomePage } from './components/patient/PatientHomePage'
 import { PatientSignUpPage } from './components/patient/PatientSignUpPage'
+import { ChangePasswordPage } from './components/patient/ChangePasswordPage'
 import {
   DemoInboxPage,
   ForgotPasswordPage,
@@ -48,6 +49,13 @@ function App() {
     return (
       <ErrorBoundary where="patient-reset-password">
         <ResetPasswordPage />
+      </ErrorBoundary>
+    )
+  }
+  if (route.page === 'patient-change-password') {
+    return (
+      <ErrorBoundary where="patient-change-password">
+        <ChangePasswordPage />
       </ErrorBoundary>
     )
   }

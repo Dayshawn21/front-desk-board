@@ -4,7 +4,7 @@ import {
   patientStatusLabel,
   patientVisitLabel,
 } from '../../lib/patientBooking'
-import { bookingPath, checkInPath } from '../../lib/route'
+import { bookingPath, CHANGE_PASSWORD_PATH, checkInPath } from '../../lib/route'
 import { formatTime, formatTimeRange } from '../../lib/time'
 import { PatientShell } from './PatientShell'
 import { type PatientSession, RequirePatient } from './RequirePatient'
@@ -116,6 +116,22 @@ function YourVisits({ session }: { session: PatientSession }) {
       >
         Book a visit
       </a>
+
+      <section
+        aria-labelledby={`${ids}-account`}
+        className="flex flex-col gap-2 border-t border-slate-200 pt-6"
+      >
+        <h2 id={`${ids}-account`} className="font-semibold">
+          Your account
+        </h2>
+        <p className="text-slate-700">Signed in as {patient.email}</p>
+        <a
+          href={CHANGE_PASSWORD_PATH}
+          className="self-start font-medium text-teal-800 underline underline-offset-2"
+        >
+          Change password
+        </a>
+      </section>
     </PatientShell>
   )
 }

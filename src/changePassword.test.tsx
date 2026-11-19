@@ -19,12 +19,12 @@ async function fillIn(
   {
     current = DEMO_PATIENT_PASSWORD,
     next = 'brand new pass',
-    again = next,
-  } = {},
+    again,
+  }: { current?: string; next?: string; again?: string } = {},
 ) {
   await user.type(await screen.findByLabelText('Current password'), current)
   await user.type(screen.getByLabelText('New password'), next)
-  await user.type(screen.getByLabelText('Type it again'), again)
+  await user.type(screen.getByLabelText('Type it again'), again ?? next)
   await user.click(screen.getByRole('button', { name: 'Change password' }))
 }
 

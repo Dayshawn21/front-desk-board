@@ -11,6 +11,7 @@
 //   /patient/forgot-password  ask for a password reset link
 //   /patient/reset-password?token=…  choose a new password
 //   /patient/demo-inbox  the emails the demo "sent" (no real email)
+//   /patient/change-password  a signed-in patient changes their password
 //   anything else     the staff board
 
 export type Route =
@@ -23,6 +24,7 @@ export type Route =
   | { page: 'patient-forgot-password' }
   | { page: 'patient-reset-password' }
   | { page: 'patient-demo-inbox' }
+  | { page: 'patient-change-password' }
 
 // Patient pages with no parameters in the path.
 type PatientSubpage = Extract<
@@ -31,6 +33,7 @@ type PatientSubpage = Extract<
   | 'patient-forgot-password'
   | 'patient-reset-password'
   | 'patient-demo-inbox'
+  | 'patient-change-password'
 >
 
 const PATIENT_SUBPAGES: Record<string, PatientSubpage | undefined> = {
@@ -38,6 +41,7 @@ const PATIENT_SUBPAGES: Record<string, PatientSubpage | undefined> = {
   'forgot-password': 'patient-forgot-password',
   'reset-password': 'patient-reset-password',
   'demo-inbox': 'patient-demo-inbox',
+  'change-password': 'patient-change-password',
 }
 
 export function parseRoute(pathname: string): Route {
@@ -84,3 +88,4 @@ export const PATIENT_HOME_PATH = '/patient'
 export const PATIENT_SIGN_UP_PATH = '/patient/sign-up'
 export const FORGOT_PASSWORD_PATH = '/patient/forgot-password'
 export const DEMO_INBOX_PATH = '/patient/demo-inbox'
+export const CHANGE_PASSWORD_PATH = '/patient/change-password'

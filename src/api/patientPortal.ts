@@ -507,8 +507,20 @@ export async function resetPassword(
   const reset = findReset(db, tokenHash)
   const email = reset && emailForPatient(db, reset.patientId)
   if (!reset || !email) throw new ApiError(RESET_REFUSED, 400)
-  const { patientId } = reset
+  storePassword(db, reset.patientId, email, salt, passwordHash)
+  endSessions(db, reset.patientId)
+  saveDb(db)
+}
 
+// Saves a patient's new password hash (a demo patient gets an account,
+// which then wins over the demo password), and drops any pending reset.
+function storePassword(
+  db: Db,
+  patientId: string,
+  email: string,
+  salt: string,
+  passwordHash: string,
+) {
   const account = db.patientAccounts.find((a) => a.patientId === patientId)
   if (account) {
     account.salt = salt
@@ -517,8 +529,51 @@ export async function resetPassword(
     db.patientAccounts.push({ email, patientId, salt, passwordHash })
   }
   db.passwordResets = db.passwordResets.filter((r) => r.patientId !== patientId)
-  for (const [t, id] of Object.entries(db.patientSessions)) {
-    if (id === patientId) delete db.patientSessions[t]
+}
+
+// Signs the patient out everywhere, except the session `keep`.
+function endSessions(db: Db, patientId: string, keep?: string) {
+  for (const [token, id] of Object.entries(db.patientSessions)) {
+    if (id === patientId && token !== keep) delete db.patientSessions[token]
   }
-  saveDb(db)
+}
+
+// --- Change password (signed in) ---------------------------------------
+
+// Changes the signed-in patient's password. They must give the current
+// one (so someone at an unlocked phone can't take over the account). Every
+// other session ends; this one stays signed in.
+export async function changeMyPassword(
+  token: string,
+  current: string,
+  next: string,
+): Promise<void> {
+  await sleep(LATENCY_MS)
+  const db = loadDb()
+  const patient = patientFor(db, token)
+  const email = emailForPatient(db, patient.id)
+  if (!email) throw new ApiError(SIGNED_OUT, 401)
+
+  if ((await checkLogin(db, email, current)) !== patient.id) {
+    throw new ApiError("Your current password isn't right.", 400)
+  }
+  if (next.length < 8) throw new ApiError(SHORT_PASSWORD, 400)
+  if (next === current) {
+    throw new ApiError(
+      'Choose a new password that is different from the current one.',
+      400,
+    )
+  }
+
+  const salt = toHex(crypto.getRandomValues(new Uint8Array(16)))
+  const passwordHash = await hashPassword(next, salt)
+
+  // Fresh read after the async hashing; the session must still be live.
+  const fresh = loadDb()
+  if (patientFor(fresh, token).id !== patient.id) {
+    throw new ApiError(SIGNED_OUT, 401)
+  }
+  storePassword(fresh, patient.id, email, salt, passwordHash)
+  endSessions(fresh, patient.id, token)
+  saveDb(fresh)
 }

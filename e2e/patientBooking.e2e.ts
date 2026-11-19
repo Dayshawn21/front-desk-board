@@ -162,5 +162,8 @@ test('a signed-in patient changes their password', async ({ page }) => {
   await page.getByLabel('Email').fill('ravi.menon@example.com')
   await page.getByLabel('Password').fill('brand new pass')
   await page.getByRole('button', { name: 'Sign in' }).click()
-  await expect(page.getByRole('heading', { name: 'Your visits' })).toBeVisible()
+  // Signed in again with the new password, on the same page.
+  await expect(
+    page.getByRole('heading', { name: 'Change your password' }),
+  ).toBeVisible()
 })

@@ -47,6 +47,9 @@ front-end engineering skills: React, TypeScript, Tailwind, TanStack Query, and t
    [demo inbox](https://front-desk-board.vercel.app/patient/demo-inbox) and the reset
    link in it. Choose a new password; `demo1234` stops working for Owen and the new
    one works. **Reset demo data** puts `demo1234` back.
+10. Change password: signed in as a patient, scroll to **Your account** on "Your
+    visits" and choose **Change password**. Enter the current password and a new one
+    twice.
 
 Demo patient logins: every made-up patient's email is `first.last@example.com`
 (accents dropped, so Tomás Reyes is `tomas.reyes@example.com`), all with the password
@@ -178,6 +181,15 @@ Built in six daily steps.
       used, expired, or replaced link (with "Ask for a new link"), stores the new
       password as a salted PBKDF2 hash (the demo password then stops working), and
       signs the patient out everywhere
+- [x] Change password, signed in (`/patient/change-password`, linked from the **Your
+      account** section of "Your visits", which shows the account's email): the
+      current password plus the new one twice, with password-manager hints (a hidden
+      username field, `current-password`, `new-password`). The server checks the
+      current password (so someone with an unlocked phone can't take the account
+      over), needs 8+ characters and a different password, stores a salted hash, and
+      signs the patient out everywhere else while this tab stays signed in. A wrong
+      current password clears the fields; mismatched new passwords are caught before
+      anything is sent
 - [x] Patient check-in from a phone (`/check-in/<practice>/<visit>`): the patient sees
       the visit and the details on file (with "tell the front desk" if something is
       wrong), ticks "I've filled in my visit forms" and "I've reviewed my health
@@ -360,8 +372,8 @@ an interrupted run picks up where it stopped.
 - `src/hooks/`: `useStatusChanges` (save, toast, Undo), `useBooking`, `useSchedule`
   (TanStack Query), `useTheme`, `useMediaQuery`, `useModalDialog`
 - `src/components/patient/`: the patient pages (`ChoosePracticePage`, `BookVisitPage`,
-  `PatientHomePage`, `PatientSignUpPage`, `CheckInPage`, and `PasswordResetPages`:
-  forgot password, demo inbox, new password), the sign-in gate and form (`RequirePatient`, with
+  `PatientHomePage`, `PatientSignUpPage`, `CheckInPage`, `ChangePasswordPage`, and
+  `PasswordResetPages`: forgot password, demo inbox, new password), the sign-in gate and form (`RequirePatient`, with
   `usePatientSession` and `src/session/patientStorage.ts`), and
   their frame (`PatientShell`); `src/lib/route.ts` picks the page from the URL path (no
   router package; `vercel.json` sends `/book`, `/patient` and `/check-in` paths to
@@ -372,7 +384,7 @@ an interrupted run picks up where it stopped.
   `patientBooking` (which times a patient sees),
   `overlap`, `lanes`, `permissions`, `assist` (AI answer checks), `time`
 - `src/api/schedule.ts`: the mock server (shared between tabs through `localStorage`);
-  `src/api/patientPortal.ts`: its patient side (sign-up, sign-in, password reset, sessions, and calls that
+  `src/api/patientPortal.ts`: its patient side (sign-up, sign-in, password reset and change, sessions, and calls that
   only return or change the signed-in patient's own visits), with the demo logins in
   `src/mocks/patientLogins.ts`;
   `server/` and `api/`: the AI route
