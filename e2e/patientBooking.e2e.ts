@@ -106,3 +106,39 @@ test('a new patient signs up, then books', async ({ page }) => {
     page.getByRole('heading', { name: 'Book a visit' }),
   ).toBeVisible()
 })
+
+test('a patient resets a forgotten password through the demo inbox', async ({
+  page,
+}) => {
+  await page.goto('/patient')
+  await page.getByRole('link', { name: 'Forgot password?' }).click()
+  await page.getByLabel('Email').fill('owen.hart@example.com')
+  await page.getByRole('button', { name: 'Send reset link' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Check your email' }),
+  ).toBeVisible()
+
+  await page.getByRole('link', { name: /demo inbox/i }).click()
+  await page
+    .getByRole('article')
+    .first()
+    .getByRole('link', { name: 'Reset your password' })
+    .click()
+  await expect(page).toHaveURL(/\/patient\/reset-password\?token=/)
+  await page.getByLabel('New password').fill('brand new pass')
+  await page.getByLabel('Type it again').fill('brand new pass')
+  await page.getByRole('button', { name: 'Change password' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Password changed' }),
+  ).toBeVisible()
+
+  await page.getByRole('link', { name: 'Sign in' }).click()
+  // The old password no longer works; the new one does.
+  await page.getByLabel('Email').fill('owen.hart@example.com')
+  await page.getByLabel('Password').fill('demo1234')
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await expect(page.getByRole('alert')).toContainText("don't match")
+  await page.getByLabel('Password').fill('brand new pass')
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await expect(page.getByRole('heading', { name: 'Your visits' })).toBeVisible()
+})

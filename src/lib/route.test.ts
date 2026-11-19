@@ -95,3 +95,17 @@ describe('patient pages', () => {
     })
   })
 })
+
+describe('password reset pages', () => {
+  it('reads the forgot, inbox and reset pages', () => {
+    expect(parseRoute('/patient/forgot-password')).toEqual({
+      page: 'patient-forgot-password',
+    })
+    expect(parseRoute('/patient/demo-inbox')).toEqual({
+      page: 'patient-demo-inbox',
+    })
+    expect(parseRoute('/patient/reset-password')).toEqual({
+      page: 'patient-reset-password',
+    })
+  })
+})

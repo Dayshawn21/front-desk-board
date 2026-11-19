@@ -273,6 +273,35 @@ test.describe('patient pages', () => {
       await expectNoViolations(page)
     })
 
+    test('forgot password, link sent', async ({ page }) => {
+      await page.goto('/patient/forgot-password')
+      await page.getByLabel('Email').fill('owen.hart@example.com')
+      await page.getByRole('button', { name: 'Send reset link' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'Check your email' }),
+      ).toBeVisible()
+      await expectNoSideways(page)
+      await expectNoViolations(page)
+    })
+
+    test('demo inbox and new password', async ({ page }) => {
+      await page.goto('/patient/forgot-password')
+      await page.getByLabel('Email').fill('owen.hart@example.com')
+      await page.getByRole('button', { name: 'Send reset link' }).click()
+      await page.getByRole('link', { name: /demo inbox/i }).click()
+      await expect(page.getByRole('article')).toHaveCount(1)
+      await expectNoSideways(page)
+      await expectNoViolations(page)
+
+      await page.getByRole('link', { name: 'Reset your password' }).click()
+      await page.getByLabel('New password').fill('brand new pass')
+      await page.getByLabel('Type it again').fill('not the same')
+      await page.getByRole('button', { name: 'Change password' }).click()
+      await expect(page.getByRole('alert')).toBeVisible()
+      await expectNoSideways(page)
+      await expectNoViolations(page)
+    })
+
     test('patient sign-up', async ({ page }) => {
       await page.goto('/patient/sign-up')
       await expect(
