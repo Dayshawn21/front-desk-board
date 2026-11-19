@@ -255,4 +255,24 @@ describe('choosing a practice at /book', () => {
       screen.queryByRole('heading', { name: 'Sign in' }),
     ).not.toBeInTheDocument()
   })
+  it('links to the patient sign-in, for someone who already has a visit', async () => {
+    window.history.pushState(null, '', '/book')
+    renderWithQuery(<App />, { signedOut: true })
+    await screen.findByRole('heading', { name: 'Choose your dental office' })
+
+    const main = screen.getByRole('main')
+    expect(
+      within(main).getByRole('link', { name: /sign in to see your visits/i }),
+    ).toHaveAttribute('href', '/patient')
+  })
+
+  it("doesn't link to itself on the patient sign-in's office list", async () => {
+    window.history.pushState(null, '', '/patient')
+    renderWithQuery(<App />, { signedOut: true })
+    await screen.findByRole('heading', { name: 'Choose your dental office' })
+
+    expect(
+      screen.queryByRole('link', { name: /sign in to see your visits/i }),
+    ).not.toBeInTheDocument()
+  })
 })
