@@ -189,6 +189,20 @@ describe('AI booking assist', () => {
     expect(within(dialog).queryByRole('alert')).not.toBeInTheDocument()
   })
 
+  it('explains a rate limit (429) instead of a generic error', async () => {
+    // Vercel's firewall answers 429 itself, with its own (non-JSON) body.
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response('Too Many Requests', { status: 429 }),
+    )
+    const { user, dialog } = await openBooking()
+
+    await askAi(user, dialog, 'Cleaning for Ana')
+
+    expect(await within(dialog).findByRole('alert')).toHaveTextContent(
+      /too many requests\. wait a minute and try again/i,
+    )
+  })
+
   it('asks for text before calling the server', async () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
     const { user, dialog } = await openBooking()
