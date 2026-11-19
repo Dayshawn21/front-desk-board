@@ -141,3 +141,22 @@ test.describe('signed in, cancel and no-show', () => {
     await expectNoViolations(page)
   })
 })
+
+test('the theme follows the device until a choice is made', async ({
+  page,
+}, testInfo) => {
+  await signInAsFrontDesk(page)
+  const isDark = async () =>
+    /\bdark\b/.test((await page.locator('html').getAttribute('class')) ?? '')
+  // The chromium-dark project sets the device to dark.
+  const deviceIsDark = testInfo.project.name === 'chromium-dark'
+  expect(await isDark()).toBe(deviceIsDark)
+
+  // Choose the other one; it sticks after a reload.
+  await page.getByRole('button', { name: /account menu/i }).click()
+  await page.getByText(deviceIsDark ? 'Light' : 'Dark', { exact: true }).click()
+  await expect.poll(isDark).toBe(!deviceIsDark)
+  await expectNoViolations(page)
+  await page.reload()
+  await expect.poll(isDark).toBe(!deviceIsDark)
+})

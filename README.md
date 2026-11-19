@@ -17,7 +17,7 @@ front-end engineering skills: React, TypeScript, Tailwind, TanStack Query, and t
 3. Click an empty spot on the schedule, or **New appointment**, to book. In the panel,
    type "60 min cleaning for Ana Diaz this afternoon with Hygienist Patel" and press
    **Fill in with AI**, then pick a time.
-4. Open the account menu (top right) and sign out. Sign in as **Theo Grant** (office
+4. Open the account menu (top right) to switch between light and dark, and sign out. Sign in as **Theo Grant** (office
    manager) to switch practices, or **Dr. Amara Okafor** (provider), who can seat a
    patient but can't book, check in, or cancel.
 
@@ -42,6 +42,11 @@ Built in six daily steps.
       (this tab only)
 - [x] Account menu: shows name, job title, and practice, with Sign out (returns to the
       sign-in page and clears cached data); closes on Escape, outside click, or focus leaving
+- [x] Dark mode: Light, Dark, or System (the default, follows the device) in the
+      account menu, remembered in `localStorage`. A small script in `index.html` sets it
+      before the first paint, so there's no white flash. Instead of `dark:` on every
+      class, `src/index.css` flips each Tailwind palette (50 ↔ 950, …) under `.dark`, so
+      text/background pairs keep their contrast; axe runs on every screen in both themes
 - [x] Undo: every status change shows a toast with Undo, and the drawer can move a visit
       back one step; reopening a checked-out visit is office-manager only
 - [x] Open-slot finder (`src/lib/slots.ts`): given a duration and an optional chair and

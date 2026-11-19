@@ -29,6 +29,18 @@ export default defineConfig({
         channel: process.env.PW_CHANNEL || undefined,
       },
     },
+    // The accessibility checks again with the device set to dark. The app's
+    // default theme follows the device, so every screen renders dark, and
+    // axe re-checks colour contrast there.
+    {
+      name: 'chromium-dark',
+      testMatch: '**/a11y.e2e.ts',
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: process.env.PW_CHANNEL || undefined,
+        colorScheme: 'dark',
+      },
+    },
   ],
   webServer: {
     command: `npm run build && npm run preview -- --port ${PORT} --strictPort`,

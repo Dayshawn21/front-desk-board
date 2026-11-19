@@ -140,7 +140,7 @@ export function CheckInDrawer({
     <div className="fixed inset-0 z-40">
       <div
         aria-hidden="true"
-        className="absolute inset-0 bg-slate-900/40"
+        className="absolute inset-0 bg-slate-900/40 dark:bg-black/60"
         onClick={onClose}
       />
 

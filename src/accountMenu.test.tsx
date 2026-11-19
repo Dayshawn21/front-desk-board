@@ -65,7 +65,9 @@ describe('account menu', () => {
   it('closes on Escape and puts focus back on the button', async () => {
     const { user, button } = await renderAs('front-desk')
     await user.click(button)
-    await user.tab() // into the panel, onto Sign out
+    await user.tab() // into the panel: the checked theme option
+    expect(screen.getByRole('radio', { name: 'System' })).toHaveFocus()
+    await user.tab() // Sign out
     expect(screen.getByRole('button', { name: /sign out/i })).toHaveFocus()
 
     await user.keyboard('{Escape}')
@@ -86,6 +88,7 @@ describe('account menu', () => {
   it('closes when keyboard focus leaves it', async () => {
     const { user, button } = await renderAs('front-desk')
     await user.click(button)
+    await user.tab() // the checked theme option
     await user.tab() // Sign out
     await user.tab() // past the menu, into the page
 

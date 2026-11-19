@@ -4,6 +4,24 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- Set the theme before the page paints, so dark mode doesn't flash
+         light first. Same rules as src/lib/theme.ts; keep them in step. -->
+    <script>
+      ;(function () {
+        var choice = 'system'
+        try {
+          var stored = localStorage.getItem('front-desk-board.theme')
+          if (stored === 'light' || stored === 'dark') choice = stored
+        } catch (e) {}
+        var dark =
+          choice === 'dark' ||
+          (choice === 'system' &&
+            window.matchMedia &&
+            window.matchMedia('(prefers-color-scheme: dark)').matches)
+        document.documentElement.classList.toggle('dark', dark)
+        document.documentElement.style.colorScheme = dark ? 'dark' : 'light'
+      })()
+    </script>
     <title>Front Desk Board (demo)</title>
     <meta
       name="description"

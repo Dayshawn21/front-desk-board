@@ -1,11 +1,20 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { roleLabel } from '../lib/display'
+import { THEME_CHOICES, type ThemeChoice } from '../lib/theme'
 import type { StaffUser } from '../types'
 
 type AccountMenuProps = {
   user: StaffUser
   practiceName: string
+  theme: ThemeChoice
+  onThemeChange: (choice: ThemeChoice) => void
   onSignOut: () => void
+}
+
+const themeLabel: Record<ThemeChoice, string> = {
+  light: 'Light',
+  dark: 'Dark',
+  system: 'System',
 }
 
 // "Dr. Amara Okafor" -> "AO". Honorifics aren't initials.
@@ -25,6 +34,8 @@ function initials(name: string): string {
 export function AccountMenu({
   user,
   practiceName,
+  theme,
+  onThemeChange,
   onSignOut,
 }: AccountMenuProps) {
   const [open, setOpen] = useState(false)
@@ -52,9 +63,12 @@ export function AccountMenu({
         }
       }}
       onBlur={(event) => {
-        // relatedTarget is where focus is going; null means it left the page.
-        if (!containerRef.current?.contains(event.relatedTarget as Node | null))
-          setOpen(false)
+        // relatedTarget is where focus is going. Close only when it moves to
+        // something outside. null is not "leaving": pressing the mouse on
+        // plain text inside the panel (like a theme option's label) blurs to
+        // the page first. Clicks outside are handled by pointerdown above.
+        const next = event.relatedTarget as Node | null
+        if (next && !containerRef.current?.contains(next)) setOpen(false)
       }}
     >
       <button
@@ -106,6 +120,35 @@ export function AccountMenu({
           <p className="mt-3 text-xs text-slate-600">
             Access level: {roleLabel[user.role]}
           </p>
+          {/* Native radios: arrow keys move between them, and the group
+              reads as "Theme" with the current choice checked. */}
+          {/* The divider is on a wrapper: a border on the fieldset would draw
+              through its legend. */}
+          <div className="mt-4 border-t border-slate-200 pt-3">
+            <fieldset>
+              <legend className="mb-2 text-xs font-semibold text-slate-700">
+                Theme
+              </legend>
+              <div className="grid grid-cols-3 gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1">
+                {THEME_CHOICES.map((choice) => (
+                  <label
+                    key={choice}
+                    className="flex h-9 cursor-pointer items-center justify-center rounded-md text-xs font-medium text-slate-700 has-checked:bg-teal-700 has-checked:text-white has-focus-visible:outline-2 has-focus-visible:outline-teal-700"
+                  >
+                    <input
+                      type="radio"
+                      name={`${panelId}-theme`}
+                      value={choice}
+                      checked={theme === choice}
+                      onChange={() => onThemeChange(choice)}
+                      className="sr-only"
+                    />
+                    {themeLabel[choice]}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          </div>
           <div className="mt-4 border-t border-slate-200 pt-3">
             <button
               type="button"

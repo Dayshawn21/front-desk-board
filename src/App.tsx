@@ -19,6 +19,8 @@ import {
 import { cancelReasonLabel, statusStyle, typeLabel } from './lib/display'
 import { formatTime } from './lib/time'
 import { previousAction } from './lib/workflow'
+import { useTheme } from './hooks/useTheme'
+import type { ThemeChoice } from './lib/theme'
 import { useAuth, useSession } from './session/SessionContext'
 import type { AppointmentStatus, CancelReason } from './types'
 
@@ -43,9 +45,12 @@ let changeCounter = 0
 // instead of a blank page.
 function App() {
   const { user } = useAuth()
+  // Here, not in the menu, so "System" keeps following the device even on
+  // the sign-in page.
+  const [theme, setTheme] = useTheme()
   return user ? (
     <ErrorBoundary key={user.id} where="board">
-      <Board />
+      <Board theme={theme} onThemeChange={setTheme} />
     </ErrorBoundary>
   ) : (
     <SignInPage />
@@ -60,7 +65,13 @@ function throwIfDemoCrash() {
   }
 }
 
-function Board() {
+function Board({
+  theme,
+  onThemeChange,
+}: {
+  theme: ThemeChoice
+  onThemeChange: (choice: ThemeChoice) => void
+}) {
   throwIfDemoCrash()
   const { user, practiceId, setPracticeId, signOut, can } = useSession()
   const headingRef = useRef<HTMLHeadingElement>(null)
@@ -279,6 +290,8 @@ function Board() {
           <AccountMenu
             user={user}
             practiceName={practiceName}
+            theme={theme}
+            onThemeChange={onThemeChange}
             onSignOut={signOut}
           />
         </div>
