@@ -3,6 +3,7 @@ import { ErrorBoundary } from './components/ErrorBoundary'
 import { SignInPage } from './components/SignInPage'
 import { BookVisitPage } from './components/patient/BookVisitPage'
 import { CheckInPage } from './components/patient/CheckInPage'
+import { ChoosePracticePage } from './components/patient/ChoosePracticePage'
 import { useLiveScheduleUpdates } from './hooks/useSchedule'
 import { useTheme } from './hooks/useTheme'
 import { parseRoute } from './lib/route'
@@ -22,6 +23,13 @@ function App() {
 
   // Patient pages are public: no staff sign-in.
   const route = parseRoute(window.location.pathname)
+  if (route.page === 'choose-practice') {
+    return (
+      <ErrorBoundary where="choose-practice">
+        <ChoosePracticePage />
+      </ErrorBoundary>
+    )
+  }
   if (route.page === 'book') {
     return (
       <ErrorBoundary where="book">

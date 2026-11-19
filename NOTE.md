@@ -11,7 +11,7 @@ including from a plain-language request ("60 min cleaning for Ana Diaz this afte
 
 ## Decisions that shaped it
 
-- **A patient side that uses the same rules.** The public booking page (`/book/maple`)
+- **A patient side that uses the same rules.** The public booking pages (`/book`, then a practice)
   offers times from the same slot finder as the desk, and the same server check rejects
   a time someone just took. On arrival, the patient's check-in page (`/check-in/…`)
   saves their ticks and "I'm here" through the same API as the desk's drawer. Tabs
@@ -62,5 +62,5 @@ book and move visits, with a keyboard alternative.
 
 ## Numbers
 
-357 unit tests and 52 Playwright tests (user flows, the AI assist with its route faked, and
+359 unit tests and 54 Playwright tests (user flows, the AI assist with its route faked, and
 axe in light and dark) run in CI on every push.

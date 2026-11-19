@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { initials, roleLabel, roleSummary } from '../lib/display'
 import { practices } from '../mocks/seed'
 import { users } from '../mocks/users'
-import { bookingPath } from '../lib/route'
+import { CHOOSE_PRACTICE_PATH } from '../lib/route'
 import { useAuth } from '../session/SessionContext'
 import { BrandMark } from './BrandMark'
 
@@ -80,7 +80,7 @@ export function SignInPage() {
         <p className="text-center text-sm text-slate-600">
           Want the patient's side?{' '}
           <a
-            href={bookingPath('maple')}
+            href={CHOOSE_PRACTICE_PATH}
             className="font-medium text-teal-800 underline underline-offset-2"
           >
             Book a visit online

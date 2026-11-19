@@ -21,8 +21,9 @@ front-end engineering skills: React, TypeScript, Tailwind, TanStack Query, and t
    manager) to switch practices, or **Dr. Amara Okafor** (provider), who can seat a
    patient but can't book, check in, or cancel.
 5. The patient's side: keep the board open and, in a second tab, open
-   [/book/maple](https://front-desk-board.vercel.app/book/maple) (also linked from the
-   sign-in page). Pick a patient, a visit type, and a time, and book. The visit appears
+   [/book](https://front-desk-board.vercel.app/book) (also linked from the sign-in
+   page) and choose **Maple Street Dental**. Pick a patient, a visit type, and a time,
+   and book. The visit appears
    on the board in the first tab, as Scheduled, without a reload. **Reset demo data** in
    the account menu starts over.
 6. Patient check-in: on the board, open **Ravi Menon** (10:15) and press **Open
@@ -104,8 +105,9 @@ Built in six daily steps.
 - [x] Shared demo data: every tab in the browser shares one mock database, so a change
       in one tab shows up on the board in another without a reload, and a reload keeps
       it. **Reset demo data** in the account menu puts the demo back to its start
-- [x] Patient online booking (`/book/maple`, `/book/riverbend`): a public, phone-first
-      page in the app's look. The patient picks who the visit is for (one of the
+- [x] Patient online booking: `/book` lists the dental offices with today's hours, and
+      each links to its own booking page (`/book/maple`, `/book/riverbend`): a public,
+      phone-first page in the app's look. The patient picks who the visit is for (one of the
       practice's made-up patients), a visit type in patient words (Cleaning, Checkup,
       Consultation, Tooth pain), and one of today's open times, grouped morning and
       afternoon. Times come from the same slot finder as the board, start no earlier
@@ -285,7 +287,8 @@ an interrupted run picks up where it stopped.
   `ScheduleGrid`, `PatientFlow`, `CheckInDrawer`, `BookingDrawer` beside it
 - `src/hooks/`: `useStatusChanges` (save, toast, Undo), `useBooking`, `useSchedule`
   (TanStack Query), `useTheme`, `useMediaQuery`, `useModalDialog`
-- `src/components/patient/`: the patient pages (`BookVisitPage`, `CheckInPage`) and
+- `src/components/patient/`: the patient pages (`ChoosePracticePage`, `BookVisitPage`,
+  `CheckInPage`) and
   their frame (`PatientShell`); `src/lib/route.ts` picks the page from the URL path (no
   router package; `vercel.json` sends `/book` and `/check-in` paths to `index.html`);
   `CheckInLink` is the link section in the check-in drawer
