@@ -110,7 +110,8 @@ Built in six daily steps.
       in one tab shows up on the board in another without a reload, and a reload keeps
       it. **Reset demo data** in the account menu puts the demo back to its start
 - [x] Patient online booking: `/book` lists the dental offices with today's hours, and
-      each links to its own booking page (`/book/maple`, `/book/riverbend`): a public,
+      each links to its own booking page (`/book/maple`, `/book/riverbend`), with a
+      "Sign in to see your visits" link for someone already booked: a public,
       phone-first page in the app's look. The patient signs in first (see patient
       sign-in), then picks a visit type in patient words (Cleaning, Checkup,
       Consultation, Tooth pain), and one of today's open times, grouped morning and

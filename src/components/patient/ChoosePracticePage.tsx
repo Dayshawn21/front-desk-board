@@ -1,5 +1,9 @@
 import { usePractices } from '../../hooks/useSchedule'
-import { bookingPath, patientHomePath } from '../../lib/route'
+import {
+  bookingPath,
+  PATIENT_SIGN_IN_PATH,
+  patientHomePath,
+} from '../../lib/route'
 import { formatTimeRange } from '../../lib/time'
 import { PatientShell } from './PatientShell'
 
@@ -97,6 +101,18 @@ export function ChoosePracticePage({
           </li>
         ))}
       </ul>
+      {purpose === 'book' && (
+        <p className="text-slate-700">
+          Already booked?{' '}
+          <a
+            href={PATIENT_SIGN_IN_PATH}
+            className="font-medium text-teal-800 underline underline-offset-2"
+          >
+            Sign in to see your visits
+          </a>{' '}
+          and check in when you arrive.
+        </p>
+      )}
     </PatientShell>
   )
 }
