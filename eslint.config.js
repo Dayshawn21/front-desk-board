@@ -30,5 +30,12 @@ export default defineConfig([
       ],
     },
   },
+  {
+    // Server code (Vercel functions, eval runner) runs in Node, not the browser.
+    files: ['api/**/*.ts', 'server/**/*.ts', 'evals/**/*.ts'],
+    languageOptions: {
+      globals: globals.node,
+    },
+  },
   eslintConfigPrettier,
 ])
