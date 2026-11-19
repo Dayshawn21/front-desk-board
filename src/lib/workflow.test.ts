@@ -5,6 +5,7 @@ import {
   cancelAction,
   flowSteps,
   groupByFlow,
+  minutesLate,
   nextAction,
   noShowAction,
   previousAction,
@@ -195,5 +196,40 @@ describe('noShowAction', () => {
       permission: 'no-show',
     })
     expect(nextAction('no-show')).toBeNull()
+  })
+})
+
+describe('minutesLate', () => {
+  const NOW = '2026-11-17T09:40:00'
+  const at = (time: string) => `2026-11-17T${time}:00`
+
+  it('counts minutes past the start for a visit still expected', () => {
+    expect(minutesLate({ status: 'confirmed', start: at('08:00') }, NOW)).toBe(
+      100,
+    )
+    expect(minutesLate({ status: 'scheduled', start: at('09:35') }, NOW)).toBe(
+      5,
+    )
+  })
+
+  it('is null before or at the start time', () => {
+    expect(
+      minutesLate({ status: 'confirmed', start: at('09:45') }, NOW),
+    ).toBeNull()
+    expect(
+      minutesLate({ status: 'confirmed', start: at('09:40') }, NOW),
+    ).toBeNull()
+  })
+
+  it('is null once the patient is here or the visit is closed', () => {
+    for (const status of [
+      'arrived',
+      'in-chair',
+      'completed',
+      'cancelled',
+      'no-show',
+    ] as const) {
+      expect(minutesLate({ status, start: at('08:00') }, NOW)).toBeNull()
+    }
   })
 })

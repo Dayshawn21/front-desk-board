@@ -26,3 +26,9 @@ export function formatTime(value: string | number): string {
   const hour12 = ((hours + 11) % 12) + 1
   return `${hour12}:${String(minutes).padStart(2, '0')} ${suffix}`
 }
+
+// 100 -> "1h 40m", 45 -> "45m", 60 -> "1h". STUB: filled in by the next commit.
+export function formatDuration(minutes: number): string {
+  void minutes
+  return ''
+}

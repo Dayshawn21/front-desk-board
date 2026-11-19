@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatTime, toMinutes } from './time'
+import { formatDuration, formatTime, toMinutes } from './time'
 
 describe('toMinutes', () => {
   it('reads HH:MM from an ISO wall-clock string', () => {
@@ -29,5 +29,17 @@ describe('formatTime', () => {
 
   it('accepts an ISO string', () => {
     expect(formatTime('2026-11-17T14:05:00')).toBe('2:05 PM')
+  })
+})
+
+describe('formatDuration', () => {
+  it.each([
+    [100, '1h 40m'],
+    [60, '1h'],
+    [45, '45m'],
+    [5, '5m'],
+    [125, '2h 5m'],
+  ])('%i minutes -> %s', (minutes, expected) => {
+    expect(formatDuration(minutes)).toBe(expected)
   })
 })

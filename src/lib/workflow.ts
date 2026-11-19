@@ -145,3 +145,14 @@ export function noShowAction(
     ? { label: 'Mark no-show', status: 'no-show', permission: 'no-show' }
     : null
 }
+
+// How late an expected visit is, in minutes, once its start has passed
+// without the patient arriving; null otherwise. STUB: filled in next commit.
+export function minutesLate(
+  appointment: Pick<Appointment, 'status' | 'start'>,
+  now: string,
+): number | null {
+  void appointment
+  void now
+  return null
+}
