@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { handleParseBooking } from '../server/handler'
-import { DEFAULT_MODEL, parseBookingRequest } from '../server/parseBooking'
+import { handleParseBooking } from '../server/handler.js'
+import { DEFAULT_MODEL, parseBookingRequest } from '../server/parseBooking.js'
 
 // Vercel function: POST /api/parse-booking.
 // It runs on the server, so ANTHROPIC_API_KEY never reaches the browser.

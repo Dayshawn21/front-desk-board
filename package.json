@@ -14,7 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
-    "eval": "node --env-file-if-exists=.env.local evals/parse-booking/run-eval.mjs --flow .claude/hillclimb/parse-booking --model claude-haiku-5-5"
+    "eval": "node --env-file-if-exists=.env.local --import ./evals/parse-booking/resolve-ts.mjs evals/parse-booking/run-eval.mjs --flow .claude/hillclimb/parse-booking --model claude-haiku-5-5"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.10.0",
@@ -46,5 +46,8 @@
     "typescript-eslint": "^8.72.1",
     "vite": "^8.3.6",
     "vitest": "^5.1.0"
+  },
+  "engines": {
+    "node": "24.x"
   }
 }

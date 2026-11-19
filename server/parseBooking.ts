@@ -5,7 +5,7 @@ import {
   sanitizeDraft,
   TIMES_OF_DAY,
   VISIT_TYPES,
-} from '../src/lib/assist.ts'
+} from '../src/lib/assist.js'
 
 // One place to change the model; CLAUDE_MODEL overrides it (the eval uses that
 // to compare). Haiku 5.5 was picked by the eval in evals/parse-booking: 28/30

@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk'
-import type { AssistContext, SanitizedDraft } from '../src/lib/assist'
-import { chairs, patients, practices } from '../src/mocks/seed.ts'
-import { AssistError } from './parseBooking.ts'
+import type { AssistContext, SanitizedDraft } from '../src/lib/assist.js'
+import { chairs, patients, practices } from '../src/mocks/seed.js'
+import { AssistError } from './parseBooking.js'
 
 export const MAX_REQUEST_CHARS = 300
 
