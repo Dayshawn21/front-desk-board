@@ -6,9 +6,26 @@ front-end engineering skills: React, TypeScript, Tailwind, TanStack Query, and t
 > **Fake data only.** Every patient, practice, and provider is invented.
 > Phone numbers use the 555-01xx range reserved for fiction. No real health information.
 
+**Live demo: https://front-desk-board.vercel.app/** · Design notes: [NOTE.md](NOTE.md)
+
+**A one-minute tour**
+
+1. Sign in as **Rosa Jimenez** (front desk). No password; pick a user.
+2. The red banner is a deliberate double-booking in Chair 2. Click **Lena Ortiz** to
+   open the check-in drawer, then **Check in**. Undo is in the toast.
+3. Click an empty spot on the schedule, or **New appointment**, to book. In the panel,
+   type "60 min cleaning for Ana Diaz this afternoon with Hygienist Patel" and press
+   **Fill in with AI**, then pick a time.
+4. Open the account menu (top right) and sign out. Sign in as **Theo Grant** (office
+   manager) to switch practices, or **Dr. Amara Okafor** (provider), who can seat a
+   patient but can't book, check in, or cancel.
+
+The AI assist is rate limited (10 requests a minute per visitor). Add `?fail`,
+`?failBook`, or `?crash` to the URL to see the error states.
+
 ## Status
 
-Work in progress. Built in daily steps.
+Built in six daily steps.
 
 - [x] Schedule grid: chairs as columns, 15-minute rows, status labels
 - [x] Two practices with practice-scoped data (switcher in the header)
