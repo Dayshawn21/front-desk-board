@@ -52,7 +52,7 @@ describe('check-in drawer keyboard support', () => {
     const user = userEvent.setup()
     const { dialog } = await openJonKimWithKeyboard(user)
 
-    // The save button is disabled (no changes yet), so the notes box is the last control.
+    // Changes save on their own (no Save button), so the notes box is the last control.
     within(dialog)
       .getByLabelText(/front desk notes/i)
       .focus()

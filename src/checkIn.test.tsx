@@ -1,7 +1,8 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent, { type UserEvent } from '@testing-library/user-event'
 import { afterEach, describe, expect, it } from 'vitest'
 import App from './App'
+import { fetchSchedule } from './api/schedule'
 import { renderWithQuery } from './test/render'
 
 async function openPatient(user: UserEvent, name: RegExp) {
@@ -50,39 +51,58 @@ describe('check-in drawer', () => {
     ).toBeInTheDocument()
   })
 
-  it('saves the checklist and notes so they are there when reopened', async () => {
+  it('saves a checklist tick right away, so closing never loses it', async () => {
     const user = userEvent.setup()
     const dialog = await openJonKim(user)
 
     await user.click(
       within(dialog).getByRole('checkbox', { name: /copay collected/i }),
     )
+    expect(await within(dialog).findByText('Saved')).toBeInTheDocument()
+    expect(
+      within(dialog).queryByRole('button', { name: /save/i }),
+    ).not.toBeInTheDocument()
+
+    await user.keyboard('{Escape}')
+    await user.click(screen.getByRole('button', { name: /jon kim/i }))
+    expect(
+      within(screen.getByRole('dialog', { name: /jon kim/i })).getByRole(
+        'checkbox',
+        { name: /copay collected/i },
+      ),
+    ).toBeChecked()
+  })
+
+  it('saves notes when you leave the field', async () => {
+    const user = userEvent.setup()
+    const dialog = await openJonKim(user)
+
     await user.type(
       within(dialog).getByLabelText(/front desk notes/i),
       ' Paid at desk.',
     )
-    await user.click(
-      within(dialog).getByRole('button', { name: /save checklist and notes/i }),
+    expect(within(dialog).queryByText('Saved')).not.toBeInTheDocument()
+    await user.tab()
+
+    expect(await within(dialog).findByText('Saved')).toBeInTheDocument()
+  })
+
+  it('saves notes still being typed when the drawer closes', async () => {
+    const user = userEvent.setup()
+    const dialog = await openJonKim(user)
+
+    await user.type(
+      within(dialog).getByLabelText(/front desk notes/i),
+      ' Paid at desk.',
     )
-    // Saved once the button is disabled again (no unsaved changes left).
-    await expect
-      .poll(() =>
-        within(dialog).getByRole('button', { name: /save checklist/i }),
+    await user.keyboard('{Escape}') // straight from the notes box
+
+    await waitFor(async () => {
+      const day = await fetchSchedule('maple', '2026-11-17')
+      expect(day.appointments.find((a) => a.id === 'a-06')?.notes).toBe(
+        'Asked to confirm copay amount before visit. Paid at desk.',
       )
-      .toBeDisabled()
-
-    await user.click(
-      within(dialog).getByRole('button', { name: /close check-in/i }),
-    )
-    await user.click(screen.getByRole('button', { name: /jon kim/i }))
-
-    const reopened = screen.getByRole('dialog', { name: /jon kim/i })
-    expect(
-      within(reopened).getByRole('checkbox', { name: /copay collected/i }),
-    ).toBeChecked()
-    expect(within(reopened).getByLabelText(/front desk notes/i)).toHaveValue(
-      'Asked to confirm copay amount before visit. Paid at desk.',
-    )
+    })
   })
 
   it('shows an error when saving fails', async () => {
