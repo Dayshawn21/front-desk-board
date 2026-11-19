@@ -22,8 +22,10 @@ including from a plain-language request ("60 min cleaning for Ana Diaz this afte
   follow the ARIA pattern, and every status change is announced. axe runs on each screen
   in Playwright. It caught a card label whose words didn't match the visible text (WCAG
   2.5.3) and a `dialog` role on an `<aside>`, both fixed.
-- **Undo instead of "Are you sure?"** Cancelling is a status, not a delete, so it's
-  reversible; a toast offers Undo, and a restore is refused if the time was rebooked.
+- **A reason instead of "Are you sure?"** Cancelling is a status, not a delete. The
+  confirm step asks why (late cancel, patient cancelled, …), which is data the office
+  needs, rather than a yes/no box people click through; a toast still offers Undo. A
+  late patient can be marked a no-show once their start time has passed.
 - **AI fills a form; a person books.** The model returns JSON in a schema that only
   allows that practice's patient and chair ids; the server and browser re-check it, and
   the slot finder (not the model) picks times. A 15-case eval chose Haiku over Opus:
@@ -51,5 +53,5 @@ book and move visits, with a keyboard alternative.
 
 ## Numbers
 
-240 unit tests and 15 Playwright tests (user flows, the AI assist with its route faked, and
+254 unit tests and 18 Playwright tests (user flows, the AI assist with its route faked, and
 axe) run in CI on every push.

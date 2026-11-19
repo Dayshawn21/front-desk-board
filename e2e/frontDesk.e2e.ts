@@ -101,3 +101,31 @@ test('clicking an empty spot on the schedule starts a booking there', async ({
     /2:15 PM.*Chair 1/,
   )
 })
+
+test('cancel asks for a reason, then Undo restores the visit', async ({
+  page,
+}) => {
+  await page.getByRole('button', { name: /^Owen Hart,/ }).click()
+  const drawer = page.getByRole('dialog', { name: 'Owen Hart' })
+  await drawer.getByRole('button', { name: 'Cancel visit…' }).click()
+  await expect(
+    drawer.getByRole('radio', { name: 'Patient cancelled' }),
+  ).toBeFocused()
+  await drawer.getByRole('radio', { name: 'Late cancel' }).check()
+  await drawer
+    .getByRole('button', { name: 'Cancel visit', exact: true })
+    .click()
+
+  await expect(
+    page.getByText('Owen Hart: cancelled, late cancel'),
+  ).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(
+    page.getByText('Owen Hart (11:15 AM, late cancel)'),
+  ).toBeVisible()
+
+  await page.getByRole('button', { name: 'Undo cancel for Owen Hart' }).click()
+  await expect(
+    page.getByRole('button', { name: /^Owen Hart, Scheduled,/ }),
+  ).toBeVisible()
+})

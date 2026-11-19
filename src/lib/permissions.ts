@@ -32,7 +32,7 @@ const rules: Record<Permission, Role[]> = {
   'switch-practice': ['office-manager'],
   book: ['front-desk', 'office-manager'],
   cancel: ['front-desk', 'office-manager'],
-  'no-show': [], // STUB: filled in by the next commit
+  'no-show': ['front-desk', 'office-manager'],
 }
 
 export function can(role: Role, permission: Permission): boolean {

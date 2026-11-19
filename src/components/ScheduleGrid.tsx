@@ -1,4 +1,4 @@
-import { statusStyle, typeLabel } from '../lib/display'
+import { cancelReasonLabel, statusStyle, typeLabel } from '../lib/display'
 import { assignLanes } from '../lib/lanes'
 import { findConflicts } from '../lib/overlap'
 import { formatTime, toClock, toMinutes } from '../lib/time'
@@ -85,7 +85,12 @@ export function ScheduleGrid({
         <p className="text-sm text-slate-600">
           <span className="font-medium text-slate-700">Cancelled today:</span>{' '}
           {cancelled
-            .map((a) => `${patientName(a.patientId)} (${formatTime(a.start)})`)
+            .map((a) => {
+              const reason = a.cancelReason
+                ? `, ${cancelReasonLabel[a.cancelReason].toLowerCase()}`
+                : ''
+              return `${patientName(a.patientId)} (${formatTime(a.start)}${reason})`
+            })
             .join(', ')}
         </p>
       )}

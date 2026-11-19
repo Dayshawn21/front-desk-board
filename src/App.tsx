@@ -16,11 +16,11 @@ import {
   useCreateAppointment,
   useUpdateAppointment,
 } from './hooks/useSchedule'
-import { statusStyle, typeLabel } from './lib/display'
+import { cancelReasonLabel, statusStyle, typeLabel } from './lib/display'
 import { formatTime } from './lib/time'
 import { previousAction } from './lib/workflow'
 import { useAuth, useSession } from './session/SessionContext'
-import type { AppointmentStatus } from './types'
+import type { AppointmentStatus, CancelReason } from './types'
 
 // The most recent status change, kept so the toast can offer to undo it.
 type StatusChange = {
@@ -30,8 +30,9 @@ type StatusChange = {
   from: AppointmentStatus
   to: AppointmentStatus
   // forward: a normal step; undo: one step back; cancel: visit cancelled;
-  // restore: a cancel was undone
-  kind: 'forward' | 'undo' | 'cancel' | 'restore'
+  // restore: a cancel was undone; no-show: marked as not coming
+  kind: 'forward' | 'undo' | 'cancel' | 'restore' | 'no-show'
+  reason?: CancelReason // for a cancel
 }
 
 let changeCounter = 0
@@ -94,7 +95,11 @@ function Board() {
 
   // Every status change (drawer, board, or the toast's Undo) goes through here,
   // so each one gets a toast and can be undone the same way.
-  const changeStatus = (id: string, to: AppointmentStatus) => {
+  const changeStatus = (
+    id: string,
+    to: AppointmentStatus,
+    reason?: CancelReason,
+  ) => {
     const appt = schedule.data?.appointments.find((a) => a.id === id)
     if (!appt) return
     const patient = schedule.data?.patients.find((p) => p.id === appt.patientId)
@@ -103,14 +108,23 @@ function Board() {
     const kind: StatusChange['kind'] =
       to === 'cancelled'
         ? 'cancel'
+        : to === 'no-show'
+          ? 'no-show'
+          : from === 'cancelled'
+            ? 'restore'
+            : from === 'no-show' || previousAction(from)?.status === to
+              ? 'undo'
+              : 'forward'
+    // A cancel records why; restoring a cancelled visit clears it.
+    const patch =
+      to === 'cancelled'
+        ? { status: to, cancelReason: reason }
         : from === 'cancelled'
-          ? 'restore'
-          : previousAction(from)?.status === to
-            ? 'undo'
-            : 'forward'
+          ? { status: to, cancelReason: null }
+          : { status: to }
 
     update.mutate(
-      { id, patch: { status: to } },
+      { id, patch },
       {
         onSuccess: () => {
           changeCounter += 1
@@ -122,15 +136,17 @@ function Board() {
             from,
             to,
             kind,
+            reason,
           })
         },
       },
     )
   }
 
-  // Offer Undo only for a forward step or a cancel the current role is allowed
-  // to reverse. (Front desk can check a patient out, but only the office
-  // manager can reopen.) Undoing a cancel restores the status it had before.
+  // Offer Undo only for a forward step, a cancel, or a no-show the current
+  // role is allowed to reverse. (Front desk can check a patient out, but only
+  // the office manager can reopen.) Undoing a cancel or a no-show restores
+  // the exact status it had before.
   const undoStep =
     lastChange?.kind === 'forward'
       ? previousAction(lastChange.to)
@@ -140,7 +156,13 @@ function Board() {
             status: lastChange.from,
             permission: 'cancel' as const,
           }
-        : null
+        : lastChange?.kind === 'no-show'
+          ? {
+              label: 'Undo no-show',
+              status: lastChange.from,
+              permission: 'no-show' as const,
+            }
+          : null
   const canUndoLast =
     lastChange !== null &&
     undoStep !== null &&
@@ -190,7 +212,10 @@ function Board() {
     ? {
         forward: `${lastChange.name}: ${statusStyle[lastChange.to].label}`,
         undo: `${lastChange.name}: moved back to ${statusStyle[lastChange.to].label}`,
-        cancel: `${lastChange.name}: cancelled`,
+        cancel: lastChange.reason
+          ? `${lastChange.name}: cancelled, ${cancelReasonLabel[lastChange.reason].toLowerCase()}`
+          : `${lastChange.name}: cancelled`,
+        'no-show': `${lastChange.name}: marked no-show`,
         restore: `${lastChange.name}: restored as ${statusStyle[lastChange.to].label}`,
       }[lastChange.kind]
     : null
@@ -336,7 +361,10 @@ function Board() {
           isSaving={update.isPending}
           saveError={update.error?.message ?? null}
           onSave={(patch) => update.mutate({ id: selected.id, patch })}
-          onChangeStatus={(status) => changeStatus(selected.id, status)}
+          now={DEMO_NOW}
+          onChangeStatus={(status, reason) =>
+            changeStatus(selected.id, status, reason)
+          }
           onClose={() => setSelectedId(null)}
         />
       )}

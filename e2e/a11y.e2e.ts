@@ -112,3 +112,32 @@ test('error screen (board crashed on purpose with ?crash)', async ({
   )
   await expectNoViolations(page)
 })
+
+test.describe('signed in, cancel and no-show', () => {
+  test.beforeEach(async ({ page }) => {
+    await signInAsFrontDesk(page)
+  })
+
+  test('cancel reason step', async ({ page }) => {
+    await page.getByRole('button', { name: /^Owen Hart,/ }).click()
+    const drawer = page.getByRole('dialog', { name: 'Owen Hart' })
+    await drawer.getByRole('button', { name: 'Cancel visit…' }).click()
+    // Submit without a reason, so the error is on screen too.
+    await drawer
+      .getByRole('button', { name: 'Cancel visit', exact: true })
+      .click()
+    await expect(drawer.getByText('Choose a reason.')).toBeVisible()
+    await expectNoViolations(page)
+  })
+
+  test('schedule with a no-show', async ({ page }) => {
+    await page.getByRole('button', { name: /^Priya Shah,/ }).click()
+    await page.getByRole('button', { name: 'Mark no-show' }).click()
+    await expect(page.getByText('Priya Shah: marked no-show')).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(
+      page.getByRole('button', { name: /^Priya Shah, No-show,/ }),
+    ).toBeVisible()
+    await expectNoViolations(page)
+  })
+})

@@ -12,7 +12,8 @@ front-end engineering skills: React, TypeScript, Tailwind, TanStack Query, and t
 
 1. Sign in as **Rosa Jimenez** (front desk). No password; pick a user.
 2. The red banner is a deliberate double-booking in Chair 2. Click **Lena Ortiz** to
-   open the check-in drawer, then **Check in**. Undo is in the toast.
+   open the check-in drawer, then **Check in**. Undo is in the toast. **Priya Shah**
+   (8:00) never arrived: open her and **Mark no-show**.
 3. Click an empty spot on the schedule, or **New appointment**, to book. In the panel,
    type "60 min cleaning for Ana Diaz this afternoon with Hygienist Patel" and press
    **Fill in with AI**, then pick a time.
@@ -55,9 +56,16 @@ Built in six daily steps.
       and start time filled in. Mouse and touch only; keyboard users use the New
       appointment button, which does the same thing
 - [x] Cancel visit: front desk and office manager can cancel a scheduled or confirmed
-      visit from the drawer. It's a status, not a delete, so the record stays. The visit
-      leaves the grid (listed as "Cancelled today") and its time can be booked again;
-      the toast's Undo restores it unless that time was booked in the meantime
+      visit from the drawer, in two steps: "Cancel visit…" asks why (patient cancelled,
+      late cancel, office rescheduled, other), then Cancel visit or Keep visit. The mock
+      server refuses a cancel without a reason. It's a status, not a delete, so the
+      record stays. The visit leaves the grid (listed as "Cancelled today" with the
+      reason) and its time can be booked again; the toast's Undo restores it unless that
+      time was booked in the meantime
+- [x] No-show: once an expected visit's start time has passed, front desk and office
+      manager can mark it a no-show (Priya Shah, 8:00, in the demo). It stays on the
+      grid with its own style, leaves the patient flow columns (listed as "No-shows
+      today"), and the toast's Undo puts it back
 - [x] AI booking assist: describe the visit in plain words ("60 min cleaning for Ana
       Diaz this afternoon with Hygienist Patel") and Claude fills in the New appointment
       form. The slot finder then suggests times and a person books; the AI never picks a
@@ -188,11 +196,9 @@ an interrupted run picks up where it stopped.
   limit. With real auth, limit per signed-in user and practice instead of per IP.
 - **A bigger eval from real phrasing.** 15 hand-written cases is a regression check. Grow
   it to 50+ from how staff actually type requests, and run it in CI on prompt changes.
-- **Cancel reasons, a confirm step, and no-shows.** Cancelling uses Undo today, not an
-  "Are you sure?" popup, because it's frequent and fully reversible here. Once a cancel
-  texts the patient or charges a late fee it can't be undone, so it should get a confirm
-  step inside the drawer that also asks for the reason (patient called, late cancel). Add
-  a separate No-show status for reporting.
+- **Act on cancel reasons and no-shows.** They're recorded now; next would be a
+  late-cancel fee or a text to the patient (at which point Undo can't reverse
+  everything, so the confirm step would say what will be sent), and a no-show report.
 - **Drag on the schedule.** Drag down a column to pick a time range, and drag a visit to
   move it, with Undo, the same server re-check as booking, and a "Move to…" option in the
   check-in drawer so nothing needs dragging (WCAG 2.5.7).

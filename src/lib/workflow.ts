@@ -73,9 +73,16 @@ export function previousAction(status: AppointmentStatus): UndoAction | null {
         status: 'in-chair',
         permission: 'reopen-checkout',
       }
+    // A no-show goes back to expected. (It may have been only "scheduled";
+    // the toast's Undo restores the exact earlier status.)
+    case 'no-show':
+      return {
+        label: 'Undo no-show',
+        status: 'confirmed',
+        permission: 'no-show',
+      }
     case 'scheduled':
     case 'cancelled':
-    case 'no-show': // STUB: filled in by the next commit
       return null
   }
 }
@@ -125,14 +132,16 @@ export function cancelAction(status: AppointmentStatus): NextAction | null {
 }
 
 // Marking a no-show: for a visit that was expected (scheduled or confirmed)
-// once its start time has passed. STUB: filled in by the next commit.
+// once its start time has passed. Late patients can still be checked in;
+// the desk decides when someone isn't coming.
 export function noShowAction(
   status: AppointmentStatus,
   start: string,
   now: string,
 ): NextAction | null {
-  void status
-  void start
-  void now
-  return null
+  const expected = status === 'scheduled' || status === 'confirmed'
+  // Same-day ISO strings sort correctly as text.
+  return expected && start < now
+    ? { label: 'Mark no-show', status: 'no-show', permission: 'no-show' }
+    : null
 }

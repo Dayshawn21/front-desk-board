@@ -146,7 +146,10 @@ describe('createAppointment', () => {
   })
 
   it('allows booking over a cancelled visit', async () => {
-    await updateAppointment('maple', 'a-04', { status: 'cancelled' })
+    await updateAppointment('maple', 'a-04', {
+      status: 'cancelled',
+      cancelReason: 'patient-cancelled',
+    })
 
     await expect(
       createAppointment(
@@ -193,7 +196,10 @@ describe('createAppointment', () => {
 describe('restoring a cancelled visit', () => {
   it('refuses if its time was booked in the meantime (409)', async () => {
     // a-04: Owen Hart, Chair 1, 11:15 to 12:00
-    await updateAppointment('maple', 'a-04', { status: 'cancelled' })
+    await updateAppointment('maple', 'a-04', {
+      status: 'cancelled',
+      cancelReason: 'patient-cancelled',
+    })
     await createAppointment('maple', {
       patientId: 'p-ana',
       chairId: 'maple-c1',
@@ -208,7 +214,10 @@ describe('restoring a cancelled visit', () => {
   })
 
   it('restores it when the time is still free', async () => {
-    await updateAppointment('maple', 'a-04', { status: 'cancelled' })
+    await updateAppointment('maple', 'a-04', {
+      status: 'cancelled',
+      cancelReason: 'patient-cancelled',
+    })
 
     await expect(
       updateAppointment('maple', 'a-04', { status: 'scheduled' }),

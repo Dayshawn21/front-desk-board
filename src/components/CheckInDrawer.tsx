@@ -1,19 +1,26 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import type { AppointmentPatch } from '../api/schedule'
 import { useModalDialog } from '../hooks/useModalDialog'
-import { roleLabel, statusStyle, typeLabel } from '../lib/display'
+import {
+  cancelReasonLabel,
+  roleLabel,
+  statusStyle,
+  typeLabel,
+} from '../lib/display'
 import { findConflicts } from '../lib/overlap'
 import { formatTime } from '../lib/time'
 import {
   cancelAction,
   flowSteps,
   nextAction,
+  noShowAction,
   previousAction,
 } from '../lib/workflow'
 import { useSession } from '../session/SessionContext'
 import type {
   Appointment,
   AppointmentStatus,
+  CancelReason,
   CheckInChecklist,
   ScheduleDay,
 } from '../types'
@@ -28,16 +35,20 @@ const checklistItems: { key: keyof CheckInChecklist; label: string }[] = [
 type CheckInDrawerProps = {
   day: ScheduleDay
   appointment: Appointment
+  now: string // the demo clock, for "is this visit late?"
   isSaving: boolean
   saveError: string | null
   onSave: (patch: AppointmentPatch) => void
-  onChangeStatus: (status: AppointmentStatus) => void
+  onChangeStatus: (status: AppointmentStatus, reason?: CancelReason) => void
   onClose: () => void
 }
+
+const cancelReasons = Object.keys(cancelReasonLabel) as CancelReason[]
 
 export function CheckInDrawer({
   day,
   appointment,
+  now,
   isSaving,
   saveError,
   onSave,
@@ -53,6 +64,30 @@ export function CheckInDrawer({
 
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const statusHeadingRef = useRef<HTMLHeadingElement>(null)
+
+  // Cancelling takes two steps: "Cancel visit…" opens a reason, then confirm.
+  const [confirmingCancel, setConfirmingCancel] = useState(false)
+  const [cancelReason, setCancelReason] = useState<CancelReason | null>(null)
+  const [showReasonError, setShowReasonError] = useState(false)
+  const cancelTriggerRef = useRef<HTMLButtonElement>(null)
+  const firstReasonRef = useRef<HTMLInputElement>(null)
+  const reasonFormRef = useRef<HTMLFormElement>(null)
+  const backToCancelTrigger = useRef(false)
+  const reasonIds = useId()
+
+  // Opening the reason step moves focus to the first reason; "Keep visit"
+  // puts focus back on the button that opened it.
+  useEffect(() => {
+    if (confirmingCancel) {
+      // Show the whole step, buttons included, not just the first reason.
+      // (Optional call: jsdom has no scrollIntoView.)
+      reasonFormRef.current?.scrollIntoView?.({ block: 'nearest' })
+      firstReasonRef.current?.focus({ preventScroll: true })
+    } else if (backToCancelTrigger.current) {
+      backToCancelTrigger.current = false
+      cancelTriggerRef.current?.focus()
+    }
+  }, [confirmingCancel])
 
   // Focus in on open, trap Tab, Escape closes, focus back to the card on close.
   const { dialogRef, onKeyDown } = useModalDialog<HTMLDivElement>(
@@ -91,6 +126,8 @@ export function CheckInDrawer({
   const canUndo = undo !== null && can(undo.permission)
   const cancel = cancelAction(appointment.status)
   const canCancel = cancel !== null && can(cancel.permission)
+  const noShow = noShowAction(appointment.status, appointment.start, now)
+  const canNoShow = noShow !== null && can(noShow.permission)
   const currentStep = flowSteps.indexOf(appointment.status)
   const doneCount = checklistItems.filter((item) => checklist[item.key]).length
   const isDirty =
@@ -291,20 +328,111 @@ export function CheckInDrawer({
           </p>
         )}
 
-        {/* Kept apart from the next-step button so it's hard to hit by mistake.
-            No "Are you sure?": the toast offers Undo instead. */}
-        {cancel && canCancel && (
-          <div className="mt-auto border-t border-slate-200 pt-4">
-            <button
-              type="button"
-              aria-disabled={isSaving}
-              onClick={() => {
-                if (!isSaving) onChangeStatus(cancel.status)
-              }}
-              className="h-11 rounded-lg border border-red-300 px-4 text-sm font-semibold text-red-700 hover:bg-red-50 aria-disabled:opacity-60"
-            >
-              {cancel.label}
-            </button>
+        {/* Kept apart from the next-step button so they're hard to hit by
+            mistake. Both can be undone from the toast. */}
+        {((cancel && canCancel) || (noShow && canNoShow)) && (
+          <div className="mt-auto flex flex-col gap-3 border-t border-slate-200 pt-4">
+            {confirmingCancel ? (
+              <form
+                ref={reasonFormRef}
+                noValidate
+                className="flex flex-col gap-3"
+                onSubmit={(e) => {
+                  e.preventDefault()
+                  if (isSaving) return
+                  if (!cancelReason) {
+                    setShowReasonError(true)
+                    return
+                  }
+                  setConfirmingCancel(false)
+                  onChangeStatus('cancelled', cancelReason)
+                }}
+              >
+                <fieldset
+                  aria-describedby={
+                    showReasonError && !cancelReason
+                      ? `${reasonIds}-error`
+                      : undefined
+                  }
+                  className="flex flex-col gap-1"
+                >
+                  <legend className="mb-2 text-sm font-semibold">
+                    Why is this visit being cancelled?
+                  </legend>
+                  {cancelReasons.map((reason, i) => (
+                    <label
+                      key={reason}
+                      className="flex min-h-11 items-center gap-3 rounded-lg bg-slate-50 px-3 text-sm"
+                    >
+                      <input
+                        ref={i === 0 ? firstReasonRef : undefined}
+                        type="radio"
+                        name={`${reasonIds}-reason`}
+                        value={reason}
+                        checked={cancelReason === reason}
+                        onChange={() => setCancelReason(reason)}
+                        className="size-4 accent-red-700"
+                      />
+                      {cancelReasonLabel[reason]}
+                    </label>
+                  ))}
+                </fieldset>
+                {showReasonError && !cancelReason && (
+                  <p
+                    id={`${reasonIds}-error`}
+                    className="text-sm font-medium text-red-700"
+                  >
+                    Choose a reason.
+                  </p>
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="submit"
+                    aria-disabled={isSaving}
+                    className="h-11 rounded-lg bg-red-700 px-4 text-sm font-semibold text-white hover:bg-red-800 aria-disabled:opacity-60"
+                  >
+                    Cancel visit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      backToCancelTrigger.current = true
+                      setConfirmingCancel(false)
+                      setCancelReason(null)
+                      setShowReasonError(false)
+                    }}
+                    className="h-11 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50"
+                  >
+                    Keep visit
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {noShow && canNoShow && (
+                  <button
+                    type="button"
+                    aria-disabled={isSaving}
+                    onClick={() => {
+                      if (!isSaving) onChangeStatus(noShow.status)
+                    }}
+                    className="h-11 rounded-lg border border-rose-300 px-4 text-sm font-semibold text-rose-800 hover:bg-rose-50 aria-disabled:opacity-60"
+                  >
+                    {noShow.label}
+                  </button>
+                )}
+                {cancel && canCancel && (
+                  <button
+                    ref={cancelTriggerRef}
+                    type="button"
+                    onClick={() => setConfirmingCancel(true)}
+                    className="h-11 rounded-lg border border-red-300 px-4 text-sm font-semibold text-red-700 hover:bg-red-50"
+                  >
+                    {cancel.label}…
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -125,6 +125,11 @@ export async function updateAppointment(
     throw new ApiError(`Appointment not found: ${appointmentId}`, 404)
   }
 
+  // A cancel must say why (for follow-up and reporting).
+  if (patch.status === 'cancelled' && !patch.cancelReason) {
+    throw new ApiError('Choose a reason to cancel this visit.', 400)
+  }
+
   // Restoring a cancelled visit: its time may have been booked since.
   const restoring =
     appt.status === 'cancelled' &&
