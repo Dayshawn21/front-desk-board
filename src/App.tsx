@@ -2,6 +2,7 @@ import { Board } from './components/Board'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { SignInPage } from './components/SignInPage'
 import { BookVisitPage } from './components/patient/BookVisitPage'
+import { CheckInPage } from './components/patient/CheckInPage'
 import { useLiveScheduleUpdates } from './hooks/useSchedule'
 import { useTheme } from './hooks/useTheme'
 import { parseRoute } from './lib/route'
@@ -25,6 +26,18 @@ function App() {
     return (
       <ErrorBoundary where="book">
         <BookVisitPage key={route.practiceId} practiceId={route.practiceId} />
+      </ErrorBoundary>
+    )
+  }
+
+  if (route.page === 'check-in') {
+    return (
+      <ErrorBoundary where="check-in">
+        <CheckInPage
+          key={`${route.practiceId}/${route.visitId}`}
+          practiceId={route.practiceId}
+          visitId={route.visitId}
+        />
       </ErrorBoundary>
     )
   }

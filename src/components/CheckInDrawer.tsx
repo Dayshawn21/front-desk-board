@@ -17,6 +17,7 @@ import {
   previousAction,
 } from '../lib/workflow'
 import { useSession } from '../session/SessionContext'
+import { CheckInLink } from './CheckInLink'
 import type {
   Appointment,
   AppointmentStatus,
@@ -276,6 +277,16 @@ export function CheckInDrawer({
             </div>
           )}
         </section>
+
+        {/* Only while the patient is expected: after that there's nothing to check in. */}
+        {(appointment.status === 'scheduled' ||
+          appointment.status === 'confirmed') &&
+          can('check-in') && (
+            <CheckInLink
+              practiceId={appointment.practiceId}
+              visitId={appointment.id}
+            />
+          )}
 
         <div className="flex flex-col gap-4">
           {!canEdit && (

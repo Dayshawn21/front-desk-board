@@ -25,6 +25,10 @@ front-end engineering skills: React, TypeScript, Tailwind, TanStack Query, and t
    sign-in page). Pick a patient, a visit type, and a time, and book. The visit appears
    on the board in the first tab, as Scheduled, without a reload. **Reset demo data** in
    the account menu starts over.
+6. Patient check-in: on the board, open **Ravi Menon** (10:15) and press **Open
+   check-in page** (or **Copy link**). On that page, tick "I've filled in my visit
+   forms" and tap **I'm here**. Back on the board, Ravi is Arrived and his checklist
+   shows Forms complete.
 
 The AI assist is rate limited (10 requests a minute per visitor). Add `?fail`,
 `?failBook`, or `?crash` to the URL to see the error states.
@@ -108,7 +112,16 @@ Built in six daily steps.
       than the demo clock, and show once each (the first free chair takes it). The
       server's double-booking check still applies: if someone took the time first, the
       page says so, clears the time, and shows fresh ones. After booking, focus moves to
-      "You're booked"
+      "You're booked", which also links to the visit's check-in page
+- [x] Patient check-in from a phone (`/check-in/<practice>/<visit>`): the patient sees
+      the visit and the details on file (with "tell the front desk" if something is
+      wrong), ticks "I've filled in my visit forms" and "I've reviewed my health
+      history" (each tick saves at once, through the same mock API as the drawer), and
+      taps **I'm here**. The visit becomes Arrived on the board in any open tab, with
+      the ticks in its checklist; insurance and the copay stay with the desk. Cancelled,
+      no-show, and already-arrived visits each get their own message. The check-in
+      drawer of a scheduled or confirmed visit shows the link with **Copy link** and
+      **Open check-in page**
 - [x] End-to-end tests (Playwright) in a real browser: book a visit and check a patient
       in, the double-booking banner, click-to-book, and the AI assist (fill, warn about
       another day, rate limit). The AI tests fake the server route, so CI never calls
@@ -224,6 +237,9 @@ an interrupted run picks up where it stopped.
   patient would sign in (or confirm with a code texted to their phone) and the server
   would know who they are. Nothing is typed in, so no real names can get into the demo,
   or into the AI assist's patient list.
+- **The check-in link.** It's `/check-in/<practice>/<visit id>`, so anyone who has or
+  guesses it can check that visit in. A real link would carry a signed token that
+  expires after the visit (and is sent by text), and the server would check it.
 - **The AI assist's data.** Claude only ever sees fake seed data: the practice's
   invented patients and chairs, plus the typed request. In production that list would
   come from the database for the signed-in practice, and the request text could contain
@@ -266,9 +282,10 @@ an interrupted run picks up where it stopped.
   `ScheduleGrid`, `PatientFlow`, `CheckInDrawer`, `BookingDrawer` beside it
 - `src/hooks/`: `useStatusChanges` (save, toast, Undo), `useBooking`, `useSchedule`
   (TanStack Query), `useTheme`, `useMediaQuery`, `useModalDialog`
-- `src/components/patient/`: the patient pages (`BookVisitPage`) and their frame
-  (`PatientShell`); `src/lib/route.ts` picks the page from the URL path (no router
-  package; `vercel.json` sends `/book` paths to `index.html`)
+- `src/components/patient/`: the patient pages (`BookVisitPage`, `CheckInPage`) and
+  their frame (`PatientShell`); `src/lib/route.ts` picks the page from the URL path (no
+  router package; `vercel.json` sends `/book` and `/check-in` paths to `index.html`);
+  `CheckInLink` is the link section in the check-in drawer
 - `src/lib/`: the rules as pure, tested functions: `statusChange` (kinds, Undo, toast
   text), `workflow` (next step, cancel, no-show, lateness), `slots` (open-slot finder),
   `patientBooking` (which times a patient sees),

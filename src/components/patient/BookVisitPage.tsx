@@ -5,8 +5,10 @@ import { useCreateAppointment, useSchedule } from '../../hooks/useSchedule'
 import {
   PATIENT_VISITS,
   patientTimes,
+  patientVisitLabel,
   spokenDuration,
 } from '../../lib/patientBooking'
+import { checkInPath } from '../../lib/route'
 import { formatTime, formatTimeRange, toMinutes } from '../../lib/time'
 import type { Appointment, AppointmentType } from '../../types'
 import { PatientShell } from './PatientShell'
@@ -131,8 +133,7 @@ export function BookVisitPage({ practiceId }: { practiceId: string }) {
   if (booked) {
     const patient = day.patients.find((p) => p.id === booked.patientId)
     const chair = day.chairs.find((c) => c.id === booked.chairId)
-    const label =
-      PATIENT_VISITS.find((v) => v.type === booked.type)?.label ?? 'Visit'
+    const label = patientVisitLabel(booked.type)
     return (
       <PatientShell practiceName={practiceName} subtitle={SUBTITLE}>
         <div className="flex flex-col gap-2">
@@ -160,6 +161,16 @@ export function BookVisitPage({ practiceId }: { practiceId: string }) {
             </p>
           )}
         </div>
+        <p className="text-slate-700">
+          On the day,{' '}
+          <a
+            href={checkInPath(practiceId, booked.id)}
+            className="font-medium text-teal-800 underline underline-offset-2"
+          >
+            check in from your phone
+          </a>{' '}
+          when you arrive. No clipboard, no waiting at the desk.
+        </p>
         <button
           type="button"
           onClick={startOver}

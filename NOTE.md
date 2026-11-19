@@ -13,9 +13,10 @@ including from a plain-language request ("60 min cleaning for Ana Diaz this afte
 
 - **A patient side that uses the same rules.** The public booking page (`/book/maple`)
   offers times from the same slot finder as the desk, and the same server check rejects
-  a time someone just took. Tabs share one mock database, so a patient's booking shows
-  up on the board in another tab without a reload. No router package: a path switch
-  covers the few pages.
+  a time someone just took. On arrival, the patient's check-in page (`/check-in/…`)
+  saves their ticks and "I'm here" through the same API as the desk's drawer. Tabs
+  share one mock database, so both show up on the board in another tab without a
+  reload. No router package: a path switch covers the few pages.
 
 - **Logic as pure, tested functions.** Overlaps, lane layout, open-slot search, and the
   status workflow live in `src/lib` with no React in them, so they were built test-first
@@ -49,8 +50,9 @@ including from a plain-language request ("60 min cleaning for Ana Diaz this afte
 
 The API runs in the browser, in `localStorage` shared by every tab (a storage event
 tells the other tabs to refetch; Reset demo data puts the seed back), sign-in is "pick a user" with no
-password, and roles only hide buttons. A real system enforces practice scoping and
-roles on the server.
+password, and roles only hide buttons. Patients are picked from a list, and a
+check-in link is just the visit id. A real system signs patients in, sends a signed,
+expiring check-in link, and enforces practice scoping and roles on the server.
 
 ## Next
 
@@ -60,5 +62,5 @@ book and move visits, with a keyboard alternative.
 
 ## Numbers
 
-336 unit tests and 47 Playwright tests (user flows, the AI assist with its route faked, and
+353 unit tests and 52 Playwright tests (user flows, the AI assist with its route faked, and
 axe in light and dark) run in CI on every push.

@@ -4,6 +4,7 @@
 //
 //   /                 the staff board (sign-in first)
 //   /book/<practice>  a patient books a visit online (/book: the first practice)
+//   /check-in/<practice>/<visit>  a patient checks in from their phone
 //   anything else     the staff board
 
 export type Route =
@@ -19,6 +20,9 @@ export function parseRoute(pathname: string): Route {
   if (parts[0] === 'book' && parts.length <= 2) {
     return { page: 'book', practiceId: parts[1] ?? DEFAULT_PRACTICE_ID }
   }
+  if (parts[0] === 'check-in' && parts.length === 3) {
+    return { page: 'check-in', practiceId: parts[1], visitId: parts[2] }
+  }
   return { page: 'board' }
 }
 
@@ -26,9 +30,8 @@ export function bookingPath(practiceId: string): string {
   return `/book/${encodeURIComponent(practiceId)}`
 }
 
-// Stub; implemented in the next commit.
+// The link a patient opens on arrival. In a real system it would carry a
+// signed, expiring token instead of the visit id, so it can't be guessed.
 export function checkInPath(practiceId: string, visitId: string): string {
-  void practiceId
-  void visitId
-  return '/'
+  return `/check-in/${encodeURIComponent(practiceId)}/${encodeURIComponent(visitId)}`
 }

@@ -1,4 +1,5 @@
 import type { AppointmentType, ScheduleDay } from '../types'
+import { typeLabel } from './display'
 import { findOpenSlots, type OpenSlot } from './slots'
 
 // What a patient can book for themselves online. Fillings and crowns are
@@ -68,4 +69,10 @@ export function spokenDuration(minutes: number): string {
   if (hours) parts.push(hours === 1 ? '1 hour' : `${hours} hours`)
   if (rest) parts.push(`${rest} minutes`)
   return parts.join(' ')
+}
+
+// A visit type in patient words where there is one ("Checkup"), else the
+// board's label ("Crown").
+export function patientVisitLabel(type: AppointmentType): string {
+  return PATIENT_VISITS.find((v) => v.type === type)?.label ?? typeLabel[type]
 }
