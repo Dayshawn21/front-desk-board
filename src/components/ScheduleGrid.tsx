@@ -1,8 +1,10 @@
 import { cancelReasonLabel, statusStyle, typeLabel } from '../lib/display'
 import { assignLanes } from '../lib/lanes'
 import { findConflicts } from '../lib/overlap'
-import { formatTime, toClock, toMinutes } from '../lib/time'
+import { formatDuration, formatTime, toClock, toMinutes } from '../lib/time'
+import { minutesLate } from '../lib/workflow'
 import type { ScheduleDay } from '../types'
+import { LateNote } from './LateNote'
 
 const SLOT_MINUTES = 15
 const ROW_PX = 32
@@ -183,6 +185,7 @@ export function ScheduleGrid({
             const end = toMinutes(appt.end)
             const name = `${patient.firstName} ${patient.lastName}`
             const hasConflict = conflicts.has(appt.id)
+            const late = now ? minutesLate(appt, now) : null
             const { lane, laneCount } = lanes.get(appt.id) ?? {
               lane: 0,
               laneCount: 1,
@@ -196,7 +199,7 @@ export function ScheduleGrid({
                 // Same words, same order as the visible card (WCAG 2.5.3,
                 // Label in Name), so voice control users can say what they
                 // see. axe checks this in e2e/a11y.e2e.ts.
-                aria-label={`${name}, ${status.label}, ${typeLabel[appt.type]}, ${formatTime(start)} to ${formatTime(end)}${hasConflict ? ', Overlaps another appointment' : ''}`}
+                aria-label={`${name}, ${status.label}, ${typeLabel[appt.type]}, ${formatTime(start)} to ${formatTime(end)}${late ? `, Late ${formatDuration(late)}` : ''}${hasConflict ? ', Overlaps another appointment' : ''}`}
                 className={`relative z-10 my-0.5 flex min-w-0 flex-col gap-0.5 overflow-hidden rounded-lg border px-2 py-1 text-left ${status.card} ${hasConflict ? 'ring-2 ring-red-600' : ''}`}
                 style={{
                   gridColumn: column,
@@ -220,6 +223,7 @@ export function ScheduleGrid({
                   {typeLabel[appt.type]} · {formatTime(start)} to{' '}
                   {formatTime(end)}
                 </span>{' '}
+                {late && <LateNote minutes={late} />}{' '}
                 {hasConflict && (
                   <span className="flex items-center gap-1 text-xs font-semibold text-red-700">
                     <svg
@@ -244,14 +248,21 @@ export function ScheduleGrid({
           })}
 
           {/* "Now" line */}
+          {/* Above the cards so it's never hidden, but it never takes clicks.
+              Hidden from screen readers: the time is in the page header. */}
           {showNow && (
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute right-0 left-14 z-0 h-0.5 bg-teal-700"
+              className="pointer-events-none absolute right-0 left-0 z-20 flex items-center"
               style={{
                 top: HEADER_PX + ((nowMinutes - open) / SLOT_MINUTES) * ROW_PX,
               }}
-            />
+            >
+              <span className="-translate-y-1/2 rounded-full bg-teal-700 px-1.5 py-px text-[11px] font-semibold text-white tabular-nums">
+                {formatTime(nowMinutes)}
+              </span>
+              <span className="h-0.5 flex-1 -translate-y-1/2 bg-teal-700" />
+            </div>
           )}
         </div>
       </div>

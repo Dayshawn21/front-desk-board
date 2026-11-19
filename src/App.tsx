@@ -356,6 +356,7 @@ function Board({
               ) : (
                 <PatientFlow
                   day={schedule.data}
+                  now={DEMO_NOW}
                   savingId={savingId}
                   onOpen={openDrawer}
                   onAdvance={changeStatus}

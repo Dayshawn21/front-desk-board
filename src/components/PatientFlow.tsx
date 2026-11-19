@@ -5,10 +5,12 @@ import {
   type FlowColumnId,
   flowColumns,
   groupByFlow,
+  minutesLate,
   nextAction,
 } from '../lib/workflow'
 import { useSession } from '../session/SessionContext'
 import type { AppointmentStatus, ScheduleDay } from '../types'
+import { LateNote } from './LateNote'
 
 // Full class strings so Tailwind can find them (see display.ts).
 const dotClass: Record<FlowColumnId, string> = {
@@ -20,6 +22,7 @@ const dotClass: Record<FlowColumnId, string> = {
 
 type PatientFlowProps = {
   day: ScheduleDay
+  now: string // the demo clock, for late visits
   savingId: string | null
   onOpen: (id: string) => void
   onAdvance: (id: string, status: AppointmentStatus) => void
@@ -27,6 +30,7 @@ type PatientFlowProps = {
 
 export function PatientFlow({
   day,
+  now,
   savingId,
   onOpen,
   onAdvance,
@@ -95,6 +99,7 @@ export function PatientFlow({
                     ).length
                     const action = nextAction(appt.status)
                     const saving = savingId === appt.id
+                    const late = minutesLate(appt, now)
 
                     return (
                       <li key={appt.id}>
@@ -122,6 +127,7 @@ export function PatientFlow({
                               ? ' · Not confirmed yet'
                               : ''}
                           </p>
+                          {late && <LateNote minutes={late} />}
                           {hasConflict && (
                             <p className="text-xs font-semibold text-red-700">
                               Overlaps another visit

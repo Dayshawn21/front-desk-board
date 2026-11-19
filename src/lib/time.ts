@@ -27,8 +27,10 @@ export function formatTime(value: string | number): string {
   return `${hour12}:${String(minutes).padStart(2, '0')} ${suffix}`
 }
 
-// 100 -> "1h 40m", 45 -> "45m", 60 -> "1h". STUB: filled in by the next commit.
+// 100 -> "1h 40m", 45 -> "45m", 60 -> "1h". Short, for badges.
 export function formatDuration(minutes: number): string {
-  void minutes
-  return ''
+  const hours = Math.floor(minutes / 60)
+  const rest = minutes % 60
+  if (hours === 0) return `${rest}m`
+  return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`
 }

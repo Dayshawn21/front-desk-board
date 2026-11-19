@@ -1,5 +1,6 @@
 import type { Appointment, AppointmentStatus } from '../types'
 import type { Permission } from './permissions'
+import { toMinutes } from './time'
 
 // The visit's path through the front desk, in order. "cancelled" is outside the path.
 export const flowSteps: AppointmentStatus[] = [
@@ -147,12 +148,13 @@ export function noShowAction(
 }
 
 // How late an expected visit is, in minutes, once its start has passed
-// without the patient arriving; null otherwise. STUB: filled in next commit.
+// without the patient arriving; null otherwise.
 export function minutesLate(
   appointment: Pick<Appointment, 'status' | 'start'>,
   now: string,
 ): number | null {
-  void appointment
-  void now
-  return null
+  const expected =
+    appointment.status === 'scheduled' || appointment.status === 'confirmed'
+  const late = toMinutes(now) - toMinutes(appointment.start)
+  return expected && late > 0 ? late : null
 }
