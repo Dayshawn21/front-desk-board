@@ -55,7 +55,7 @@ export function CheckInDrawer({
   const statusHeadingRef = useRef<HTMLHeadingElement>(null)
 
   // Focus in on open, trap Tab, Escape closes, focus back to the card on close.
-  const { dialogRef, onKeyDown } = useModalDialog<HTMLElement>(
+  const { dialogRef, onKeyDown } = useModalDialog<HTMLDivElement>(
     closeButtonRef,
     onClose,
   )
@@ -107,7 +107,7 @@ export function CheckInDrawer({
         onClick={onClose}
       />
 
-      <aside
+      <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
@@ -307,7 +307,7 @@ export function CheckInDrawer({
             </button>
           </div>
         )}
-      </aside>
+      </div>
     </div>
   )
 }

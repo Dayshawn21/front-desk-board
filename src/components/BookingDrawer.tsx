@@ -74,7 +74,7 @@ export function BookingDrawer({
   const [showErrors, setShowErrors] = useState(false)
 
   const patientRef = useRef<HTMLSelectElement>(null)
-  const { dialogRef, onKeyDown } = useModalDialog<HTMLElement>(
+  const { dialogRef, onKeyDown } = useModalDialog<HTMLDivElement>(
     patientRef,
     onClose,
   )
@@ -193,7 +193,7 @@ export function BookingDrawer({
         onClick={onClose}
       />
 
-      <aside
+      <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
@@ -488,7 +488,7 @@ export function BookingDrawer({
             </button>
           </div>
         </form>
-      </aside>
+      </div>
     </div>
   )
 }

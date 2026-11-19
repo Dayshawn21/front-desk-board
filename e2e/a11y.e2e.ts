@@ -6,11 +6,20 @@ import { expect, type Page, test } from '@playwright/test'
 // third of WCAG issues; keyboard and screen-reader behaviour is covered by
 // the other tests and by hand.
 
-const WCAG_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
+// WCAG 2.2 A/AA rules plus axe's best practices (which include using only
+// ARIA roles that HTML allows on each element; Lighthouse found that one).
+const AXE_TAGS = [
+  'wcag2a',
+  'wcag2aa',
+  'wcag21a',
+  'wcag21aa',
+  'wcag22aa',
+  'best-practice',
+]
 
 async function expectNoViolations(page: Page) {
   const { violations } = await new AxeBuilder({ page })
-    .withTags(WCAG_TAGS)
+    .withTags(AXE_TAGS)
     .analyze()
   // One line per problem, so a failure says what and where.
   const summary = violations.flatMap((v) =>
