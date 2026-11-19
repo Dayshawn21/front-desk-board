@@ -1,9 +1,11 @@
 import { type FormEvent, useId, useRef, useState } from 'react'
 import type { NewAppointment } from '../api/schedule'
+import { DEMO_DAY_LABEL } from '../config'
 import { useModalDialog } from '../hooks/useModalDialog'
 import { useParseBooking } from '../hooks/useSchedule'
 import {
   contextFromDay,
+  findOtherDay,
   LENGTHS,
   type SanitizedDraft,
   sanitizeDraft,
@@ -110,6 +112,10 @@ export function BookingDrawer({
   )
   const chairName = (id: string) =>
     day.chairs.find((c) => c.id === id)?.name ?? id
+
+  // Bookings are for today only. If the request named another day, say so
+  // plainly, whether or not the model noticed.
+  const otherDay = aiResult ? findOtherDay(aiAskedFor) : null
 
   const patientError = showErrors && !patientId ? 'Choose a patient.' : null
   const timeError = showErrors && !picked ? 'Choose a time.' : null
@@ -292,6 +298,12 @@ export function BookingDrawer({
               <p className="font-semibold text-slate-900">
                 AI-filled. Review before booking.
               </p>
+              {otherDay && (
+                <p className="rounded-md border border-amber-300 bg-amber-50 px-2.5 py-2 font-medium text-amber-900">
+                  You asked for {otherDay}. This books today, {DEMO_DAY_LABEL},
+                  and the times below are for today.
+                </p>
+              )}
               <p>
                 {aiResult.filled.length > 0
                   ? `Filled in: ${aiResult.filled.join(', ')}.`

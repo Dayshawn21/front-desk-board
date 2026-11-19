@@ -9,7 +9,7 @@ import { ScheduleGrid } from './components/ScheduleGrid'
 import { type ToastMessage, UndoToast } from './components/UndoToast'
 import { type ViewId, ViewTabs } from './components/ViewTabs'
 import type { NewAppointment } from './api/schedule'
-import { DEMO_DATE, DEMO_NOW } from './config'
+import { DEMO_DATE, DEMO_DAY_LABEL, DEMO_NOW } from './config'
 import {
   usePractices,
   useSchedule,
@@ -210,7 +210,7 @@ function Board() {
             Front Desk Board
           </h1>
           <p className="text-sm text-slate-600">
-            Tuesday, Nov 17 · Demo data only, no real patients
+            {DEMO_DAY_LABEL} · Demo data only, no real patients
           </p>
         </div>
 

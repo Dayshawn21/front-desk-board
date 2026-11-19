@@ -150,9 +150,26 @@ export function contextFromDay(day: ScheduleDay): AssistContext {
 }
 
 // The words in a request that ask for a day other than today, e.g.
-// "tomorrow". Checked in code, so the warning doesn't depend on the model.
-// STUB: filled in by the next commit.
+// "tomorrow". Checked in code, so the warning doesn't depend on the model
+// noticing. A bare weekday ("Tuesday") counts too: saying "this books today"
+// is harmless if it was meant as today.
+const WEEKDAY = '(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday)'
+const MONTH = String.raw`(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?`
+const OTHER_DAY = new RegExp(
+  [
+    'the day after tomorrow',
+    'tomorrow',
+    `next (?:week|month|${WEEKDAY})`,
+    String.raw`in (?:\d+|a|one|two|three) (?:days?|weeks?|months?)`,
+    WEEKDAY,
+    String.raw`\d{1,2}/\d{1,2}(?:/\d{2,4})?`,
+    String.raw`${MONTH} \d{1,2}(?:st|nd|rd|th)?`,
+  ]
+    .map((part) => String.raw`\b(?:${part})\b`)
+    .join('|'),
+  'i',
+)
+
 export function findOtherDay(text: string): string | null {
-  void text
-  return null
+  return text.match(OTHER_DAY)?.[0] ?? null
 }
