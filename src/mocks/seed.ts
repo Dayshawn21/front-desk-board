@@ -196,8 +196,9 @@ export const appointments: Appointment[] = [
     from: '8:00',
     to: '9:00',
     type: 'cleaning',
-    status: 'completed',
-    checklist: ALL_DONE,
+    // Confirmed but never arrived: at 9:40 she's the no-show to mark.
+    status: 'confirmed',
+    checklist: checklist({ formsComplete: true }),
   }),
   // Deliberate overlap: a-06 and a-07 share Chair 2 from 9:45 to 10:00.
   appt({

@@ -38,7 +38,17 @@ export type AppointmentType =
   'cleaning' | 'exam' | 'filling' | 'crown' | 'consult' | 'emergency'
 
 export type AppointmentStatus =
-  'scheduled' | 'confirmed' | 'arrived' | 'in-chair' | 'completed' | 'cancelled'
+  | 'scheduled'
+  | 'confirmed'
+  | 'arrived'
+  | 'in-chair'
+  | 'completed'
+  | 'cancelled'
+  | 'no-show' // never arrived; set after the start time has passed
+
+// Why a visit was cancelled, for follow-up and reporting.
+export type CancelReason =
+  'patient-cancelled' | 'late-cancel' | 'office-rescheduled' | 'other'
 
 export type CheckInChecklist = {
   insuranceVerified: boolean
@@ -58,6 +68,7 @@ export type Appointment = {
   status: AppointmentStatus
   checklist: CheckInChecklist
   notes: string
+  cancelReason?: CancelReason | null // set when cancelled, cleared on restore
 }
 
 // What the mock API returns for one practice on one day.

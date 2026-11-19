@@ -25,11 +25,11 @@ describe('patient flow tab', () => {
       'aria-selected',
       'true',
     )
-    expect(column(/^expected/i)).toHaveTextContent('9 visits')
+    expect(column(/^expected/i)).toHaveTextContent('10 visits')
     expect(column(/^arrived/i)).toHaveTextContent('1 visit')
     expect(within(column(/^arrived/i)).getByText('Jon Kim')).toBeInTheDocument()
     expect(column(/^in chair/i)).toHaveTextContent('2 visits')
-    expect(column(/^checked out/i)).toHaveTextContent('3 visits')
+    expect(column(/^checked out/i)).toHaveTextContent('2 visits')
   })
 
   it('checking a patient in moves them to the Arrived column', async () => {

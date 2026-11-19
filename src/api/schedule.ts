@@ -103,7 +103,7 @@ export async function fetchSchedule(
 }
 
 export type AppointmentPatch = Partial<
-  Pick<Appointment, 'status' | 'checklist' | 'notes'>
+  Pick<Appointment, 'status' | 'checklist' | 'notes' | 'cancelReason'>
 >
 
 export async function updateAppointment(

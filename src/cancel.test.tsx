@@ -23,6 +23,22 @@ async function openVisit(
 const cancelButton = (dialog: HTMLElement) =>
   within(dialog).queryByRole('button', { name: /cancel visit/i })
 
+// Cancel takes two steps: open the reason step, pick a reason, confirm.
+async function cancelVisit(
+  user: ReturnType<typeof userEvent.setup>,
+  dialog: HTMLElement,
+  reason: RegExp = /late cancel/i,
+) {
+  await user.click(cancelButton(dialog)!)
+  const reasons = within(dialog).getByRole('group', {
+    name: /why is this visit being cancelled/i,
+  })
+  await user.click(within(reasons).getByRole('radio', { name: reason }))
+  await user.click(
+    within(dialog).getByRole('button', { name: /^cancel visit$/i }),
+  )
+}
+
 describe('cancel visit', () => {
   it('is offered for scheduled and confirmed visits only', async () => {
     const user = await renderAs()
@@ -51,13 +67,54 @@ describe('cancel visit', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('asks why before cancelling, and Keep visit backs out', async () => {
+    const user = await renderAs()
+    const dialog = await openVisit(user, /owen hart/i)
+
+    await user.click(
+      within(dialog).getByRole('button', { name: 'Cancel visit…' }),
+    )
+
+    const reasons = within(dialog).getByRole('group', {
+      name: /why is this visit being cancelled/i,
+    })
+    expect(
+      within(reasons)
+        .getAllByRole('radio')
+        .map((radio) => radio.closest('label')?.textContent),
+    ).toEqual([
+      'Patient cancelled',
+      'Late cancel',
+      'Office rescheduled',
+      'Other',
+    ])
+    expect(within(reasons).getAllByRole('radio')[0]).toHaveFocus()
+
+    // No reason yet: nothing is cancelled.
+    await user.click(
+      within(dialog).getByRole('button', { name: /^cancel visit$/i }),
+    )
+    expect(within(dialog).getByText('Choose a reason.')).toBeInTheDocument()
+    expect(
+      within(dialog).getByRole('heading', { name: /status: scheduled/i }),
+    ).toBeInTheDocument()
+
+    await user.click(within(dialog).getByRole('button', { name: 'Keep visit' }))
+    expect(within(dialog).queryByRole('group', { name: /why/i })).toBeNull()
+    expect(
+      within(dialog).getByRole('button', { name: 'Cancel visit…' }),
+    ).toHaveFocus()
+  })
+
   it('cancels, confirms with Undo, and takes the visit off the schedule', async () => {
     const user = await renderAs()
     const dialog = await openVisit(user, /owen hart/i)
 
-    await user.click(cancelButton(dialog)!)
+    await cancelVisit(user, dialog, /late cancel/i)
 
-    expect(await screen.findByText('Owen Hart: cancelled')).toBeInTheDocument()
+    expect(
+      await screen.findByText('Owen Hart: cancelled, late cancel'),
+    ).toBeInTheDocument()
     expect(
       screen.getByRole('button', { name: /undo cancel for owen hart/i }),
     ).toBeInTheDocument()
@@ -73,7 +130,7 @@ describe('cancel visit', () => {
       screen.queryByRole('button', { name: /^owen hart,/i }),
     ).not.toBeInTheDocument()
     expect(screen.getByText(/cancelled today/i).closest('p')).toHaveTextContent(
-      /owen hart.*11:15 AM/i,
+      'Owen Hart (11:15 AM, late cancel)',
     )
     // Its card is gone, so focus goes to the page heading, not nowhere.
     expect(
@@ -84,7 +141,7 @@ describe('cancel visit', () => {
   it('Undo puts the visit back as it was', async () => {
     const user = await renderAs()
     const dialog = await openVisit(user, /grace liu/i)
-    await user.click(cancelButton(dialog)!)
+    await cancelVisit(user, dialog, /patient cancelled/i)
     await user.keyboard('{Escape}')
 
     await user.click(
@@ -100,7 +157,7 @@ describe('cancel visit', () => {
   it('frees the time for a new booking', async () => {
     const user = await renderAs()
     const dialog = await openVisit(user, /owen hart/i)
-    await user.click(cancelButton(dialog)!)
+    await cancelVisit(user, dialog)
     await user.keyboard('{Escape}')
 
     await user.click(screen.getByTestId('slot-maple-c1-11:15'))

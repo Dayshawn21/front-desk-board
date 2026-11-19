@@ -6,6 +6,7 @@ import {
   flowSteps,
   groupByFlow,
   nextAction,
+  noShowAction,
   previousAction,
 } from './workflow'
 
@@ -115,10 +116,10 @@ describe('groupByFlow', () => {
 
   it('counts each column from the seed data', () => {
     const groups = groupByFlow(maple)
-    expect(groups.expected).toHaveLength(9) // 5 scheduled + 4 confirmed
+    expect(groups.expected).toHaveLength(10) // 5 scheduled + 5 confirmed
     expect(groups.arrived.map((a) => a.id)).toEqual(['a-06'])
     expect(groups['in-chair'].map((a) => a.id)).toEqual(['a-02', 'a-10'])
-    expect(groups['checked-out']).toHaveLength(3)
+    expect(groups['checked-out']).toHaveLength(2)
   })
 
   it('orders each column by start time', () => {
@@ -126,9 +127,10 @@ describe('groupByFlow', () => {
     expect(starts).toEqual([...starts].sort())
   })
 
-  it('leaves cancelled visits off the board', () => {
+  it('leaves cancelled visits and no-shows off the board', () => {
     const cancelled = { ...maple[0], id: 'x', status: 'cancelled' as const }
-    const ids = Object.values(groupByFlow([cancelled])).flat()
+    const noShow = { ...maple[0], id: 'y', status: 'no-show' as const }
+    const ids = Object.values(groupByFlow([cancelled, noShow])).flat()
     expect(ids).toHaveLength(0)
   })
 })
@@ -153,5 +155,45 @@ describe('cancelAction', () => {
     ] as const) {
       expect(cancelAction(status)).toBeNull()
     }
+  })
+})
+
+describe('noShowAction', () => {
+  const NOW = '2026-11-17T09:40:00'
+
+  it('is offered once an expected visit is past its start time', () => {
+    for (const status of ['scheduled', 'confirmed'] as const) {
+      expect(noShowAction(status, '2026-11-17T08:00:00', NOW)).toEqual({
+        label: 'Mark no-show',
+        status: 'no-show',
+        permission: 'no-show',
+      })
+    }
+  })
+
+  it('is not offered before the start time, or at it', () => {
+    expect(noShowAction('confirmed', '2026-11-17T09:45:00', NOW)).toBeNull()
+    expect(noShowAction('confirmed', NOW, NOW)).toBeNull()
+  })
+
+  it('is not offered once the patient is here, or the visit is closed', () => {
+    for (const status of [
+      'arrived',
+      'in-chair',
+      'completed',
+      'cancelled',
+      'no-show',
+    ] as const) {
+      expect(noShowAction(status, '2026-11-17T08:00:00', NOW)).toBeNull()
+    }
+  })
+
+  it('can be undone, back to expected (confirmed)', () => {
+    expect(previousAction('no-show')).toEqual({
+      label: 'Undo no-show',
+      status: 'confirmed',
+      permission: 'no-show',
+    })
+    expect(nextAction('no-show')).toBeNull()
   })
 })

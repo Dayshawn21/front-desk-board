@@ -37,6 +37,7 @@ export function nextAction(status: AppointmentStatus): NextAction | null {
       }
     case 'completed':
     case 'cancelled':
+    case 'no-show':
       return null
   }
 }
@@ -74,6 +75,7 @@ export function previousAction(status: AppointmentStatus): UndoAction | null {
       }
     case 'scheduled':
     case 'cancelled':
+    case 'no-show': // STUB: filled in by the next commit
       return null
   }
 }
@@ -120,4 +122,17 @@ export function cancelAction(status: AppointmentStatus): NextAction | null {
   return status === 'scheduled' || status === 'confirmed'
     ? { label: 'Cancel visit', status: 'cancelled', permission: 'cancel' }
     : null
+}
+
+// Marking a no-show: for a visit that was expected (scheduled or confirmed)
+// once its start time has passed. STUB: filled in by the next commit.
+export function noShowAction(
+  status: AppointmentStatus,
+  start: string,
+  now: string,
+): NextAction | null {
+  void status
+  void start
+  void now
+  return null
 }

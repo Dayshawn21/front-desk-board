@@ -1,4 +1,9 @@
-import type { AppointmentStatus, AppointmentType, Role } from '../types'
+import type {
+  AppointmentStatus,
+  AppointmentType,
+  CancelReason,
+  Role,
+} from '../types'
 
 export const roleLabel: Record<Role, string> = {
   'front-desk': 'Front desk',
@@ -51,4 +56,16 @@ export const statusStyle: Record<
     card: 'border-slate-300 bg-white opacity-60',
     pill: 'bg-slate-100 text-slate-700',
   },
+  'no-show': {
+    label: 'No-show',
+    card: 'border-dashed border-rose-400 bg-white',
+    pill: 'bg-rose-100 text-rose-900',
+  },
+}
+
+export const cancelReasonLabel: Record<CancelReason, string> = {
+  'patient-cancelled': 'Patient cancelled',
+  'late-cancel': 'Late cancel',
+  'office-rescheduled': 'Office rescheduled',
+  other: 'Other',
 }

@@ -34,6 +34,30 @@ describe('updateAppointment', () => {
     expect(saved.notes).toBe('Running 5 min late.')
   })
 
+  it('saves why a visit was cancelled, and clears it on restore', async () => {
+    const cancelled = await updateAppointment('maple', 'a-04', {
+      status: 'cancelled',
+      cancelReason: 'late-cancel',
+    })
+    expect(cancelled.cancelReason).toBe('late-cancel')
+
+    const restored = await updateAppointment('maple', 'a-04', {
+      status: 'scheduled',
+      cancelReason: null,
+    })
+    expect(restored.status).toBe('scheduled')
+    expect(restored.cancelReason).toBeNull()
+  })
+
+  it('refuses to cancel without a reason', async () => {
+    await expect(
+      updateAppointment('maple', 'a-04', { status: 'cancelled' }),
+    ).rejects.toMatchObject({
+      status: 400,
+      message: 'Choose a reason to cancel this visit.',
+    })
+  })
+
   it("refuses to update another practice's appointment", async () => {
     // a-16 belongs to Riverbend
     await expect(
