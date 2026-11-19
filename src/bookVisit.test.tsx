@@ -183,6 +183,33 @@ describe('the way in from the staff side', () => {
     renderWithQuery(<App />, { signedOut: true })
     expect(
       screen.getByRole('link', { name: /book a visit online/i }),
-    ).toHaveAttribute('href', '/book/maple')
+    ).toHaveAttribute('href', '/book')
+  })
+})
+
+describe('choosing a practice at /book', () => {
+  it('lists every practice, each linking to its booking page', async () => {
+    window.history.pushState(null, '', '/book')
+    renderWithQuery(<App />, { signedOut: true })
+
+    expect(
+      await screen.findByRole('heading', { name: 'Choose your dental office' }),
+    ).toBeInTheDocument()
+    const maple = screen.getByRole('link', { name: /Maple Street Dental/ })
+    const riverbend = screen.getByRole('link', {
+      name: /Riverbend Family Dental/,
+    })
+    expect(maple).toHaveAttribute('href', '/book/maple')
+    expect(riverbend).toHaveAttribute('href', '/book/riverbend')
+    // Today's hours help a patient tell the offices apart.
+    expect(maple).toHaveAccessibleName(/8:00 AM – 5:00 PM/)
+    expect(riverbend).toHaveAccessibleName(/7:30 AM – 4:00 PM/)
+    // Not a booking form yet, and not the staff sign-in.
+    expect(
+      screen.queryByLabelText('Who is the visit for?'),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: 'Sign in' }),
+    ).not.toBeInTheDocument()
   })
 })

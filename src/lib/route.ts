@@ -10,6 +10,7 @@
 export type Route =
   | { page: 'board' }
   | { page: 'book'; practiceId: string }
+  | { page: 'choose-practice' } // stub; built in the next commit
   | { page: 'check-in'; practiceId: string; visitId: string }
 
 // Where a bare /book goes: the demo's first practice.

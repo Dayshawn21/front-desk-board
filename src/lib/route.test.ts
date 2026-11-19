@@ -14,9 +14,12 @@ describe('parseRoute', () => {
     })
   })
 
-  it('opens the first practice for a bare /book, and ignores a trailing slash', () => {
-    expect(parseRoute('/book')).toEqual({ page: 'book', practiceId: 'maple' })
-    expect(parseRoute('/book/')).toEqual({ page: 'book', practiceId: 'maple' })
+  it('lets the patient choose a practice at a bare /book', () => {
+    expect(parseRoute('/book')).toEqual({ page: 'choose-practice' })
+    expect(parseRoute('/book/')).toEqual({ page: 'choose-practice' })
+  })
+
+  it('ignores a trailing slash', () => {
     expect(parseRoute('/book/maple/')).toEqual({
       page: 'book',
       practiceId: 'maple',

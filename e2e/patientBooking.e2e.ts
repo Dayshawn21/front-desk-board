@@ -35,10 +35,14 @@ test('a patient books online and the visit appears on the front desk board', asy
   ).toBeVisible()
 })
 
-test('the sign-in page links to the patient booking page', async ({ page }) => {
+test('the sign-in page links to /book, where the patient picks a practice', async ({
+  page,
+}) => {
   await page.goto('/')
   await page.getByRole('link', { name: /book a visit online/i }).click()
-  await expect(page).toHaveURL(/\/book\/maple$/)
+  await expect(page).toHaveURL(/\/book$/)
+  await page.getByRole('link', { name: /Riverbend Family Dental/ }).click()
+  await expect(page).toHaveURL(/\/book\/riverbend$/)
   await expect(
     page.getByRole('heading', { name: 'Book a visit' }),
   ).toBeVisible()

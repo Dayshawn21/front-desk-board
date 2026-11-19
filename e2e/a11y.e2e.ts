@@ -254,6 +254,15 @@ test.describe('patient pages', () => {
       await expectNoViolations(page)
     })
 
+    test('choose a practice', async ({ page }) => {
+      await page.goto('/book')
+      await expect(
+        page.getByRole('heading', { name: 'Choose your dental office' }),
+      ).toBeVisible()
+      await expectNoSideways(page)
+      await expectNoViolations(page)
+    })
+
     test('a practice that does not exist', async ({ page }) => {
       await page.goto('/book/nowhere')
       await expect(
