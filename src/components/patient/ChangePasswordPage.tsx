@@ -106,6 +106,9 @@ function ChangePassword({ session }: { session: PatientSession }) {
         ? change.error.message
         : "We couldn't change your password. Please try again."
       : null
+  // Too many wrong tries: the server has locked the form for a while.
+  const locked =
+    !mismatch && change.error instanceof ApiError && change.error.status === 429
 
   return shell(
     <>
@@ -187,12 +190,17 @@ function ChangePassword({ session }: { session: PatientSession }) {
           />
         </div>
         {error && (
-          <p
+          <div
             role="alert"
-            className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800"
+            className="flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800"
           >
-            {error}
-          </p>
+            <p>{error}</p>
+            {locked && (
+              <a href={FORGOT_PASSWORD_PATH} className={`self-start ${LINK}`}>
+                Reset your password
+              </a>
+            )}
+          </div>
         )}
         <button
           type="submit"

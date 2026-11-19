@@ -136,5 +136,5 @@ describe('change password', () => {
     expect(
       screen.queryByRole('heading', { name: 'Password changed' }),
     ).not.toBeInTheDocument()
-  })
+  }, 20_000) // six rounds of typing in jsdom
 })

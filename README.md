@@ -190,6 +190,13 @@ Built in six daily steps.
       signs the patient out everywhere else while this tab stays signed in. A wrong
       current password clears the fields; mismatched new passwords are caught before
       anything is sent
+- [x] Rate limit on change password: 5 wrong current passwords per patient in 15
+      minutes lock the form ("Too many tries. Try again in N minutes, or reset your
+      password.", with a **Reset your password** link). While locked the server doesn't
+      check the password at all, so guessing gets nowhere, and tries made while locked
+      don't extend the lock. It's counted per patient, so signing in again doesn't
+      reset it; a successful change clears the count, and a refused new password
+      (too short, unchanged) isn't counted as a wrong guess
 - [x] Patient check-in from a phone (`/check-in/<practice>/<visit>`): the patient sees
       the visit and the details on file (with "tell the front desk" if something is
       wrong), ticks "I've filled in my visit forms" and "I've reviewed my health
@@ -319,7 +326,10 @@ an interrupted run picks up where it stopped.
   `localStorage`, as are changed passwords. The session token sits in
   `sessionStorage`. The demo inbox stands in for email: anyone using this browser can
   read it, so it would never exist on a real site, where the link goes only to the
-  patient's inbox (and sign-in and reset requests would be rate limited). Sign-up details never
+  patient's inbox. Only change password is rate limited here, and the count lives
+  in this browser's `localStorage`, so clearing it resets the count. A real server
+  would keep the count itself, also limit by IP address, and limit sign-in and reset
+  requests too. Sign-up details never
   reach Claude: the AI assist's server only knows the built-in seed patients. A real server would hash each patient's own
   password, rate-limit sign-in attempts, keep the session in an HttpOnly cookie, and
   check it on every request. The emails are on `example.com`, which can never be a

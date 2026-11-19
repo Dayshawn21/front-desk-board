@@ -48,6 +48,9 @@ export type Db = {
   // never the token), and the "emails" sent, for the demo inbox.
   passwordResets: PasswordReset[]
   outbox: DemoEmail[]
+  // Rate limits: recent failed tries (ms timestamps), by what was tried and
+  // by whom, e.g. "change-password:p-owen".
+  failedTries: Record<string, number[]>
 }
 
 export type PasswordReset = {
@@ -73,8 +76,8 @@ export type PatientAccount = {
 }
 
 // Versioned, so a change to the data's shape starts fresh (v2 added
-// patient sessions, v3 patient sign-ups, v4 password resets).
-export const MOCK_DB_KEY = 'front-desk-board.mock-db.v4'
+// patient sessions, v3 patient sign-ups, v4 password resets, v5 rate limits).
+export const MOCK_DB_KEY = 'front-desk-board.mock-db.v5'
 
 function createDb(): Db {
   return structuredClone({
@@ -88,6 +91,7 @@ function createDb(): Db {
     nextPatientId: 1,
     passwordResets: [],
     outbox: [],
+    failedTries: {},
   })
 }
 
@@ -109,7 +113,9 @@ function isDb(value: unknown): value is Db {
     Array.isArray(db.patientAccounts) &&
     typeof db.nextPatientId === 'number' &&
     Array.isArray(db.passwordResets) &&
-    Array.isArray(db.outbox)
+    Array.isArray(db.outbox) &&
+    typeof db.failedTries === 'object' &&
+    db.failedTries !== null
   )
 }
 

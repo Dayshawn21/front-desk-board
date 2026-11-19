@@ -285,6 +285,21 @@ test.describe('patient pages', () => {
       await expectNoViolations(page)
     })
 
+    test('change password, locked after too many tries', async ({ page }) => {
+      await page.goto('/patient/change-password')
+      await signInAsPatient(page, 'owen.hart@example.com')
+      for (let i = 0; i < 6; i++) {
+        await page.getByLabel('Current password').fill('not my password')
+        await page.getByLabel('New password').fill('brand new pass')
+        await page.getByLabel('Type it again').fill('brand new pass')
+        await page.getByRole('button', { name: 'Change password' }).click()
+        await expect(page.getByRole('alert')).toBeVisible()
+      }
+      await expect(page.getByRole('alert')).toContainText('Too many tries')
+      await expectNoSideways(page)
+      await expectNoViolations(page)
+    })
+
     test('forgot password, link sent', async ({ page }) => {
       await page.goto('/patient/forgot-password')
       await page.getByLabel('Email').fill('owen.hart@example.com')

@@ -540,6 +540,38 @@ function endSessions(db: Db, patientId: string, keep?: string) {
 
 // --- Change password (signed in) ---------------------------------------
 
+// Rate limit: 5 wrong current passwords per patient in 15 minutes. Then
+// the form is locked until the oldest of those tries is 15 minutes old.
+// While locked, the password isn't even checked, so guessing gets nowhere.
+// Counted per patient, not per session, so signing in again doesn't reset
+// it. (A real server would also limit by IP address.)
+const CHANGE_PASSWORD_TRIES = 5
+const CHANGE_PASSWORD_WINDOW_MS = 15 * 60_000
+
+function recentFailures(db: Db, key: string, now: number): number[] {
+  return (Object.hasOwn(db.failedTries, key) ? db.failedTries[key] : []).filter(
+    (t) => t > now - CHANGE_PASSWORD_WINDOW_MS,
+  )
+}
+
+function throwIfLocked(db: Db, key: string) {
+  const now = Date.now()
+  const recent = recentFailures(db, key, now)
+  if (recent.length < CHANGE_PASSWORD_TRIES) return
+  const unlocksAt =
+    recent[recent.length - CHANGE_PASSWORD_TRIES] + CHANGE_PASSWORD_WINDOW_MS
+  const minutes = Math.max(1, Math.ceil((unlocksAt - now) / 60_000))
+  throw new ApiError(
+    `Too many tries. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}, or reset your password.`,
+    429,
+  )
+}
+
+function recordFailure(db: Db, key: string) {
+  const now = Date.now()
+  db.failedTries[key] = [...recentFailures(db, key, now), now]
+}
+
 // Changes the signed-in patient's password. They must give the current
 // one (so someone at an unlocked phone can't take over the account). Every
 // other session ends; this one stays signed in.
@@ -554,7 +586,14 @@ export async function changeMyPassword(
   const email = emailForPatient(db, patient.id)
   if (!email) throw new ApiError(SIGNED_OUT, 401)
 
+  const limitKey = `change-password:${patient.id}`
+  throwIfLocked(db, limitKey)
+
   if ((await checkLogin(db, email, current)) !== patient.id) {
+    // Fresh read after the async check, so tries from two tabs both count.
+    const fresh = loadDb()
+    recordFailure(fresh, limitKey)
+    saveDb(fresh)
     throw new ApiError("Your current password isn't right.", 400)
   }
   if (next.length < 8) throw new ApiError(SHORT_PASSWORD, 400)
@@ -575,5 +614,6 @@ export async function changeMyPassword(
   }
   storePassword(fresh, patient.id, email, salt, passwordHash)
   endSessions(fresh, patient.id, token)
+  delete fresh.failedTries[limitKey] // a successful change clears the count
   saveDb(fresh)
 }
