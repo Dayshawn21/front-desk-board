@@ -8,7 +8,7 @@ import {
 } from 'react'
 import type { MyAccount } from '../../api/patientPortal'
 import { ApiError } from '../../api/schedule'
-import { PATIENT_SIGN_UP_PATH } from '../../lib/route'
+import { FORGOT_PASSWORD_PATH, PATIENT_SIGN_UP_PATH } from '../../lib/route'
 import { usePatientSession } from '../../hooks/usePatientSession'
 import { PatientShell } from './PatientShell'
 
@@ -213,6 +213,13 @@ function PatientSignInForm({
             onChange={(event) => setPassword(event.target.value)}
             className="h-12 rounded-xl border border-slate-400 bg-white px-3 text-base"
           />
+          {/* After the field, so Tab goes email, password, then this. */}
+          <a
+            href={FORGOT_PASSWORD_PATH}
+            className="self-start text-sm font-medium text-teal-800 underline underline-offset-2"
+          >
+            Forgot password?
+          </a>
         </div>
 
         {error && (

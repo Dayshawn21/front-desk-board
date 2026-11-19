@@ -11,6 +11,7 @@ import type {
 import {
   ApiError,
   type Db,
+  type DemoEmail,
   insertAppointment,
   LATENCY_MS,
   loadDb,
@@ -125,17 +126,36 @@ async function hashPassword(password: string, saltHex: string) {
 
 const normalEmail = (email: string) => email.trim().toLowerCase()
 
-// The patient id for an email and password, from the seed's demo logins or
-// a sign-up account, or null.
+// The patient id for an email and password, or null. An account in the db
+// (a sign-up, or a demo patient who reset their password) wins over the
+// seed's demo login, so a reset password replaces the demo one.
 async function checkLogin(db: Db, email: string, password: string) {
+  const account = db.patientAccounts.find((a) => a.email === email)
+  if (account) {
+    const hash = await hashPassword(password, account.salt)
+    return hash === account.passwordHash ? account.patientId : null
+  }
   const demo = patientLogins.find(
     (l) => l.email === email && l.password === password,
   )
-  if (demo) return demo.patientId
-  const account = db.patientAccounts.find((a) => a.email === email)
-  if (!account) return null
-  const hash = await hashPassword(password, account.salt)
-  return hash === account.passwordHash ? account.patientId : null
+  return demo?.patientId ?? null
+}
+
+// The patient id that signs in with this email, or null.
+function patientIdForEmail(db: Db, email: string): string | null {
+  return (
+    db.patientAccounts.find((a) => a.email === email)?.patientId ??
+    patientLogins.find((l) => l.email === email)?.patientId ??
+    null
+  )
+}
+
+function emailForPatient(db: Db, patientId: string): string | null {
+  return (
+    db.patientAccounts.find((a) => a.patientId === patientId)?.email ??
+    patientLogins.find((l) => l.patientId === patientId)?.email ??
+    null
+  )
 }
 
 function startSession(db: Db, patientId: string): string {
@@ -401,4 +421,104 @@ export async function checkInMyVisit(
   }
   saveDb(db)
   return toMyVisit(db, appt)
+}
+
+// --- Forgot password ---------------------------------------------------
+
+const RESET_MINUTES = 30
+const RESET_REFUSED =
+  'This reset link has expired or was already used. Ask for a new one.'
+const SHORT_PASSWORD = 'Use a password of at least 8 characters.'
+
+async function sha256(text: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(text),
+  )
+  return toHex(new Uint8Array(digest))
+}
+
+// "Emails" a single-use reset link that works for 30 minutes. It resolves
+// the same way whether or not the email has an account, so the page can't
+// be used to find out who is a patient. A newer link replaces older ones.
+export async function requestPasswordReset(email: string): Promise<void> {
+  await sleep(LATENCY_MS)
+  const to = normalEmail(email)
+  const token = newToken()
+  const tokenHash = await sha256(token)
+
+  const db = loadDb()
+  const patientId = patientIdForEmail(db, to)
+  if (!patientId) return
+  const practiceName =
+    db.practices.find(
+      (p) => p.id === db.patients.find((x) => x.id === patientId)?.practiceId,
+    )?.name ?? 'your dental office'
+
+  db.passwordResets = db.passwordResets.filter((r) => r.patientId !== patientId)
+  db.passwordResets.push({
+    tokenHash,
+    patientId,
+    expiresAt: Date.now() + RESET_MINUTES * 60_000,
+  })
+  db.outbox.push({
+    id: crypto.randomUUID(),
+    to,
+    subject: 'Reset your password',
+    body: `Someone asked to reset the password for your ${practiceName} patient account. The link works once, for ${RESET_MINUTES} minutes. If it wasn't you, you can ignore this email.`,
+    link: `/patient/reset-password?token=${token}`,
+    sentAt: new Date().toISOString(),
+  })
+  saveDb(db)
+}
+
+// The demo inbox: every email "sent" in this browser, newest first. A real
+// site has no such page; the email goes to the patient.
+export async function fetchDemoInbox(): Promise<DemoEmail[]> {
+  await sleep(LATENCY_MS)
+  return structuredClone(loadDb().outbox).reverse()
+}
+
+function findReset(db: Db, tokenHash: string) {
+  return db.passwordResets.find(
+    (r) => r.tokenHash === tokenHash && r.expiresAt > Date.now(),
+  )
+}
+
+// Sets a new password from a reset link. The link works once; the new
+// password is stored as a salted hash; every session for the patient ends,
+// so anyone signed in with the old password is signed out.
+export async function resetPassword(
+  token: string,
+  password: string,
+): Promise<void> {
+  await sleep(LATENCY_MS)
+  const tokenHash = await sha256(token)
+  if (!findReset(loadDb(), tokenHash)) {
+    throw new ApiError(RESET_REFUSED, 400)
+  }
+  if (password.length < 8) throw new ApiError(SHORT_PASSWORD, 400)
+
+  const salt = toHex(crypto.getRandomValues(new Uint8Array(16)))
+  const passwordHash = await hashPassword(password, salt)
+
+  // Fresh read after the async hash: check the link again, then save.
+  const db = loadDb()
+  const reset = findReset(db, tokenHash)
+  const email = reset && emailForPatient(db, reset.patientId)
+  if (!reset || !email) throw new ApiError(RESET_REFUSED, 400)
+  const { patientId } = reset
+
+  const account = db.patientAccounts.find((a) => a.patientId === patientId)
+  if (account) {
+    account.salt = salt
+    account.passwordHash = passwordHash
+  } else {
+    db.patientAccounts.push({ email, patientId, salt, passwordHash })
+  }
+  db.passwordResets = db.passwordResets.filter((r) => r.patientId !== patientId)
+  for (const [t, id] of Object.entries(db.patientSessions)) {
+    if (id === patientId) delete db.patientSessions[t]
+  }
+  saveDb(db)
 }

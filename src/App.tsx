@@ -6,6 +6,11 @@ import { CheckInPage } from './components/patient/CheckInPage'
 import { ChoosePracticePage } from './components/patient/ChoosePracticePage'
 import { PatientHomePage } from './components/patient/PatientHomePage'
 import { PatientSignUpPage } from './components/patient/PatientSignUpPage'
+import {
+  DemoInboxPage,
+  ForgotPasswordPage,
+  ResetPasswordPage,
+} from './components/patient/PasswordResetPages'
 import { useLiveScheduleUpdates } from './hooks/useSchedule'
 import { useTheme } from './hooks/useTheme'
 import { parseRoute } from './lib/route'
@@ -29,6 +34,27 @@ function App() {
     return (
       <ErrorBoundary where="choose-practice">
         <ChoosePracticePage />
+      </ErrorBoundary>
+    )
+  }
+  if (route.page === 'patient-forgot-password') {
+    return (
+      <ErrorBoundary where="patient-forgot-password">
+        <ForgotPasswordPage />
+      </ErrorBoundary>
+    )
+  }
+  if (route.page === 'patient-reset-password') {
+    return (
+      <ErrorBoundary where="patient-reset-password">
+        <ResetPasswordPage />
+      </ErrorBoundary>
+    )
+  }
+  if (route.page === 'patient-demo-inbox') {
+    return (
+      <ErrorBoundary where="patient-demo-inbox">
+        <DemoInboxPage />
       </ErrorBoundary>
     )
   }

@@ -1,5 +1,5 @@
-// The app's few pages, read from the URL path. No router package: six
-// kinds of page don't need one. On Vercel, vercel.json sends these paths to
+// The app's few pages, read from the URL path. No router package: a
+// handful of pages don't need one. On Vercel, vercel.json sends these paths to
 // index.html; `vite preview` and the dev server already do.
 //
 //   /                 the staff board (sign-in first)
@@ -8,6 +8,9 @@
 //   /check-in/<practice>/<visit>  a patient checks in from their phone
 //   /patient          a patient signs in, then sees today's visits
 //   /patient/sign-up  a new patient creates an account
+//   /patient/forgot-password  ask for a password reset link
+//   /patient/reset-password?token=…  choose a new password
+//   /patient/demo-inbox  the emails the demo "sent" (no real email)
 //   anything else     the staff board
 
 export type Route =
@@ -17,6 +20,25 @@ export type Route =
   | { page: 'check-in'; practiceId: string; visitId: string }
   | { page: 'patient-home' }
   | { page: 'patient-sign-up' }
+  | { page: 'patient-forgot-password' }
+  | { page: 'patient-reset-password' }
+  | { page: 'patient-demo-inbox' }
+
+// Patient pages with no parameters in the path.
+type PatientSubpage = Extract<
+  Route['page'],
+  | 'patient-sign-up'
+  | 'patient-forgot-password'
+  | 'patient-reset-password'
+  | 'patient-demo-inbox'
+>
+
+const PATIENT_SUBPAGES: Record<string, PatientSubpage | undefined> = {
+  'sign-up': 'patient-sign-up',
+  'forgot-password': 'patient-forgot-password',
+  'reset-password': 'patient-reset-password',
+  'demo-inbox': 'patient-demo-inbox',
+}
 
 export function parseRoute(pathname: string): Route {
   const parts = pathname.split('/').filter(Boolean).map(decodeURIComponent)
@@ -32,8 +54,12 @@ export function parseRoute(pathname: string): Route {
   if (parts[0] === 'patient' && parts.length === 1) {
     return { page: 'patient-home' }
   }
-  if (parts[0] === 'patient' && parts.length === 2 && parts[1] === 'sign-up') {
-    return { page: 'patient-sign-up' }
+  if (parts[0] === 'patient' && parts.length === 2) {
+    // hasOwn: not "constructor" or other names every object has
+    const page = Object.hasOwn(PATIENT_SUBPAGES, parts[1])
+      ? PATIENT_SUBPAGES[parts[1]]
+      : undefined
+    if (page) return { page }
   }
   return { page: 'board' }
 }
@@ -56,3 +82,5 @@ export function checkInPath(practiceId: string, visitId: string): string {
 export const PATIENT_HOME_PATH = '/patient'
 
 export const PATIENT_SIGN_UP_PATH = '/patient/sign-up'
+export const FORGOT_PASSWORD_PATH = '/patient/forgot-password'
+export const DEMO_INBOX_PATH = '/patient/demo-inbox'

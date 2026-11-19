@@ -42,6 +42,11 @@ front-end engineering skills: React, TypeScript, Tailwind, TanStack Query, and t
    office, and enter a made-up name, phone, `@example.com` email, and a password of 8+
    characters. You land on "Your visits", signed in, and can book. The new patient
    also shows in the board's New appointment patient list.
+9. Forgot password: on the patient sign-in form, choose **Forgot password?**, enter
+   `owen.hart@example.com`, then open the
+   [demo inbox](https://front-desk-board.vercel.app/patient/demo-inbox) and the reset
+   link in it. Choose a new password; `demo1234` stops working for Owen and the new
+   one works. **Reset demo data** puts `demo1234` back.
 
 Demo patient logins: every made-up patient's email is `first.last@example.com`
 (accents dropped, so Tomás Reyes is `tomas.reyes@example.com`), all with the password
@@ -162,6 +167,17 @@ Built in six daily steps.
       `/patient` with focus on its heading. A failed try clears the password and keeps
       the rest. Signed in already, the page says so instead of offering a second
       account. Reset demo data removes sign-ups
+- [x] Forgot password (linked under the password field, so Tab still goes email →
+      password): `/patient/forgot-password` takes an email and always answers "If an
+      account exists for …, we've sent a link", so it never reveals who is a patient.
+      For a real account the server makes a single-use token that works for 30
+      minutes, keeps only its SHA-256 hash, and "emails" the link. There's no real
+      email, so it lands in a **demo inbox** (`/patient/demo-inbox`, like a
+      developer's mail catcher; the page says so). The reset page
+      (`/patient/reset-password?token=…`) asks for the new password twice, refuses a
+      used, expired, or replaced link (with "Ask for a new link"), stores the new
+      password as a salted PBKDF2 hash (the demo password then stops working), and
+      signs the patient out everywhere
 - [x] Patient check-in from a phone (`/check-in/<practice>/<visit>`): the patient sees
       the visit and the details on file (with "tell the front desk" if something is
       wrong), ticks "I've filled in my visit forms" and "I've reviewed my health
@@ -288,7 +304,10 @@ an interrupted run picks up where it stopped.
   anyone can read `localStorage` or the bundle. The demo passwords are one shared,
   published password, stored in plain text in `src/mocks/patientLogins.ts`. Accounts
   from the sign-up page store a salted PBKDF2 hash instead, but in this browser's
-  `localStorage`. The session token sits in `sessionStorage`. Sign-up details never
+  `localStorage`, as are changed passwords. The session token sits in
+  `sessionStorage`. The demo inbox stands in for email: anyone using this browser can
+  read it, so it would never exist on a real site, where the link goes only to the
+  patient's inbox (and sign-in and reset requests would be rate limited). Sign-up details never
   reach Claude: the AI assist's server only knows the built-in seed patients. A real server would hash each patient's own
   password, rate-limit sign-in attempts, keep the session in an HttpOnly cookie, and
   check it on every request. The emails are on `example.com`, which can never be a
@@ -341,7 +360,8 @@ an interrupted run picks up where it stopped.
 - `src/hooks/`: `useStatusChanges` (save, toast, Undo), `useBooking`, `useSchedule`
   (TanStack Query), `useTheme`, `useMediaQuery`, `useModalDialog`
 - `src/components/patient/`: the patient pages (`ChoosePracticePage`, `BookVisitPage`,
-  `PatientHomePage`, `PatientSignUpPage`, `CheckInPage`), the sign-in gate and form (`RequirePatient`, with
+  `PatientHomePage`, `PatientSignUpPage`, `CheckInPage`, and `PasswordResetPages`:
+  forgot password, demo inbox, new password), the sign-in gate and form (`RequirePatient`, with
   `usePatientSession` and `src/session/patientStorage.ts`), and
   their frame (`PatientShell`); `src/lib/route.ts` picks the page from the URL path (no
   router package; `vercel.json` sends `/book`, `/patient` and `/check-in` paths to
@@ -352,7 +372,7 @@ an interrupted run picks up where it stopped.
   `patientBooking` (which times a patient sees),
   `overlap`, `lanes`, `permissions`, `assist` (AI answer checks), `time`
 - `src/api/schedule.ts`: the mock server (shared between tabs through `localStorage`);
-  `src/api/patientPortal.ts`: its patient side (sign-up, sign-in, sessions, and calls that
+  `src/api/patientPortal.ts`: its patient side (sign-up, sign-in, password reset, sessions, and calls that
   only return or change the signed-in patient's own visits), with the demo logins in
   `src/mocks/patientLogins.ts`;
   `server/` and `api/`: the AI route

@@ -44,6 +44,25 @@ export type Db = {
   // demo logins in src/mocks/patientLogins.ts instead.
   patientAccounts: PatientAccount[]
   nextPatientId: number
+  // Forgot password: one pending reset per patient (a hash of the token,
+  // never the token), and the "emails" sent, for the demo inbox.
+  passwordResets: PasswordReset[]
+  outbox: DemoEmail[]
+}
+
+export type PasswordReset = {
+  tokenHash: string // hex SHA-256 of the token in the emailed link
+  patientId: string
+  expiresAt: number // ms since 1970
+}
+
+export type DemoEmail = {
+  id: string
+  to: string
+  subject: string
+  body: string
+  link: string // a path on this site
+  sentAt: string // ISO time
 }
 
 export type PatientAccount = {
@@ -54,8 +73,8 @@ export type PatientAccount = {
 }
 
 // Versioned, so a change to the data's shape starts fresh (v2 added
-// patient sessions, v3 patient sign-ups).
-export const MOCK_DB_KEY = 'front-desk-board.mock-db.v3'
+// patient sessions, v3 patient sign-ups, v4 password resets).
+export const MOCK_DB_KEY = 'front-desk-board.mock-db.v4'
 
 function createDb(): Db {
   return structuredClone({
@@ -67,6 +86,8 @@ function createDb(): Db {
     patientSessions: {},
     patientAccounts: [],
     nextPatientId: 1,
+    passwordResets: [],
+    outbox: [],
   })
 }
 
@@ -86,7 +107,9 @@ function isDb(value: unknown): value is Db {
     typeof db.patientSessions === 'object' &&
     db.patientSessions !== null &&
     Array.isArray(db.patientAccounts) &&
-    typeof db.nextPatientId === 'number'
+    typeof db.nextPatientId === 'number' &&
+    Array.isArray(db.passwordResets) &&
+    Array.isArray(db.outbox)
   )
 }
 
