@@ -7,8 +7,10 @@ import {
   VISIT_TYPES,
 } from '../src/lib/assist.ts'
 
-// One place to change the model; the eval can compare others via CLAUDE_MODEL.
-export const DEFAULT_MODEL = 'claude-opus-5-5'
+// One place to change the model; CLAUDE_MODEL overrides it (the eval uses that
+// to compare). Haiku 5.5 was picked by the eval in evals/parse-booking: 28/30
+// vs Opus 5.5's 30/30, nothing made up by either, ~40x cheaper, ~2x faster.
+export const DEFAULT_MODEL = 'claude-haiku-5-5'
 
 // Only the part of the SDK this file uses, so tests can pass a fake.
 export type MessagesClient = Pick<Anthropic['beta']['messages'], 'create'>
@@ -87,6 +89,8 @@ export async function parseBookingRequest(
     // Small cap: the answer is a short JSON object. Also bounds cost per call.
     max_tokens: 4096,
     // If a safety classifier declines, the API retries on a fallback model.
+    // (Takes effect on Opus/Sonnet; per Anthropic's docs Haiku 5.5 has no
+    // server-side fallback, so a Haiku refusal shows the plain 422 message.)
     betas: ['server-side-fallback-2026-07-01'],
     fallbacks: 'default',
     output_config: {

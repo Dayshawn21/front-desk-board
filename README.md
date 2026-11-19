@@ -28,7 +28,7 @@ Work in progress. Built in daily steps.
       back one step; reopening a checked-out visit is office-manager only
 - [x] Open-slot finder (`src/lib/slots.ts`): given a duration and an optional chair and
       time window, suggests the earliest free slots inside opening hours, skipping
-      cancelled visits. Pure function, built test-first; the AI assist will call it
+      cancelled visits. Pure function, built test-first; the AI assist feeds it
 - [x] Booking: "New appointment" (front desk and office manager) picks a patient, visit
       type, length, and optional chair or time of day, shows the three earliest open
       times from the slot finder, and books the one you choose. The mock server re-checks
@@ -41,7 +41,55 @@ Work in progress. Built in daily steps.
       visit from the drawer. It's a status, not a delete, so the record stays. The visit
       leaves the grid (listed as "Cancelled today") and its time can be booked again;
       the toast's Undo restores it unless that time was booked in the meantime
-- [ ] AI scheduling assist
+- [x] AI booking assist: describe the visit in plain words ("60 min cleaning for Ana
+      Diaz this afternoon with Hygienist Patel") and Claude fills in the New appointment
+      form. The slot finder then suggests times and a person books; the AI never picks a
+      time or books. Measured with an eval (below)
+
+## AI booking assist
+
+**How it works.** The browser posts `{ practiceId, text }` to `/api/parse-booking`, a
+Vercel function (`api/parse-booking.ts`; in dev a small Vite plugin serves the same file).
+The server sends Claude the request plus that practice's fake patient and chair list, and
+asks for JSON in a fixed schema whose patient and chair fields only allow that practice's
+ids. The answer is checked again on the server and in the browser (`sanitizeDraft` in
+`src/lib/assist.ts`): anything not in the practice, or not a value the form offers, is
+dropped with a warning. The panel says **"AI-filled. Review before booking."**, lists what
+it filled and what it couldn't use (e.g. "tomorrow"), and shows loading and an error with
+Try again.
+
+**Guardrails.** The API key is read only on the server (`ANTHROPIC_API_KEY` in
+`.env.local` or the host's settings) and never reaches the browser bundle. Requests are
+capped at 300 characters, answers at 4,096 tokens, and only fake data is ever sent. The
+server logs the kind of failure, never the request or error details.
+
+**Eval** (`evals/parse-booking`, results in `.claude/hillclimb/parse-booking`). 15 fake
+cases, 2 runs each, graded in code (no AI judge): all fields right, nothing made up, and
+share of fields right. Cases include an unknown patient, a prompt injection, a patient
+from the other practice, and requests the form can't do ("tomorrow", "every 6 months").
+
+| Model (prompt)           | All fields right | Nothing made up | Cost / request | Median time |
+| ------------------------ | ---------------- | --------------- | -------------- | ----------- |
+| Opus 5.5 (first prompt)  | 30/30            | 30/30           | $0.0084        | 2.0 s       |
+| Haiku 5.5 (first prompt) | 27/30            | 30/30           | $0.0002        | 1.1 s       |
+| Haiku 5.5 (tuned prompt) | 28/30            | 30/30           | $0.0002        | 0.9 s       |
+| Opus 5.5 (tuned prompt)  | 30/30            | 30/30           | $0.0089        | 2.1 s       |
+
+The app uses **Haiku 5.5 with the tuned prompt**: about 40x cheaper and 2x faster, its
+misses are empty fields a person reviews anyway, and neither model made anything up.
+`CLAUDE_MODEL=claude-opus-5-5` switches back. Two prompt rules came straight from eval
+misses ("at 10:15" is a start time; "Ms. Silva" matches by last name). With 15 cases the
+eval can't tell 28/30 from 30/30 with confidence; it's a regression check, not a benchmark.
+The whole eval cost about $0.53.
+
+Re-run it (needs a key in `.env.local`; the runner asks you to approve changed eval files
+once with `--approve-harness`):
+
+    npm run eval -- --reps 2 --variant v4                            # Haiku (the default)
+    npm run eval -- --reps 2 --variant v5 --model claude-opus-5-5    # Opus
+
+Each run goes in a new variant folder (`v4`, `v5`, …); a finished variant is skipped, so
+an interrupted run picks up where it stopped.
 
 ## What is mocked
 
@@ -55,11 +103,20 @@ Work in progress. Built in daily steps.
   would decide who you are. The chosen user is remembered in `sessionStorage` for that
   tab. Role rules (`src/lib/permissions.ts`) only hide buttons in the UI; a real server
   would enforce the same rules on every request.
+- **The AI assist's data.** Claude only ever sees fake seed data: the practice's
+  invented patients and chairs, plus the typed request. In production that list would
+  come from the database for the signed-in practice, and the request text could contain
+  real patient details, so it would need a data agreement with the AI provider.
 - **The clock.** The demo always runs on Tue Nov 17, 2026 at 9:40 AM so it looks the same
   whenever it's opened. Times are practice wall-clock strings with no timezone.
 
 ## What I'd do next
 
+- **Protect the AI endpoint.** It's public with no sign-in, so anyone can spend the key's
+  budget: add real auth, a per-user rate limit (in a shared store, since serverless
+  instances don't share memory), and a spend limit on the key.
+- **A bigger eval from real phrasing.** 15 hand-written cases is a regression check. Grow
+  it to 50+ from how staff actually type requests, and run it in CI on prompt changes.
 - **Cancel reasons, a confirm step, and no-shows.** Cancelling uses Undo today, not an
   "Are you sure?" popup, because it's frequent and fully reversible here. Once a cancel
   texts the patient or charges a late fee it can't be undone, so it should get a confirm

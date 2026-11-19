@@ -1,0 +1,42 @@
+{
+  "reps": 2,
+  "harness_paths": [
+    "evals/parse-booking/run-eval.mjs",
+    "evals/parse-booking/grade.ts",
+    "evals/parse-booking/cases.json",
+    "server/handler.ts",
+    "server/parseBooking.ts",
+    "src/lib/assist.ts",
+    "src/mocks/seed.ts"
+  ],
+  "metrics": [
+    {
+      "id": "all_fields",
+      "kind": "binary",
+      "label": "All fields"
+    },
+    {
+      "id": "no_invented",
+      "kind": "binary",
+      "label": "Nothing made up"
+    },
+    {
+      "id": "field_score",
+      "kind": "float",
+      "label": "Field score"
+    }
+  ],
+  "perf_fields": [
+    {
+      "id": "cost_usd",
+      "label": "Cost",
+      "unit": "$"
+    },
+    {
+      "id": "latency_s",
+      "label": "Latency",
+      "unit": "s"
+    }
+  ],
+  "harness_sha": "5cb52c3d8db2be308df8ab96f6c2a6761cb248cd37e149f64acddb7d725e71cc"
+}

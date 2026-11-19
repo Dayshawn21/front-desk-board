@@ -4,3 +4,6 @@ package-lock.json
 # Copied unchanged from Anthropic's eval runner scaffold (only its hooks are filled in);
 # kept in its original style so it stays easy to compare with upstream.
 evals/**/run-eval.mjs
+
+# Eval output written by the runner (kept as-is so resume and diffs stay exact)
+.claude/
