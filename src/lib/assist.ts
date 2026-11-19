@@ -148,3 +148,11 @@ export function contextFromDay(day: ScheduleDay): AssistContext {
     })),
   }
 }
+
+// The words in a request that ask for a day other than today, e.g.
+// "tomorrow". Checked in code, so the warning doesn't depend on the model.
+// STUB: filled in by the next commit.
+export function findOtherDay(text: string): string | null {
+  void text
+  return null
+}

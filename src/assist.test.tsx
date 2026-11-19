@@ -152,6 +152,33 @@ describe('AI booking assist', () => {
     expect(within(dialog).getByLabelText(/patient/i)).toHaveValue('')
   })
 
+  it('warns plainly when the request asks for another day', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      reply(200, {
+        draft: { ...anaCleaning.draft, notUsed: ['tomorrow'] },
+        warnings: [],
+      }),
+    )
+    const { user, dialog } = await openBooking()
+
+    await askAi(user, dialog, 'Cleaning for Ana tomorrow afternoon')
+
+    const warning = await within(dialog).findByText(/you asked for tomorrow/i)
+    expect(warning).toHaveTextContent(
+      'You asked for tomorrow. This books today, Tuesday, Nov 17, and the times below are for today.',
+    )
+  })
+
+  it('shows no day warning for a request about today', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(reply(200, anaCleaning))
+    const { user, dialog } = await openBooking()
+
+    await askAi(user, dialog, 'Cleaning for Ana this afternoon with Patel')
+
+    await within(dialog).findByText(/ai-filled/i)
+    expect(within(dialog).queryByText(/you asked for/i)).not.toBeInTheDocument()
+  })
+
   it('shows a loading state while it reads the request', async () => {
     let resolve!: (r: Response) => void
     vi.spyOn(globalThis, 'fetch').mockReturnValue(

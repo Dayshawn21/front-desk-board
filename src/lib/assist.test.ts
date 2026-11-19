@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { type AssistContext, sanitizeDraft } from './assist'
+import { type AssistContext, findOtherDay, sanitizeDraft } from './assist'
 
 const context: AssistContext = {
   practiceName: 'Maple Street Dental',
@@ -115,5 +115,30 @@ describe('sanitizeDraft', () => {
   it('rejects output that is not an object', () => {
     expect(() => sanitizeDraft('cleaning for Ana', context)).toThrow()
     expect(() => sanitizeDraft(null, context)).toThrow()
+  })
+})
+
+describe('findOtherDay', () => {
+  it.each([
+    ['Filling for Priya in chair 3 tomorrow morning', 'tomorrow'],
+    ['Exam for Jon the day after tomorrow', 'the day after tomorrow'],
+    ['Cleaning for Ana next Tuesday', 'next Tuesday'],
+    ['Exam for Jon on Friday at 10', 'Friday'],
+    ['Crown prep next week', 'next week'],
+    ['Consult for Ms. Silva on 11/20', '11/20'],
+    ['Exam for Jon Nov 24', 'Nov 24'],
+    ['Exam for Jon in 2 weeks', 'in 2 weeks'],
+  ])('finds another day in %j', (text, expected) => {
+    expect(findOtherDay(text)).toBe(expected)
+  })
+
+  it.each([
+    'Cleaning for Ana this afternoon',
+    'Exam for Jon Kim, any time today',
+    'Crown prep for Marcus Bell after 2:30 pm',
+    'Book Tomás Reyes for a 90 min crown with Dr. Lindqvist at 1:30',
+    '45 minute exam for Owen Hart, every 6 months',
+  ])('finds nothing in %j', (text) => {
+    expect(findOtherDay(text)).toBeNull()
   })
 })
