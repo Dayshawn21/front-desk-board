@@ -142,3 +142,25 @@ test('a patient resets a forgotten password through the demo inbox', async ({
   await page.getByRole('button', { name: 'Sign in' }).click()
   await expect(page.getByRole('heading', { name: 'Your visits' })).toBeVisible()
 })
+
+test('a signed-in patient changes their password', async ({ page }) => {
+  await page.goto('/patient')
+  await signInAsPatient(page, 'ravi.menon@example.com')
+  await page
+    .getByRole('region', { name: 'Your account' })
+    .getByRole('link', { name: 'Change password' })
+    .click()
+  await page.getByLabel('Current password').fill('demo1234')
+  await page.getByLabel('New password').fill('brand new pass')
+  await page.getByLabel('Type it again').fill('brand new pass')
+  await page.getByRole('button', { name: 'Change password' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Password changed' }),
+  ).toBeVisible()
+
+  await page.getByRole('button', { name: 'Sign out' }).click()
+  await page.getByLabel('Email').fill('ravi.menon@example.com')
+  await page.getByLabel('Password').fill('brand new pass')
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await expect(page.getByRole('heading', { name: 'Your visits' })).toBeVisible()
+})

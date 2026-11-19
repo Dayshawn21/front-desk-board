@@ -107,6 +107,9 @@ describe('password reset pages', () => {
     expect(parseRoute('/patient/reset-password')).toEqual({
       page: 'patient-reset-password',
     })
+    expect(parseRoute('/patient/change-password')).toEqual({
+      page: 'patient-change-password',
+    })
     expect(parseRoute('/patient/constructor')).toEqual({ page: 'board' })
   })
 })

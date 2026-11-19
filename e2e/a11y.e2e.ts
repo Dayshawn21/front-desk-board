@@ -273,6 +273,18 @@ test.describe('patient pages', () => {
       await expectNoViolations(page)
     })
 
+    test('change password, with an error', async ({ page }) => {
+      await page.goto('/patient/change-password')
+      await signInAsPatient(page, 'owen.hart@example.com')
+      await page.getByLabel('Current password').fill('not my password')
+      await page.getByLabel('New password').fill('brand new pass')
+      await page.getByLabel('Type it again').fill('brand new pass')
+      await page.getByRole('button', { name: 'Change password' }).click()
+      await expect(page.getByRole('alert')).toBeVisible()
+      await expectNoSideways(page)
+      await expectNoViolations(page)
+    })
+
     test('forgot password, link sent', async ({ page }) => {
       await page.goto('/patient/forgot-password')
       await page.getByLabel('Email').fill('owen.hart@example.com')
