@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { initials, roleLabel, roleSummary } from '../lib/display'
 import { practices } from '../mocks/seed'
 import { users } from '../mocks/users'
+import { bookingPath } from '../lib/route'
 import { useAuth } from '../session/SessionContext'
 import { BrandMark } from './BrandMark'
 
@@ -75,6 +76,17 @@ export function SignInPage() {
             ))}
           </ul>
         </div>
+
+        <p className="text-center text-sm text-slate-600">
+          Want the patient's side?{' '}
+          <a
+            href={bookingPath('maple')}
+            className="font-medium text-teal-800 underline underline-offset-2"
+          >
+            Book a visit online
+          </a>{' '}
+          in one tab and watch it appear on the board in another.
+        </p>
       </main>
     </div>
   )

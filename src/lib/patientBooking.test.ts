@@ -64,8 +64,8 @@ describe('patientTimes', () => {
       { chairId: 'c1', ...busy },
       { chairId: 'c2', ...busy },
     ])
+    // 10:45, 11:00 and 11:15 would all run into the 11:00 visits.
     expect(starts(patientTimes(day, 30, '2026-11-17T10:40:00'))).toEqual([
-      '10:45',
       '11:30',
     ])
   })

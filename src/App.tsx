@@ -1,8 +1,10 @@
 import { Board } from './components/Board'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { SignInPage } from './components/SignInPage'
+import { BookVisitPage } from './components/patient/BookVisitPage'
 import { useLiveScheduleUpdates } from './hooks/useSchedule'
 import { useTheme } from './hooks/useTheme'
+import { parseRoute } from './lib/route'
 import { useAuth } from './session/SessionContext'
 
 // Signed out: the sign-in page. Signed in: the board, keyed by user so a
@@ -16,6 +18,17 @@ function App() {
   const [theme, setTheme] = useTheme()
   // Changes made in other tabs show up here without a reload.
   useLiveScheduleUpdates()
+
+  // Patient pages are public: no staff sign-in.
+  const route = parseRoute(window.location.pathname)
+  if (route.page === 'book') {
+    return (
+      <ErrorBoundary where="book">
+        <BookVisitPage key={route.practiceId} practiceId={route.practiceId} />
+      </ErrorBoundary>
+    )
+  }
+
   return user ? (
     <ErrorBoundary key={user.id} where="board" onSignOut={signOut}>
       <Board theme={theme} onThemeChange={setTheme} />

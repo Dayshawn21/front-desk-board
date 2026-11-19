@@ -194,10 +194,11 @@ async function bookCheckup(page: Page) {
   await page.goto('/book/maple')
   await page.getByLabel('Who is the visit for?').selectOption('p-grace')
   await page.getByRole('radio', { name: /^Checkup/ }).check()
+  // Click the visible label: the radio itself is visually hidden.
   await page
     .getByRole('group', { name: 'Pick a time' })
-    .getByRole('radio', { name: '11:30 AM' })
-    .check()
+    .getByText('11:30 AM', { exact: true })
+    .click()
 }
 
 async function expectNoSideways(page: Page) {

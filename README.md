@@ -20,6 +20,11 @@ front-end engineering skills: React, TypeScript, Tailwind, TanStack Query, and t
 4. Open the account menu (top right) to switch between light and dark, and sign out. Sign in as **Theo Grant** (office
    manager) to switch practices, or **Dr. Amara Okafor** (provider), who can seat a
    patient but can't book, check in, or cancel.
+5. The patient's side: keep the board open and, in a second tab, open
+   [/book/maple](https://front-desk-board.vercel.app/book/maple) (also linked from the
+   sign-in page). Pick a patient, a visit type, and a time, and book. The visit appears
+   on the board in the first tab, as Scheduled, without a reload. **Reset demo data** in
+   the account menu starts over.
 
 The AI assist is rate limited (10 requests a minute per visitor). Add `?fail`,
 `?failBook`, or `?crash` to the URL to see the error states.
@@ -95,6 +100,15 @@ Built in six daily steps.
 - [x] Shared demo data: every tab in the browser shares one mock database, so a change
       in one tab shows up on the board in another without a reload, and a reload keeps
       it. **Reset demo data** in the account menu puts the demo back to its start
+- [x] Patient online booking (`/book/maple`, `/book/riverbend`): a public, phone-first
+      page in the app's look. The patient picks who the visit is for (one of the
+      practice's made-up patients), a visit type in patient words (Cleaning, Checkup,
+      Consultation, Tooth pain), and one of today's open times, grouped morning and
+      afternoon. Times come from the same slot finder as the board, start no earlier
+      than the demo clock, and show once each (the first free chair takes it). The
+      server's double-booking check still applies: if someone took the time first, the
+      page says so, clears the time, and shows fresh ones. After booking, focus moves to
+      "You're booked"
 - [x] End-to-end tests (Playwright) in a real browser: book a visit and check a patient
       in, the double-booking banner, click-to-book, and the AI assist (fill, warn about
       another day, rate limit). The AI tests fake the server route, so CI never calls
@@ -205,6 +219,11 @@ an interrupted run picks up where it stopped.
   would decide who you are. The chosen user is remembered in `sessionStorage` for that
   tab. Role rules (`src/lib/permissions.ts`) only hide buttons in the UI; a real server
   would enforce the same rules on every request.
+- **Who the patient is.** The booking page lists the practice's made-up patients to
+  pick from, like the staff sign-in. A real page would never show a patient list: the
+  patient would sign in (or confirm with a code texted to their phone) and the server
+  would know who they are. Nothing is typed in, so no real names can get into the demo,
+  or into the AI assist's patient list.
 - **The AI assist's data.** Claude only ever sees fake seed data: the practice's
   invented patients and chairs, plus the typed request. In production that list would
   come from the database for the signed-in practice, and the request text could contain
@@ -247,8 +266,12 @@ an interrupted run picks up where it stopped.
   `ScheduleGrid`, `PatientFlow`, `CheckInDrawer`, `BookingDrawer` beside it
 - `src/hooks/`: `useStatusChanges` (save, toast, Undo), `useBooking`, `useSchedule`
   (TanStack Query), `useTheme`, `useMediaQuery`, `useModalDialog`
+- `src/components/patient/`: the patient pages (`BookVisitPage`) and their frame
+  (`PatientShell`); `src/lib/route.ts` picks the page from the URL path (no router
+  package; `vercel.json` sends `/book` paths to `index.html`)
 - `src/lib/`: the rules as pure, tested functions: `statusChange` (kinds, Undo, toast
   text), `workflow` (next step, cancel, no-show, lateness), `slots` (open-slot finder),
+  `patientBooking` (which times a patient sees),
   `overlap`, `lanes`, `permissions`, `assist` (AI answer checks), `time`
 - `src/api/schedule.ts`: the mock server (shared between tabs through `localStorage`);
   `server/` and `api/`: the AI route

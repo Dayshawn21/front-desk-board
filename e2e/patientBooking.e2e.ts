@@ -18,10 +18,11 @@ test('a patient books online and the visit appears on the front desk board', asy
   ).toBeVisible()
   await patient.getByLabel('Who is the visit for?').selectOption('p-grace')
   await patient.getByRole('radio', { name: /^Checkup/ }).check()
+  // Click the visible label: the radio itself is visually hidden.
   await patient
     .getByRole('group', { name: 'Pick a time' })
-    .getByRole('radio', { name: '11:30 AM' })
-    .check()
+    .getByText('11:30 AM', { exact: true })
+    .click()
   await patient.getByRole('button', { name: 'Book 11:30 AM' }).click()
   await expect(
     patient.getByRole('heading', { name: "You're booked" }),

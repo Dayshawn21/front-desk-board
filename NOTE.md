@@ -11,6 +11,12 @@ including from a plain-language request ("60 min cleaning for Ana Diaz this afte
 
 ## Decisions that shaped it
 
+- **A patient side that uses the same rules.** The public booking page (`/book/maple`)
+  offers times from the same slot finder as the desk, and the same server check rejects
+  a time someone just took. Tabs share one mock database, so a patient's booking shows
+  up on the board in another tab without a reload. No router package: a path switch
+  covers the few pages.
+
 - **Logic as pure, tested functions.** Overlaps, lane layout, open-slot search, and the
   status workflow live in `src/lib` with no React in them, so they were built test-first
   and the UI just renders their results. Times are wall-clock strings, so results don't
@@ -54,5 +60,5 @@ book and move visits, with a keyboard alternative.
 
 ## Numbers
 
-314 unit tests and 37 Playwright tests (user flows, the AI assist with its route faked, and
+336 unit tests and 47 Playwright tests (user flows, the AI assist with its route faked, and
 axe in light and dark) run in CI on every push.
