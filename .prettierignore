@@ -7,3 +7,8 @@ evals/**/run-eval.mjs
 
 # Eval output written by the runner (kept as-is so resume and diffs stay exact)
 .claude/
+
+# Playwright output
+test-results/
+playwright-report/
+blob-report/

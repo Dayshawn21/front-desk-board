@@ -200,9 +200,10 @@ function Board() {
           {/* Only the office manager can switch, so only they get a control.
               Everyone else sees their practice as plain text. */}
           {can('switch-practice') ? (
-            <label className="flex flex-col gap-0.5 text-xs font-medium text-slate-600">
-              Practice
+            <div className="flex flex-col gap-0.5 text-xs font-medium text-slate-600">
+              <label htmlFor="practice-select">Practice</label>
               <select
+                id="practice-select"
                 value={practiceId}
                 onChange={(e) => {
                   setSelectedId(null) // never keep one practice's drawer open on another
@@ -220,7 +221,7 @@ function Board() {
                   </option>
                 ))}
               </select>
-            </label>
+            </div>
           ) : (
             <div className="flex flex-col gap-0.5">
               <span className="text-xs font-medium text-slate-600">

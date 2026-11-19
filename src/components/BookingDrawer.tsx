@@ -317,9 +317,10 @@ export function BookingDrawer({
           onSubmit={handleSubmit}
           className="flex flex-col gap-4"
         >
-          <label className={labelClass}>
-            Patient
+          <div className={labelClass}>
+            <label htmlFor={`${ids}-patient`}>Patient</label>
             <select
+              id={`${ids}-patient`}
               ref={patientRef}
               value={patientId}
               onChange={(e) => setPatientId(e.target.value)}
@@ -344,12 +345,13 @@ export function BookingDrawer({
                 {patientError}
               </span>
             )}
-          </label>
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
-            <label className={labelClass}>
-              Visit type
+            <div className={labelClass}>
+              <label htmlFor={`${ids}-type`}>Visit type</label>
               <select
+                id={`${ids}-type`}
                 value={type}
                 onChange={(e) => {
                   const next = e.target.value as AppointmentType
@@ -364,10 +366,11 @@ export function BookingDrawer({
                   </option>
                 ))}
               </select>
-            </label>
-            <label className={labelClass}>
-              Length
+            </div>
+            <div className={labelClass}>
+              <label htmlFor={`${ids}-length`}>Length</label>
               <select
+                id={`${ids}-length`}
                 value={String(length)}
                 onChange={(e) => setLength(Number(e.target.value))}
                 className={fieldClass}
@@ -378,10 +381,11 @@ export function BookingDrawer({
                   </option>
                 ))}
               </select>
-            </label>
-            <label className={labelClass}>
-              Chair
+            </div>
+            <div className={labelClass}>
+              <label htmlFor={`${ids}-chair`}>Chair</label>
               <select
+                id={`${ids}-chair`}
                 value={chairId}
                 onChange={(e) => setChairId(e.target.value)}
                 className={fieldClass}
@@ -393,10 +397,11 @@ export function BookingDrawer({
                   </option>
                 ))}
               </select>
-            </label>
-            <label className={labelClass}>
-              Time of day
+            </div>
+            <div className={labelClass}>
+              <label htmlFor={`${ids}-time`}>Time of day</label>
               <select
+                id={`${ids}-time`}
                 value={timeOfDay}
                 onChange={(e) => setTimeOfDay(e.target.value as TimeOfDay)}
                 className={fieldClass}
@@ -408,7 +413,7 @@ export function BookingDrawer({
                   <option value="from">From {formatTime(fromTime)}</option>
                 )}
               </select>
-            </label>
+            </div>
           </div>
 
           <fieldset

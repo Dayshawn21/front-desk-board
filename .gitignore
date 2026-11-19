@@ -32,3 +32,8 @@ dist-ssr
 .claude/hillclimb/**/report.html
 .claude/hillclimb/**/trajectory/
 .claude/hillclimb/**/progress.txt
+
+# Playwright output
+test-results/
+playwright-report/
+blob-report/

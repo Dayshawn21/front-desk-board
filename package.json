@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
-    "eval": "node --env-file-if-exists=.env.local --import ./evals/parse-booking/resolve-ts.mjs evals/parse-booking/run-eval.mjs --flow .claude/hillclimb/parse-booking --model claude-haiku-5-5"
+    "eval": "node --env-file-if-exists=.env.local --import ./evals/parse-booking/resolve-ts.mjs evals/parse-booking/run-eval.mjs --flow .claude/hillclimb/parse-booking --model claude-haiku-5-5",
+    "e2e": "playwright test"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.10.0",
@@ -26,7 +27,9 @@
     "tailwindcss": "^4.3.5"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.1",
     "@testing-library/jest-dom": "^7.0.1",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.12",
