@@ -82,3 +82,27 @@ test('a patient signs in, books, and sees the visit in their list', async ({
   await page.reload()
   await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
 })
+
+test('a new patient signs up, then books', async ({ page }) => {
+  await page.goto('/patient')
+  await page.getByRole('link', { name: /create an account/i }).click()
+  await expect(page).toHaveURL(/\/patient\/sign-up$/)
+  await page.getByText('Riverbend Family Dental').click()
+  await page.getByLabel('First name').fill('Zoe')
+  await page.getByLabel('Last name').fill('Quill')
+  await page.getByLabel('Phone').fill('555-0199')
+  await page.getByLabel('Email').fill('zoe.quill@example.com')
+  await page.getByLabel('Password').fill('correct horse')
+  await page.getByRole('button', { name: 'Create account' }).click()
+
+  await expect(page.getByRole('heading', { name: 'Your visits' })).toBeVisible()
+  await expect(page).toHaveURL(/\/patient$/)
+  await expect(page.getByText('You have no visits today.')).toBeVisible()
+
+  // Signed in: a reload keeps it, and booking goes straight to the form.
+  await page.reload()
+  await page.getByRole('link', { name: 'Book a visit' }).click()
+  await expect(
+    page.getByRole('heading', { name: 'Book a visit' }),
+  ).toBeVisible()
+})

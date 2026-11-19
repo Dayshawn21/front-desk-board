@@ -3,6 +3,7 @@ import {
   bookingPath,
   checkInPath,
   PATIENT_HOME_PATH,
+  PATIENT_SIGN_UP_PATH,
   parseRoute,
 } from './route'
 
@@ -84,5 +85,13 @@ describe('patient pages', () => {
     expect(parseRoute('/patient')).toEqual({ page: 'patient-home' })
     expect(parseRoute('/patient/')).toEqual({ page: 'patient-home' })
     expect(parseRoute('/patient/maple')).toEqual({ page: 'board' })
+  })
+
+  it('has a sign-up page for new patients', () => {
+    expect(PATIENT_SIGN_UP_PATH).toBe('/patient/sign-up')
+    expect(parseRoute('/patient/sign-up')).toEqual({ page: 'patient-sign-up' })
+    expect(parseRoute('/patient/sign-up/')).toEqual({
+      page: 'patient-sign-up',
+    })
   })
 })

@@ -273,6 +273,28 @@ test.describe('patient pages', () => {
       await expectNoViolations(page)
     })
 
+    test('patient sign-up', async ({ page }) => {
+      await page.goto('/patient/sign-up')
+      await expect(
+        page.getByRole('heading', { name: 'Create your account' }),
+      ).toBeVisible()
+      await expectNoSideways(page)
+      await expectNoViolations(page)
+    })
+
+    test('patient sign-up with an email already in use', async ({ page }) => {
+      await page.goto('/patient/sign-up')
+      await page.getByText('Maple Street Dental').click()
+      await page.getByLabel('First name').fill('Zoe')
+      await page.getByLabel('Last name').fill('Quill')
+      await page.getByLabel('Phone').fill('555-0199')
+      await page.getByLabel('Email').fill('owen.hart@example.com')
+      await page.getByLabel('Password').fill('correct horse')
+      await page.getByRole('button', { name: 'Create account' }).click()
+      await expect(page.getByRole('alert')).toBeVisible()
+      await expectNoViolations(page)
+    })
+
     test('patient sign-in with a wrong password', async ({ page }) => {
       await page.goto('/patient')
       await page.getByLabel('Email').fill('owen.hart@example.com')
