@@ -51,6 +51,12 @@ Work in progress. Built in daily steps.
       schedule (desktop and phone width), patient flow, check-in drawer, New appointment
       panel, account menu, and toast. axe catches only part of WCAG; keyboard and focus
       behaviour is covered by the other tests
+- [x] Lighthouse on the live site, including the signed-in board (a scripted user
+      flow that signs in, then opens the check-in drawer). Accessibility, Best
+      Practices, and SEO are 100 on every screen; the sign-in page scores 100 for
+      Performance on phone and desktop. One thing to improve: on Lighthouse's slowed-down
+      phone, the click from sign-in to the board takes 420 ms to respond (70 ms on
+      desktop), mostly rendering and layout of the whole board at once
 
 ## AI booking assist
 
