@@ -45,8 +45,21 @@ Built in six daily steps.
 - [x] Dark mode: Light, Dark, or System (the default, follows the device) in the
       account menu, remembered in `localStorage`. A small script in `index.html` sets it
       before the first paint, so there's no white flash. Instead of `dark:` on every
-      class, `src/index.css` flips each Tailwind palette (50 ↔ 950, …) under `.dark`, so
-      text/background pairs keep their contrast; axe runs on every screen in both themes
+      class, `src/index.css` remaps the palettes under `.dark`: neutrals run the other
+      way, and each status colour has a hand-tuned dark ramp (quiet fills, light text)
+      so cards don't turn into saturated blocks. axe runs on every screen in both themes
+- [x] Design pass (from a structured critique): warm neutrals, a self-hosted typeface
+      (Source Sans 3), a brand mark, a themed focus ring, one time format, a branded
+      sign-in that says what each role can do, New appointment on the tabs row, a
+      status key, and names in the conflict banner and cancelled/no-show lists that
+      open the visit
+- [x] Late visits: an expected visit past its start shows "Late 1h 40m" on its cards;
+      the now line sits above the cards with a time label
+- [x] Checklist and notes save on their own (a tick right away, notes when you leave
+      the box or close the drawer), so closing never loses work
+- [x] Phones: the schedule shows one chair at a time with a chair switcher (the time
+      column stays in view, nothing scrolls sideways), patient flow shows one column at a
+      time starting with Arrived, and New appointment floats in thumb reach
 - [x] Undo: every status change shows a toast with Undo, and the drawer can move a visit
       back one step; reopening a checked-out visit is office-manager only
 - [x] Open-slot finder (`src/lib/slots.ts`): given a duration and an optional chair and

@@ -10,7 +10,10 @@ import {
 } from '../lib/time'
 import { minutesLate } from '../lib/workflow'
 import type { Appointment, ScheduleDay } from '../types'
+import { useState } from 'react'
+import { PHONE_QUERY, useMediaQuery } from '../hooks/useMediaQuery'
 import { LateNote } from './LateNote'
+import { Segmented } from './Segmented'
 
 const SLOT_MINUTES = 15
 const ROW_PX = 32
@@ -39,7 +42,16 @@ export function ScheduleGrid({
 
   const patientsById = new Map(day.patients.map((p) => [p.id, p]))
   const chairsById = new Map(day.chairs.map((c) => [c.id, c]))
-  const columnByChair = new Map(day.chairs.map((c, i) => [c.id, i + 2]))
+
+  // On a phone, one chair at a time (a switcher picks which), so the time
+  // column stays in view and nothing scrolls sideways. If the picked chair
+  // isn't in this practice (after a switch), fall back to the first.
+  const isPhone = useMediaQuery(PHONE_QUERY)
+  const [pickedChairId, setPickedChairId] = useState(day.chairs[0]?.id ?? '')
+  const pickedChair =
+    day.chairs.find((c) => c.id === pickedChairId) ?? day.chairs[0]
+  const shownChairs = isPhone && pickedChair ? [pickedChair] : day.chairs
+  const columnByChair = new Map(shownChairs.map((c, i) => [c.id, i + 2]))
   const apptsById = new Map(day.appointments.map((a) => [a.id, a]))
 
   // Cancelled visits leave the grid so their time shows as open; they're
@@ -152,16 +164,26 @@ export function ScheduleGrid({
         </ul>
       </div>
 
+      {isPhone && pickedChair && (
+        <Segmented
+          legend="Chair"
+          hideLegend
+          options={day.chairs.map((c) => ({ value: c.id, label: c.name }))}
+          value={pickedChair.id}
+          onChange={setPickedChairId}
+        />
+      )}
+
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
         <div
-          className="relative grid min-w-160"
+          className={`relative grid ${isPhone ? '' : 'min-w-160'}`}
           style={{
-            gridTemplateColumns: `64px repeat(${day.chairs.length}, minmax(160px, 1fr))`,
+            gridTemplateColumns: `64px repeat(${shownChairs.length}, minmax(160px, 1fr))`,
             gridTemplateRows: `${HEADER_PX}px repeat(${slotCount}, ${ROW_PX}px)`,
           }}
         >
           {/* Chair headers + vertical lane lines */}
-          {day.chairs.map((chair, i) => (
+          {shownChairs.map((chair, i) => (
             <div key={chair.id} className="contents">
               <div
                 className="flex flex-col justify-center border-b border-l border-slate-200 px-2.5 py-1.5"
@@ -207,7 +229,7 @@ export function ScheduleGrid({
               bury the visits). Keyboard users book with "New appointment".
               Cards render after these, so a visit always wins the click. */}
           {onSelectSlot &&
-            day.chairs.flatMap((chair, c) =>
+            shownChairs.flatMap((chair, c) =>
               Array.from({ length: slotCount }, (_, i) => {
                 const minutes = open + i * SLOT_MINUTES
                 if (nowMinutes !== null && minutes < nowMinutes) return null

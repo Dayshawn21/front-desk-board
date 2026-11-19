@@ -53,5 +53,5 @@ book and move visits, with a keyboard alternative.
 
 ## Numbers
 
-266 unit tests and 31 Playwright tests (user flows, the AI assist with its route faked, and
+287 unit tests and 35 Playwright tests (user flows, the AI assist with its route faked, and
 axe in light and dark) run in CI on every push.

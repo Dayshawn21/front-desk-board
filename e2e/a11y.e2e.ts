@@ -160,3 +160,30 @@ test('the theme follows the device until a choice is made', async ({
   await page.reload()
   await expect.poll(isDark).toBe(!deviceIsDark)
 })
+
+test.describe('on a phone', () => {
+  test.use({ viewport: { width: 375, height: 812 } })
+
+  test('schedule, one chair at a time', async ({ page }) => {
+    // Not signInAsFrontDesk: it waits for Jon Kim, who is in Chair 2.
+    await page.goto('/')
+    await page.getByRole('button', { name: /rosa jimenez/i }).click()
+    await expect(page.getByRole('button', { name: /^Ana Diaz,/ })).toBeVisible()
+    await page
+      .getByRole('group', { name: 'Chair' })
+      .getByText('Chair 2', { exact: true })
+      .click()
+    await expect(
+      page.getByRole('button', { name: /^Lena Ortiz,/ }),
+    ).toBeVisible()
+    await expectNoViolations(page)
+  })
+
+  test('patient flow, one column at a time', async ({ page }) => {
+    await page.goto('/')
+    await page.getByRole('button', { name: /rosa jimenez/i }).click()
+    await page.getByRole('tab', { name: 'Patient flow' }).click()
+    await expect(page.getByRole('region', { name: /^Arrived/ })).toBeVisible()
+    await expectNoViolations(page)
+  })
+})

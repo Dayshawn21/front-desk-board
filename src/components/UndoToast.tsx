@@ -36,7 +36,8 @@ export function UndoToast({ toast, undo, onDismiss }: UndoToastProps) {
     <div
       role="status"
       aria-live="polite"
-      className="pointer-events-none fixed bottom-4 left-4 z-50 flex max-w-[calc(100vw-2rem)]"
+      // On a phone, sit above the floating New appointment button.
+      className="pointer-events-none fixed bottom-4 left-4 z-50 flex max-w-[calc(100vw-2rem)] max-sm:bottom-20"
     >
       {toast && (
         <div

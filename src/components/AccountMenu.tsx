@@ -2,6 +2,7 @@ import { useEffect, useId, useRef, useState } from 'react'
 import { initials, roleLabel } from '../lib/display'
 import { THEME_CHOICES, type ThemeChoice } from '../lib/theme'
 import type { StaffUser } from '../types'
+import { Segmented } from './Segmented'
 
 type AccountMenuProps = {
   user: StaffUser
@@ -115,29 +116,16 @@ export function AccountMenu({
           {/* The divider is on a wrapper: a border on the fieldset would draw
               through its legend. */}
           <div className="mt-4 border-t border-slate-200 pt-3">
-            <fieldset>
-              <legend className="mb-2 text-xs font-semibold text-slate-700">
-                Theme
-              </legend>
-              <div className="grid grid-cols-3 gap-1 rounded-lg border border-slate-200 bg-slate-100 p-1">
-                {THEME_CHOICES.map((choice) => (
-                  <label
-                    key={choice}
-                    className="flex h-9 cursor-pointer items-center justify-center rounded-md text-xs font-medium text-slate-700 has-checked:bg-teal-700 has-checked:text-white has-focus-visible:outline-2 has-focus-visible:outline-teal-700"
-                  >
-                    <input
-                      type="radio"
-                      name={`${panelId}-theme`}
-                      value={choice}
-                      checked={theme === choice}
-                      onChange={() => onThemeChange(choice)}
-                      className="sr-only"
-                    />
-                    {themeLabel[choice]}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
+            <Segmented
+              legend="Theme"
+              size="sm"
+              options={THEME_CHOICES.map((choice) => ({
+                value: choice,
+                label: themeLabel[choice],
+              }))}
+              value={theme}
+              onChange={onThemeChange}
+            />
           </div>
           <div className="mt-4 border-t border-slate-200 pt-3">
             <button

@@ -1,3 +1,5 @@
+import { useState } from 'react'
+import { PHONE_QUERY, useMediaQuery } from '../hooks/useMediaQuery'
 import { roleLabel, typeLabel } from '../lib/display'
 import { findConflicts } from '../lib/overlap'
 import { formatTime, formatTimeRange } from '../lib/time'
@@ -11,6 +13,7 @@ import {
 import { useSession } from '../session/SessionContext'
 import type { AppointmentStatus, ScheduleDay } from '../types'
 import { LateNote } from './LateNote'
+import { Segmented } from './Segmented'
 
 // Full class strings so Tailwind can find them (see display.ts).
 const dotClass: Record<FlowColumnId, string> = {
@@ -37,6 +40,13 @@ export function PatientFlow({
 }: PatientFlowProps) {
   const { role, can } = useSession()
   const groups = groupByFlow(day.appointments)
+
+  // On a phone, one column at a time, starting with who's waiting.
+  const isPhone = useMediaQuery(PHONE_QUERY)
+  const [pickedColumn, setPickedColumn] = useState<FlowColumnId>('arrived')
+  const shownColumns = isPhone
+    ? flowColumns.filter((c) => c.id === pickedColumn)
+    : flowColumns
   const conflicts = findConflicts(day.appointments)
   const patientsById = new Map(day.patients.map((p) => [p.id, p]))
   const chairsById = new Map(day.chairs.map((c) => [c.id, c]))
@@ -53,8 +63,27 @@ export function PatientFlow({
 
   return (
     <div className="flex flex-col gap-3">
+      {isPhone && (
+        <Segmented
+          legend="Column"
+          hideLegend
+          size="sm"
+          columns={2}
+          options={flowColumns.map((c) => ({
+            value: c.id,
+            label: (
+              <>
+                {c.label}{' '}
+                <span className="tabular-nums">{groups[c.id].length}</span>
+              </>
+            ),
+          }))}
+          value={pickedColumn}
+          onChange={setPickedColumn}
+        />
+      )}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {flowColumns.map((column) => {
+        {shownColumns.map((column) => {
           const items = groups[column.id]
           const headingId = `flow-${column.id}`
           return (

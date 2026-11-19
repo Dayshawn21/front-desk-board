@@ -302,7 +302,10 @@ function Board({
       </header>
 
       {/* inert: while a drawer is open, nothing behind it can be focused or clicked */}
-      <main inert={modalOpen} className="flex flex-col gap-4 p-6">
+      <main
+        inert={modalOpen}
+        className="flex flex-col gap-4 p-4 max-sm:pb-24 sm:p-6"
+      >
         <ViewTabs
           value={view}
           onChange={setView}
@@ -313,7 +316,8 @@ function Board({
                 ref={newAppointmentRef}
                 onClick={() => openBooking(null)}
                 disabled={!schedule.data}
-                className="h-11 rounded-lg bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+                // On a phone it floats at the bottom right, in thumb reach.
+                className="h-11 rounded-lg bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60 max-sm:fixed max-sm:right-4 max-sm:bottom-4 max-sm:z-30 max-sm:h-12 max-sm:rounded-full max-sm:px-5 max-sm:shadow-lg"
               >
                 New appointment
               </button>
