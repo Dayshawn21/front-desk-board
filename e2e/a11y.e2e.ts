@@ -187,3 +187,58 @@ test.describe('on a phone', () => {
     await expectNoViolations(page)
   })
 })
+
+// The patient's pages: public, phone-first. Checked at desktop and phone
+// width, in light and (in the chromium-dark project) dark.
+async function bookCheckup(page: Page) {
+  await page.goto('/book/maple')
+  await page.getByLabel('Who is the visit for?').selectOption('p-grace')
+  await page.getByRole('radio', { name: /^Checkup/ }).check()
+  await page
+    .getByRole('group', { name: 'Pick a time' })
+    .getByRole('radio', { name: '11:30 AM' })
+    .check()
+}
+
+async function expectNoSideways(page: Page) {
+  // A string runs in the page (the e2e tsconfig has no DOM types).
+  const overflow = await page.evaluate<number>(
+    'document.documentElement.scrollWidth - window.innerWidth',
+  )
+  expect(overflow).toBeLessThanOrEqual(0)
+}
+
+test.describe('patient pages', () => {
+  test('book a visit, with times showing', async ({ page }) => {
+    await bookCheckup(page)
+    await expectNoViolations(page)
+  })
+
+  test.describe('on a phone', () => {
+    test.use({ viewport: { width: 375, height: 812 } })
+
+    test('book a visit, with times showing', async ({ page }) => {
+      await bookCheckup(page)
+      await expectNoSideways(page)
+      await expectNoViolations(page)
+    })
+
+    test('booking confirmed', async ({ page }) => {
+      await bookCheckup(page)
+      await page.getByRole('button', { name: 'Book 11:30 AM' }).click()
+      await expect(
+        page.getByRole('heading', { name: "You're booked" }),
+      ).toBeVisible()
+      await expectNoSideways(page)
+      await expectNoViolations(page)
+    })
+
+    test('a practice that does not exist', async ({ page }) => {
+      await page.goto('/book/nowhere')
+      await expect(
+        page.getByRole('heading', { name: "We couldn't find that practice" }),
+      ).toBeVisible()
+      await expectNoViolations(page)
+    })
+  })
+})
