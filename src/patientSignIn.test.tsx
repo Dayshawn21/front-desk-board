@@ -65,6 +65,30 @@ describe('the patient sign-in page', () => {
   })
 })
 
+describe('the sign-in rate limit', () => {
+  it('locks after 5 wrong tries, and offers a password reset', async () => {
+    const { user } = openAt('/patient')
+    for (let i = 0; i < 5; i++) {
+      await signInWithForm(user, 'owen.hart@example.com', 'wrong-password')
+      await screen.findByText("That email and password don't match.")
+      await user.clear(screen.getByLabelText('Email'))
+      await user.clear(screen.getByLabelText('Password'))
+    }
+    await signInWithForm(user, 'owen.hart@example.com')
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(
+      'Too many tries. Try again in 15 minutes, or reset your password.',
+    )
+    expect(
+      within(alert).getByRole('link', { name: 'Reset your password' }),
+    ).toHaveAttribute('href', '/patient/forgot-password')
+    expect(
+      screen.queryByRole('heading', { name: 'Your visits' }),
+    ).not.toBeInTheDocument()
+  }, 20_000) // six rounds of typing in jsdom
+})
+
 describe('your visits', () => {
   it("shows the patient's visits today, with a check-in link", async () => {
     const { user } = openAt('/patient')
