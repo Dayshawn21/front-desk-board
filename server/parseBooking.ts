@@ -5,7 +5,7 @@ import {
   sanitizeDraft,
   TIMES_OF_DAY,
   VISIT_TYPES,
-} from '../src/lib/assist'
+} from '../src/lib/assist.ts'
 
 // One place to change the model; the eval can compare others via CLAUDE_MODEL.
 export const DEFAULT_MODEL = 'claude-opus-5-5'

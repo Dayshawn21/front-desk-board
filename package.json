@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run typecheck && npm run lint && npm run format:check && npm test"
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
+    "eval": "node --env-file-if-exists=.env.local evals/parse-booking/run-eval.mjs --flow .claude/hillclimb/parse-booking --model claude-opus-5-5"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.10.0",

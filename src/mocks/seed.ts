@@ -9,7 +9,7 @@ import type {
 // FAKE DATA ONLY. Names are invented. Phone numbers use 555-01xx,
 // a range reserved for fictional use.
 
-import { DEMO_DATE } from '../config'
+import { DEMO_DATE } from '../config.ts'
 
 export const practices: Practice[] = [
   {
