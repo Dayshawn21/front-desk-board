@@ -16,8 +16,20 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: 'retain-on-failure',
+    // Watch a run in installed Edge (on Windows, Application Control can block
+    // the downloaded Chromium's visible browser; headless runs aren't affected):
+    //   $env:PW_CHANNEL = 'msedge'; $env:SLOWMO = '600'; npx playwright test --headed --workers=1
+    launchOptions: { slowMo: Number(process.env.SLOWMO ?? 0) },
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        ...devices['Desktop Chrome'],
+        channel: process.env.PW_CHANNEL || undefined,
+      },
+    },
+  ],
   webServer: {
     command: `npm run build && npm run preview -- --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}`,
