@@ -10,5 +10,10 @@ afterEach(() => {
   resetMockDb()
   // Server tests run in Node, where there is no sessionStorage.
   if (typeof sessionStorage !== 'undefined') sessionStorage.clear()
+  if (typeof localStorage !== 'undefined') localStorage.clear()
+  if (typeof document !== 'undefined') {
+    document.documentElement.classList.remove('dark')
+    document.documentElement.style.colorScheme = ''
+  }
   vi.restoreAllMocks()
 })

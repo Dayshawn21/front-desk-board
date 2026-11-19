@@ -1,4 +1,4 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import App from './App'
@@ -99,5 +99,22 @@ describe('account menu', () => {
     await user.click(screen.getByRole('button', { name: /sign out/i }))
 
     expect(screen.getByRole('heading', { name: /sign in/i })).toHaveFocus()
+  })
+
+  it('switches between light, dark, and the device setting, and remembers it', async () => {
+    const { user, button } = await renderAs('front-desk')
+    await user.click(button)
+
+    const theme = screen.getByRole('group', { name: 'Theme' })
+    const option = (name: string) => within(theme).getByRole('radio', { name })
+    expect(option('System')).toBeChecked()
+
+    await user.click(option('Dark'))
+    expect(document.documentElement).toHaveClass('dark')
+    expect(localStorage.getItem('front-desk-board.theme')).toBe('dark')
+
+    await user.click(option('Light'))
+    expect(document.documentElement).not.toHaveClass('dark')
+    expect(localStorage.getItem('front-desk-board.theme')).toBe('light')
   })
 })
