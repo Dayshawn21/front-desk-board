@@ -1,6 +1,6 @@
 import { roleLabel, typeLabel } from '../lib/display'
 import { findConflicts } from '../lib/overlap'
-import { formatTime } from '../lib/time'
+import { formatTime, formatTimeRange } from '../lib/time'
 import {
   type FlowColumnId,
   flowColumns,
@@ -118,7 +118,7 @@ export function PatientFlow({
                               </button>
                             </h3>
                             <span className="text-xs text-slate-700 tabular-nums">
-                              {formatTime(appt.start)}–{formatTime(appt.end)}
+                              {formatTimeRange(appt.start, appt.end)}
                             </span>
                           </div>
                           <p className="text-xs text-slate-700">

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { AccountMenu } from './components/AccountMenu'
+import { BrandMark } from './components/BrandMark'
 import { BookingDrawer } from './components/BookingDrawer'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { CheckInDrawer } from './components/CheckInDrawer'
@@ -237,17 +238,20 @@ function Board({
         inert={modalOpen}
         className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-b border-slate-200 bg-white px-4 py-3 sm:px-6"
       >
-        <div>
-          <h1
-            ref={headingRef}
-            tabIndex={-1}
-            className="text-xl font-semibold outline-none"
-          >
-            Front Desk Board
-          </h1>
-          <p className="text-sm text-slate-600">
-            {DEMO_DAY_LABEL} · Demo data only, no real patients
-          </p>
+        <div className="flex items-center gap-3">
+          <BrandMark />
+          <div>
+            <h1
+              ref={headingRef}
+              tabIndex={-1}
+              className="text-xl leading-tight font-semibold tracking-tight outline-none"
+            >
+              Front Desk Board
+            </h1>
+            <p className="text-sm text-slate-600">
+              {DEMO_DAY_LABEL} · Demo data only, no real patients
+            </p>
+          </div>
         </div>
 
         <div className="flex flex-wrap items-center gap-x-5 gap-y-3">

@@ -8,7 +8,7 @@ import {
   typeLabel,
 } from '../lib/display'
 import { findConflicts } from '../lib/overlap'
-import { formatTime } from '../lib/time'
+import { formatTimeRange } from '../lib/time'
 import {
   cancelAction,
   flowSteps,
@@ -143,7 +143,7 @@ export function CheckInDrawer({
     const other = day.appointments.find((a) => a.id === otherId)
     const otherPatient = day.patients.find((p) => p.id === other?.patientId)
     if (!other || !otherPatient) return 'another appointment'
-    return `${otherPatient.firstName} ${otherPatient.lastName} (${typeLabel[other.type]}, ${formatTime(other.start)}–${formatTime(other.end)})`
+    return `${otherPatient.firstName} ${otherPatient.lastName} (${typeLabel[other.type]}, ${formatTimeRange(other.start, other.end)})`
   })
 
   const action = nextAction(appointment.status)
@@ -176,15 +176,12 @@ export function CheckInDrawer({
       >
         <div className="flex items-start gap-3">
           <div className="flex flex-1 flex-col gap-1">
-            <p className="text-xs font-semibold tracking-wide text-slate-600 uppercase">
-              Check-in
-            </p>
             <h2 id="checkin-title" className="text-xl font-semibold">
               {name}
             </h2>
             <p className="text-sm text-slate-700">
               {typeLabel[appointment.type]} · {chair?.name ?? 'Unknown chair'} ·{' '}
-              {formatTime(appointment.start)}–{formatTime(appointment.end)}
+              {formatTimeRange(appointment.start, appointment.end)}
             </p>
           </div>
           <button

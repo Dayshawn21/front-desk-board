@@ -1,7 +1,13 @@
 import { cancelReasonLabel, statusStyle, typeLabel } from '../lib/display'
 import { assignLanes } from '../lib/lanes'
 import { findConflicts } from '../lib/overlap'
-import { formatDuration, formatTime, toClock, toMinutes } from '../lib/time'
+import {
+  formatDuration,
+  formatTime,
+  formatTimeRange,
+  toClock,
+  toMinutes,
+} from '../lib/time'
 import { minutesLate } from '../lib/workflow'
 import type { ScheduleDay } from '../types'
 import { LateNote } from './LateNote'
@@ -57,7 +63,7 @@ export function ScheduleGrid({
         const a = apptsById.get(id)!
         const b = apptsById.get(otherId)!
         const chair = chairsById.get(a.chairId)?.name ?? 'Unknown chair'
-        return `${chair}: ${patientName(a.patientId)} (${formatTime(a.start)}–${formatTime(a.end)}) overlaps ${patientName(b.patientId)} (${formatTime(b.start)}–${formatTime(b.end)})`
+        return `${chair}: ${patientName(a.patientId)} (${formatTimeRange(a.start, a.end)}) overlaps ${patientName(b.patientId)} (${formatTimeRange(b.start, b.end)})`
       }),
   )
 

@@ -12,7 +12,7 @@ import {
 } from '../lib/assist'
 import { typeLabel } from '../lib/display'
 import { findOpenSlots, type OpenSlot } from '../lib/slots'
-import { formatTime } from '../lib/time'
+import { formatTime, formatTimeRange } from '../lib/time'
 import type { AppointmentType, ScheduleDay } from '../types'
 
 // A typical length for each visit type; the person can still change it.
@@ -209,12 +209,12 @@ export function BookingDrawer({
       >
         <div className="flex items-start gap-3">
           <div className="flex flex-1 flex-col gap-1">
-            <p className="text-xs font-semibold tracking-wide text-slate-600 uppercase">
-              {day.practice.name}
-            </p>
             <h2 id={`${ids}-title`} className="text-xl font-semibold">
               New appointment
             </h2>
+            <p className="text-sm text-slate-700">
+              {day.practice.name} · today, {DEMO_DAY_LABEL}
+            </p>
           </div>
           <button
             type="button"
@@ -456,7 +456,7 @@ export function BookingDrawer({
                   />
                   <span>
                     <span className="font-medium">
-                      {formatTime(slot.start)} – {formatTime(slot.end)}
+                      {formatTimeRange(slot.start, slot.end)}
                     </span>
                     , {chairName(slot.chairId)}
                   </span>

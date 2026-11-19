@@ -34,3 +34,10 @@ export function formatDuration(minutes: number): string {
   if (hours === 0) return `${rest}m`
   return rest === 0 ? `${hours}h` : `${hours}h ${rest}m`
 }
+
+// "8:00 AM – 9:00 AM": the one way a time range is written on screen.
+// (Schedule cards say "to" instead, so their accessible name can match
+// what's visible; see ScheduleGrid.)
+export function formatTimeRange(start: string | number, end: string | number) {
+  return `${formatTime(start)} – ${formatTime(end)}`
+}
