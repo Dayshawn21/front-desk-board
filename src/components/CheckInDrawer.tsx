@@ -38,7 +38,9 @@ type CheckInDrawerProps = {
   now: string // the demo clock, for "is this visit late?"
   isSaving: boolean
   saveError: string | null
-  onSave: (patch: AppointmentPatch) => void
+  // Resolves when the save is done (rejects if it fails; the error itself
+  // arrives through saveError).
+  onSave: (patch: AppointmentPatch) => Promise<void>
   onChangeStatus: (status: AppointmentStatus, reason?: CancelReason) => void
   onClose: () => void
 }
@@ -55,10 +57,35 @@ export function CheckInDrawer({
   onChangeStatus,
   onClose,
 }: CheckInDrawerProps) {
-  // Local draft of the form. The parent remounts this component (key={id}) when a
-  // different appointment opens, so the draft always starts from that appointment.
+  // Local copy of the form, so typing stays instant. The parent remounts
+  // this component (key={id}) when a different appointment opens, so it
+  // always starts from that appointment. There is no Save button: a tick
+  // saves right away, notes save when you leave the box or close the drawer,
+  // so closing can never throw work away.
   const [checklist, setChecklist] = useState(appointment.checklist)
   const [notes, setNotes] = useState(appointment.notes)
+  const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved'>(
+    'idle',
+  )
+
+  const save = (patch: AppointmentPatch) => {
+    setSaveState('saving')
+    onSave(patch).then(
+      () => setSaveState('saved'),
+      () => setSaveState('idle'), // the error shows as saveError below
+    )
+  }
+  // Leaving the box and then closing would otherwise save the same notes twice.
+  const savedNotes = useRef(appointment.notes)
+  const saveNotesIfChanged = () => {
+    if (notes === savedNotes.current) return
+    savedNotes.current = notes
+    save({ notes })
+  }
+  const close = () => {
+    saveNotesIfChanged()
+    onClose()
+  }
 
   const { role, can } = useSession()
 
@@ -92,7 +119,7 @@ export function CheckInDrawer({
   // Focus in on open, trap Tab, Escape closes, focus back to the card on close.
   const { dialogRef, onKeyDown } = useModalDialog<HTMLDivElement>(
     closeButtonRef,
-    onClose,
+    close,
   )
 
   // After a status change the next-step button can disappear (e.g. front desk
@@ -130,18 +157,13 @@ export function CheckInDrawer({
   const canNoShow = noShow !== null && can(noShow.permission)
   const currentStep = flowSteps.indexOf(appointment.status)
   const doneCount = checklistItems.filter((item) => checklist[item.key]).length
-  const isDirty =
-    notes !== appointment.notes ||
-    checklistItems.some(
-      (item) => checklist[item.key] !== appointment.checklist[item.key],
-    )
 
   return (
     <div className="fixed inset-0 z-40">
       <div
         aria-hidden="true"
         className="absolute inset-0 bg-slate-900/40 dark:bg-black/60"
-        onClick={onClose}
+        onClick={close}
       />
 
       <div
@@ -169,7 +191,7 @@ export function CheckInDrawer({
             ref={closeButtonRef}
             type="button"
             aria-label="Close check-in"
-            onClick={onClose}
+            onClick={close}
             className="grid size-11 place-items-center rounded-lg border border-slate-300 text-slate-700 hover:bg-slate-50"
           >
             <svg
@@ -258,13 +280,7 @@ export function CheckInDrawer({
           )}
         </section>
 
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={(e) => {
-            e.preventDefault()
-            onSave({ checklist, notes })
-          }}
-        >
+        <div className="flex flex-col gap-4">
           {!canEdit && (
             <p className="text-sm text-slate-700">
               Read only for {roleLabel[role]}. The front desk updates the
@@ -273,8 +289,19 @@ export function CheckInDrawer({
           )}
           {/* A disabled fieldset disables every checkbox inside it. */}
           <fieldset disabled={!canEdit} className="flex flex-col gap-1">
-            <legend className="mb-2 text-sm font-semibold">
+            <legend className="mb-2 flex w-full items-baseline justify-between text-sm font-semibold">
               Checklist · {doneCount} of {checklistItems.length}
+              {/* Polite: confirms each automatic save without interrupting. */}
+              <span
+                role="status"
+                className="text-xs font-normal text-slate-600"
+              >
+                {saveState === 'saving'
+                  ? 'Saving…'
+                  : saveState === 'saved'
+                    ? 'Saved'
+                    : ''}
+              </span>
             </legend>
             {checklistItems.map((item) => (
               <label
@@ -284,9 +311,11 @@ export function CheckInDrawer({
                 <input
                   type="checkbox"
                   checked={checklist[item.key]}
-                  onChange={(e) =>
-                    setChecklist({ ...checklist, [item.key]: e.target.checked })
-                  }
+                  onChange={(e) => {
+                    const next = { ...checklist, [item.key]: e.target.checked }
+                    setChecklist(next)
+                    save({ checklist: next })
+                  }}
                   className="size-4 accent-teal-700"
                 />
                 {item.label}
@@ -304,20 +333,17 @@ export function CheckInDrawer({
               value={notes}
               readOnly={!canEdit}
               onChange={(e) => setNotes(e.target.value)}
+              onBlur={saveNotesIfChanged}
               className="rounded-lg border border-slate-300 p-2.5 text-sm read-only:bg-slate-50"
             />
           </div>
 
           {canEdit && (
-            <button
-              type="submit"
-              disabled={!isDirty || isSaving}
-              className="h-11 self-start rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:opacity-60"
-            >
-              Save checklist and notes
-            </button>
+            <p className="text-xs text-slate-600">
+              Changes save automatically.
+            </p>
           )}
-        </form>
+        </div>
 
         {saveError && (
           <p

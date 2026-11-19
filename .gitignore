@@ -37,3 +37,6 @@ dist-ssr
 test-results/
 playwright-report/
 blob-report/
+
+# Design critique snapshots (impeccable skill), kept locally
+.impeccable/

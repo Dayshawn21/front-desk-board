@@ -373,7 +373,9 @@ function Board({
           appointment={selected}
           isSaving={update.isPending}
           saveError={update.error?.message ?? null}
-          onSave={(patch) => update.mutate({ id: selected.id, patch })}
+          onSave={(patch) =>
+            update.mutateAsync({ id: selected.id, patch }).then(() => {})
+          }
           now={DEMO_NOW}
           onChangeStatus={(status, reason) =>
             changeStatus(selected.id, status, reason)
