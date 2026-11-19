@@ -3,39 +3,45 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 
-// In dev, serve the Vercel function in api/parse-booking.ts from the Vite
-// server, so `npm run dev` works without the Vercel CLI. Same handler file
-// in both places; on Vercel this plugin isn't used.
+// In dev, serve the Vercel functions in api/ from the Vite server, so
+// `npm run dev` works without the Vercel CLI. Same handler files in both
+// places; on Vercel this plugin isn't used.
+const DEV_API_ROUTES = ['parse-booking', 'patient-sign-in']
+
 function devApiRoutes(): Plugin {
   return {
     name: 'dev-api-routes',
     apply: 'serve',
     configureServer(server) {
-      server.middlewares.use('/api/parse-booking', async (req, res) => {
-        if (req.method !== 'POST') {
-          res.statusCode = 405
-          res.end()
-          return
-        }
-        const chunks: Buffer[] = []
-        for await (const chunk of req) chunks.push(chunk as Buffer)
-        const headers = new Headers()
-        for (const [key, value] of Object.entries(req.headers)) {
-          if (typeof value === 'string') headers.set(key, value)
-        }
-        const request = new Request(`http://localhost${req.originalUrl}`, {
-          method: 'POST',
-          headers,
-          body: Buffer.concat(chunks),
+      for (const name of DEV_API_ROUTES) {
+        server.middlewares.use(`/api/${name}`, async (req, res) => {
+          if (req.method !== 'POST') {
+            res.statusCode = 405
+            res.end()
+            return
+          }
+          const chunks: Buffer[] = []
+          for await (const chunk of req) chunks.push(chunk as Buffer)
+          const headers = new Headers()
+          for (const [key, value] of Object.entries(req.headers)) {
+            if (typeof value === 'string') headers.set(key, value)
+          }
+          // What Vercel's x-real-ip would be: the connecting address.
+          headers.set('x-real-ip', req.socket.remoteAddress ?? 'unknown')
+          const request = new Request(`http://localhost${req.originalUrl}`, {
+            method: 'POST',
+            headers,
+            body: Buffer.concat(chunks),
+          })
+
+          const route = await server.ssrLoadModule(`/api/${name}.ts`)
+          const response: Response = await route.POST(request)
+
+          res.statusCode = response.status
+          response.headers.forEach((value, key) => res.setHeader(key, value))
+          res.end(Buffer.from(await response.arrayBuffer()))
         })
-
-        const route = await server.ssrLoadModule('/api/parse-booking.ts')
-        const response: Response = await route.POST(request)
-
-        res.statusCode = response.status
-        response.headers.forEach((value, key) => res.setHeader(key, value))
-        res.end(Buffer.from(await response.arrayBuffer()))
-      })
+      }
     },
   }
 }

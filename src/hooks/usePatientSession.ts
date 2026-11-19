@@ -11,6 +11,7 @@ import {
   type MyCheckIn,
 } from '../api/patientPortal'
 import { ApiError } from '../api/schedule'
+import { checkSignInGate } from '../api/signInGate'
 import { DEMO_DATE, DEMO_NOW } from '../config'
 import {
   readPatientToken,
@@ -44,8 +45,17 @@ export function usePatientSession() {
   })
 
   const signInMutation = useMutation({
-    mutationFn: ({ email, password }: { email: string; password: string }) =>
-      patientSignIn(email, password),
+    mutationFn: async ({
+      email,
+      password,
+    }: {
+      email: string
+      password: string
+    }) => {
+      // The per-IP limit, on our server route, before the password check.
+      await checkSignInGate()
+      return patientSignIn(email, password)
+    },
     onSuccess: ({ token: next }) => {
       rememberPatientToken(next)
       setToken(next)

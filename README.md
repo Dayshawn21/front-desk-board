@@ -203,6 +203,14 @@ Built in six daily steps.
       nothing, and a successful sign-in clears the count). Forgot password sends at
       most 3 emails per address in 15 minutes; past that it gives the usual "If an
       account exists…" answer and sends nothing, so it can't flood an inbox
+- [x] Per-IP limit on patient sign-in: every try first goes through a real server
+      route, `POST /api/patient-sign-in` (`server/signInGate.ts`), which allows 20
+      tries per IP address in 15 minutes and answers 429 with how long to wait
+      ("Too many sign-in attempts from your network…", plus `Retry-After`). It never
+      sees the email or password, only counts. On Vercel a firewall rule on that path
+      is the durable limit (see "Patient sign-in route" below); the in-function count
+      is a backup that lasts while an instance is warm. Per email stops guessing one
+      account's password; per IP stops one attacker trying many accounts
 - [x] Patient check-in from a phone (`/check-in/<practice>/<visit>`): the patient sees
       the visit and the details on file (with "tell the front desk" if something is
       wrong), ticks "I've filled in my visit forms" and "I've reviewed my health
@@ -277,6 +285,18 @@ and answers 429 above that, before the function runs (the panel then says "Too m
 requests. Wait a minute and try again."). A monthly spend limit on the API key is the
 hard cap.
 
+**Patient sign-in route.** `POST /api/patient-sign-in` counts patient sign-in tries
+per IP (from Vercel's `x-real-ip`), 20 per 15 minutes, in the function's memory.
+Function instances don't share memory and a cold start forgets, so the durable
+limit is a Vercel firewall rule, added the same way as the AI route's: in the Vercel
+dashboard, **Firewall → Rules → New rule**, if _Request Path_ _equals_
+`/api/patient-sign-in`, then **Rate Limit**, 10 requests per 60 seconds, keyed by
+**IP**, action **Too Many Requests (429)**. The sign-in form shows the route's
+message, or a plain "Too many sign-in attempts from your network…" for the
+firewall's bodiless 429. IPs are held in memory only and never logged. Where there's
+no API route (`vite preview`, which the end-to-end tests use), the form carries on
+without the check; the e2e test fakes the route's 429.
+
 **Eval** (`evals/parse-booking`, results in `.claude/hillclimb/parse-booking`). 15 fake
 cases, 2 runs each, graded in code (no AI judge): all fields right, nothing made up, and
 share of fields right. Cases include an unknown patient, a prompt injection, a patient
@@ -332,10 +352,13 @@ an interrupted run picks up where it stopped.
   `localStorage`, as are changed passwords. The session token sits in
   `sessionStorage`. The demo inbox stands in for email: anyone using this browser can
   read it, so it would never exist on a real site, where the link goes only to the
-  patient's inbox. The rate limits (sign-in, forgot password, change password)
-  count in this browser's `localStorage`, so clearing it resets them. A real server
-  would keep the counts itself and also limit by IP address, so one attacker can't
-  try many emails. Sign-up details never
+  patient's inbox. The per-email rate limits (sign-in, forgot password, change
+  password) count in this browser's `localStorage`, so clearing it resets them. The
+  per-IP sign-in limit is on a real server route, but the password is still checked
+  in the browser afterwards, so a determined visitor could skip the route: it shows
+  the pattern, not real protection. A real server checks the IP limit and the
+  password in the same request, keeps the counts in a shared store (such as Redis),
+  and limits forgot-password requests per IP too. Sign-up details never
   reach Claude: the AI assist's server only knows the built-in seed patients. A real server would hash each patient's own
   password, rate-limit sign-in attempts, keep the session in an HttpOnly cookie, and
   check it on every request. The emails are on `example.com`, which can never be a
@@ -403,7 +426,9 @@ an interrupted run picks up where it stopped.
   `src/api/patientPortal.ts`: its patient side (sign-up, sign-in, password reset and change, sessions, and calls that
   only return or change the signed-in patient's own visits), with the demo logins in
   `src/mocks/patientLogins.ts`;
-  `server/` and `api/`: the AI route
+  `server/` and `api/`: the AI route and the patient sign-in route
+  (`api/patient-sign-in.ts`, `server/signInGate.ts`; the browser side is
+  `src/api/signInGate.ts`)
 - `e2e/`: Playwright flows and axe checks; `evals/`: the AI eval
 
 Requires Node 24 (see `.nvmrc`).

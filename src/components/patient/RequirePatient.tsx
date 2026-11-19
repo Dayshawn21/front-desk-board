@@ -74,10 +74,12 @@ export function RequirePatient({
                 : "We couldn't sign you in. Please try again."
               : null
           }
-          // Too many wrong tries: offer a reset alongside the wait.
+          // Too many wrong passwords for this email: offer a reset alongside
+          // the wait. (Not for the per-network limit: a reset wouldn't help.)
           locked={
             session.signIn.error instanceof ApiError &&
-            session.signIn.error.status === 429
+            session.signIn.error.status === 429 &&
+            session.signIn.error.message.includes('reset your password')
           }
           onSubmit={(email, password) => {
             session.signIn.mutate(

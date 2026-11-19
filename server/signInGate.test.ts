@@ -35,7 +35,10 @@ async function call(
   request = attempt(),
 ) {
   const response = await handleSignInAttempt(request, gate)
-  const body = response.status === 204 ? null : await response.json()
+  const body =
+    response.status === 429
+      ? ((await response.json()) as { error: string })
+      : null
   return { response, status: response.status, body }
 }
 
@@ -71,7 +74,7 @@ describe('the per-IP sign-in limit', () => {
     for (let i = 0; i < 20; i++) await call(gate)
     advance(10 * MINUTE)
     const blocked = await call(gate)
-    expect(blocked.body.error).toMatch(/Try again in 5 minutes/)
+    expect(blocked.body?.error).toMatch(/Try again in 5 minutes/)
     expect(blocked.response.headers.get('retry-after')).toBe('300')
     advance(5 * MINUTE + 1)
     expect((await call(gate)).status).toBe(204)

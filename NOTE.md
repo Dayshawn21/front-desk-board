@@ -21,7 +21,8 @@ including from a plain-language request ("60 min cleaning for Ana Diaz this afte
   and password (sign-ups and reset passwords are stored as a salted PBKDF2 hash; forgot
   password "emails" a single-use, 30-minute link to a demo inbox; changing it
   signed in needs the current one; sign-in, reset emails, and password changes
-  are rate limited per email or patient); the mock server issues a session token, and every patient call returns
+  are rate limited per email or patient, and sign-in per IP on a real server
+  route); the mock server issues a session token, and every patient call returns
   only that patient's details and visits. Someone else's check-in link, even signed
   in, is "not found", the same as a link that doesn't exist. The pages never get the
   practice's patient list, and open times carry no patient details.
