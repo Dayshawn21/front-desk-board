@@ -67,7 +67,9 @@ Built in six daily steps.
       message, and logs it (add `?crash` to the URL, then sign in, to see it). Errors a
       boundary can't catch (event handlers, rejected promises) are logged too
 - [x] End-to-end tests (Playwright) in a real browser: book a visit and check a patient
-      in, the double-booking banner, and click-to-book
+      in, the double-booking banner, click-to-book, and the AI assist (fill, warn about
+      another day, rate limit). The AI tests fake the server route, so CI never calls
+      Claude or spends money
 - [x] Automated accessibility checks (axe-core: WCAG 2.2 AA rules plus best practices) on
       the sign-in page,
       schedule (desktop and phone width), patient flow, check-in drawer, New appointment
@@ -113,8 +115,10 @@ asks for JSON in a fixed schema whose patient and chair fields only allow that p
 ids. The answer is checked again on the server and in the browser (`sanitizeDraft` in
 `src/lib/assist.ts`): anything not in the practice, or not a value the form offers, is
 dropped with a warning. The panel says **"AI-filled. Review before booking."**, lists what
-it filled and what it couldn't use (e.g. "tomorrow"), and shows loading and an error with
-Try again.
+it filled and what it couldn't use, and shows loading and an error with Try again. If the
+request names another day ("tomorrow", "next Tuesday", "11/20"), an amber note says the
+form books today and the times are for today. That check runs in code on the typed text
+(`findOtherDay`), so it doesn't depend on the model noticing.
 
 **Guardrails.** The API key is read only on the server (`ANTHROPIC_API_KEY` in
 `.env.local` or the host's settings) and never reaches the browser bundle. Requests are

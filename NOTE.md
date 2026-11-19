@@ -51,4 +51,5 @@ book and move visits, with a keyboard alternative.
 
 ## Numbers
 
-225 unit tests and 12 Playwright tests (user flows plus axe) run in CI on every push.
+240 unit tests and 15 Playwright tests (user flows, the AI assist with its route faked, and
+axe) run in CI on every push.
