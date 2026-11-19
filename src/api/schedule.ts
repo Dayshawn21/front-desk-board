@@ -229,3 +229,16 @@ export async function createAppointment(
   db.appointments.push(appointment)
   return structuredClone(appointment)
 }
+
+// ── Shared between tabs (stubs; implemented in the next commit) ──
+
+export const MOCK_DB_KEY = 'front-desk-board.mock-db.v1'
+
+// Puts the seed data back, for this tab and every other open tab.
+export function resetDemoData() {}
+
+// Calls onChange when another tab changes the mock db. Returns an unsubscribe.
+export function subscribeToMockDb(onChange: () => void): () => void {
+  void onChange
+  return () => {}
+}
