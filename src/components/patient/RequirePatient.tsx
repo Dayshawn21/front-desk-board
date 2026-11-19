@@ -8,6 +8,7 @@ import {
 } from 'react'
 import type { MyAccount } from '../../api/patientPortal'
 import { ApiError } from '../../api/schedule'
+import { PATIENT_SIGN_UP_PATH } from '../../lib/route'
 import { usePatientSession } from '../../hooks/usePatientSession'
 import { PatientShell } from './PatientShell'
 
@@ -26,6 +27,9 @@ type RequirePatientProps = {
   heading: string // the sign-in step's heading, e.g. "Sign in to check in"
   intro: string
   children: (session: PatientSession) => ReactNode
+  // Set when this page replaced another view in place (sign-up, then
+  // "Your visits"), so the page moves focus to its heading.
+  arrivedSignedIn?: boolean
 }
 
 // Puts a patient page behind the patient sign-in. Signed out, it shows the
@@ -39,10 +43,11 @@ export function RequirePatient({
   heading,
   intro,
   children,
+  arrivedSignedIn = false,
 }: RequirePatientProps) {
   const session = usePatientSession()
   const { token, account } = session
-  const [justSignedIn, setJustSignedIn] = useState(false)
+  const [justSignedIn, setJustSignedIn] = useState(arrivedSignedIn)
   const [justSignedOut, setJustSignedOut] = useState(false)
   const signInHeadingRef = useRef<HTMLHeadingElement>(null)
 
@@ -228,6 +233,16 @@ function PatientSignInForm({
           Sign in
         </button>
       </form>
+
+      <p className="text-slate-700">
+        New patient?{' '}
+        <a
+          href={PATIENT_SIGN_UP_PATH}
+          className="font-medium text-teal-800 underline underline-offset-2"
+        >
+          Create an account
+        </a>
+      </p>
 
       <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-700">
         Demo login: <span className="font-medium">owen.hart@example.com</span>,

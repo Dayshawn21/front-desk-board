@@ -87,23 +87,154 @@ function toMyVisit(db: Db, a: Appointment): MyVisit {
   }
 }
 
+// Passwords from the sign-up page are stored as a salted PBKDF2 hash, the
+// way a real server would (with a dedicated library, and more iterations).
+const PBKDF2_ITERATIONS = 100_000
+
+const toHex = (bytes: Uint8Array) =>
+  Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+
+function fromHex(hex: string): Uint8Array<ArrayBuffer> {
+  const bytes = new Uint8Array(hex.length / 2)
+  for (let i = 0; i < bytes.length; i++) {
+    bytes[i] = parseInt(hex.slice(i * 2, i * 2 + 2), 16)
+  }
+  return bytes
+}
+
+async function hashPassword(password: string, saltHex: string) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(password),
+    'PBKDF2',
+    false,
+    ['deriveBits'],
+  )
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: 'PBKDF2',
+      hash: 'SHA-256',
+      salt: fromHex(saltHex),
+      iterations: PBKDF2_ITERATIONS,
+    },
+    key,
+    256,
+  )
+  return toHex(new Uint8Array(bits))
+}
+
+const normalEmail = (email: string) => email.trim().toLowerCase()
+
+// The patient id for an email and password, from the seed's demo logins or
+// a sign-up account, or null.
+async function checkLogin(db: Db, email: string, password: string) {
+  const demo = patientLogins.find(
+    (l) => l.email === email && l.password === password,
+  )
+  if (demo) return demo.patientId
+  const account = db.patientAccounts.find((a) => a.email === email)
+  if (!account) return null
+  const hash = await hashPassword(password, account.salt)
+  return hash === account.passwordHash ? account.patientId : null
+}
+
+function startSession(db: Db, patientId: string): string {
+  const token = newToken()
+  db.patientSessions[token] = patientId
+  return token
+}
+
 export async function patientSignIn(
   email: string,
   password: string,
 ): Promise<{ token: string }> {
   await sleep(LATENCY_MS)
-  const wanted = email.trim().toLowerCase()
-  const login = patientLogins.find(
-    (l) => l.email === wanted && l.password === password,
-  )
+  const db = loadDb()
+  const patientId = await checkLogin(db, normalEmail(email), password)
   // One message for a wrong password and an unknown email, so the form
   // doesn't tell anyone which emails have accounts.
-  if (!login) throw new ApiError("That email and password don't match.", 401)
+  if (!patientId) {
+    throw new ApiError("That email and password don't match.", 401)
+  }
+  // Fresh read: hashing was async, and another tab may have saved since.
+  const fresh = loadDb()
+  const token = startSession(fresh, patientId)
+  saveDb(fresh)
+  return { token }
+}
+
+export type NewPatientAccount = {
+  practiceId: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  password: string
+}
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// Creates an account for a new patient, adds them to their office's
+// patient list (so the desk sees them), and signs them in.
+export async function patientSignUp(
+  input: NewPatientAccount,
+): Promise<{ token: string }> {
+  await sleep(LATENCY_MS)
+  const firstName = input.firstName.trim()
+  const lastName = input.lastName.trim()
+  const email = normalEmail(input.email)
+  const phone = input.phone.trim()
 
   const db = loadDb()
-  const token = newToken()
-  db.patientSessions[token] = login.patientId
-  saveDb(db)
+  if (!db.practices.some((p) => p.id === input.practiceId)) {
+    throw new ApiError('Choose your dental office.', 400)
+  }
+  if (
+    !firstName ||
+    !lastName ||
+    firstName.length > 50 ||
+    lastName.length > 50
+  ) {
+    throw new ApiError('Enter your first and last name.', 400)
+  }
+  if ((phone.match(/\d/g) ?? []).length < 7 || phone.length > 30) {
+    throw new ApiError('Enter a phone number we can reach you on.', 400)
+  }
+  if (!EMAIL_PATTERN.test(email) || email.length > 254) {
+    throw new ApiError('Enter an email like name@example.com.', 400)
+  }
+  if (input.password.length < 8) {
+    throw new ApiError('Use a password of at least 8 characters.', 400)
+  }
+
+  const salt = toHex(crypto.getRandomValues(new Uint8Array(16)))
+  const passwordHash = await hashPassword(input.password, salt)
+
+  // Fresh read after the async hash, so the email check and the save
+  // happen together and two tabs can't both take one email.
+  const fresh = loadDb()
+  const taken =
+    patientLogins.some((l) => l.email === email) ||
+    fresh.patientAccounts.some((a) => a.email === email)
+  if (taken) {
+    throw new ApiError(
+      'An account with that email already exists. Sign in instead.',
+      409,
+    )
+  }
+
+  const patientId = `p-new-${fresh.nextPatientId++}`
+  fresh.patients.push({
+    id: patientId,
+    practiceId: input.practiceId,
+    firstName,
+    lastName,
+    phone,
+    insuranceProvider: null, // the desk adds it at the first visit
+  })
+  fresh.patientAccounts.push({ email, patientId, salt, passwordHash })
+  const token = startSession(fresh, patientId)
+  saveDb(fresh)
   return { token }
 }
 
@@ -138,7 +269,9 @@ export async function fetchMyAccount(
     patient: {
       firstName: patient.firstName,
       lastName: patient.lastName,
-      email: patientEmail(patient),
+      email:
+        db.patientAccounts.find((a) => a.patientId === patient.id)?.email ??
+        patientEmail(patient),
       phone: patient.phone,
       insuranceProvider: patient.insuranceProvider,
     },

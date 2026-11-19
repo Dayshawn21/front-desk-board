@@ -40,11 +40,22 @@ export type Db = {
   // Signed-in patients: session token -> patient id. Reset demo data
   // empties it, which signs every patient out.
   patientSessions: Record<string, string>
+  // Accounts made on the sign-up page. The made-up seed patients use the
+  // demo logins in src/mocks/patientLogins.ts instead.
+  patientAccounts: PatientAccount[]
+  nextPatientId: number
+}
+
+export type PatientAccount = {
+  email: string // trimmed, lower case
+  patientId: string
+  salt: string // hex
+  passwordHash: string // hex, PBKDF2-SHA-256; never the password itself
 }
 
 // Versioned, so a change to the data's shape starts fresh (v2 added
-// patient sessions).
-export const MOCK_DB_KEY = 'front-desk-board.mock-db.v2'
+// patient sessions, v3 patient sign-ups).
+export const MOCK_DB_KEY = 'front-desk-board.mock-db.v3'
 
 function createDb(): Db {
   return structuredClone({
@@ -54,6 +65,8 @@ function createDb(): Db {
     appointments: seed.appointments,
     nextBookingId: 1,
     patientSessions: {},
+    patientAccounts: [],
+    nextPatientId: 1,
   })
 }
 
@@ -71,7 +84,9 @@ function isDb(value: unknown): value is Db {
     Array.isArray(db.appointments) &&
     typeof db.nextBookingId === 'number' &&
     typeof db.patientSessions === 'object' &&
-    db.patientSessions !== null
+    db.patientSessions !== null &&
+    Array.isArray(db.patientAccounts) &&
+    typeof db.nextPatientId === 'number'
   )
 }
 

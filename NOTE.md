@@ -17,8 +17,8 @@ including from a plain-language request ("60 min cleaning for Ana Diaz this afte
   saves their ticks and "I'm here" through the same API as the desk's drawer. Tabs
   share one mock database, so both show up on the board in another tab without a
   reload. No router package: a path switch covers the few pages.
-- **Patients see only their own visits.** Patients sign in with an email and
-  password; the mock server issues a session token, and every patient call returns
+- **Patients see only their own visits.** Patients sign up or sign in with an email
+  and password (sign-ups are stored as a salted PBKDF2 hash); the mock server issues a session token, and every patient call returns
   only that patient's details and visits. Someone else's check-in link, even signed
   in, is "not found", the same as a link that doesn't exist. The pages never get the
   practice's patient list, and open times carry no patient details.
@@ -67,5 +67,5 @@ book and move visits, with a keyboard alternative.
 
 ## Numbers
 
-394 unit tests and 62 Playwright tests (user flows, the AI assist with its route faked, and
+414 unit tests and 67 Playwright tests (user flows, the AI assist with its route faked, and
 axe in light and dark) run in CI on every push.

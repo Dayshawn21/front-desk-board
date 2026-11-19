@@ -14,9 +14,14 @@ const SUBTITLE = 'Your visits'
 // /patient: the patient signs in, then sees today's visits at their
 // office (from the server, for their session only), with a check-in link
 // for each one they haven't arrived for yet, and a way to book another.
-export function PatientHomePage() {
+export function PatientHomePage({
+  arrivedSignedIn = false,
+}: {
+  arrivedSignedIn?: boolean // just signed up: focus the heading
+}) {
   return (
     <RequirePatient
+      arrivedSignedIn={arrivedSignedIn}
       subtitle="Patient sign-in"
       heading="Sign in"
       intro="See today's visits, check in when you arrive, or book a visit."

@@ -5,6 +5,7 @@ import { BookVisitPage } from './components/patient/BookVisitPage'
 import { CheckInPage } from './components/patient/CheckInPage'
 import { ChoosePracticePage } from './components/patient/ChoosePracticePage'
 import { PatientHomePage } from './components/patient/PatientHomePage'
+import { PatientSignUpPage } from './components/patient/PatientSignUpPage'
 import { useLiveScheduleUpdates } from './hooks/useSchedule'
 import { useTheme } from './hooks/useTheme'
 import { parseRoute } from './lib/route'
@@ -28,6 +29,13 @@ function App() {
     return (
       <ErrorBoundary where="choose-practice">
         <ChoosePracticePage />
+      </ErrorBoundary>
+    )
+  }
+  if (route.page === 'patient-sign-up') {
+    return (
+      <ErrorBoundary where="patient-sign-up">
+        <PatientSignUpPage />
       </ErrorBoundary>
     )
   }

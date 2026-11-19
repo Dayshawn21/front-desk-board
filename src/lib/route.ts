@@ -1,4 +1,4 @@
-// The app's few pages, read from the URL path. No router package: five
+// The app's few pages, read from the URL path. No router package: six
 // kinds of page don't need one. On Vercel, vercel.json sends these paths to
 // index.html; `vite preview` and the dev server already do.
 //
@@ -7,6 +7,7 @@
 //   /book/<practice>  a patient books a visit online
 //   /check-in/<practice>/<visit>  a patient checks in from their phone
 //   /patient          a patient signs in, then sees today's visits
+//   /patient/sign-up  a new patient creates an account
 //   anything else     the staff board
 
 export type Route =
@@ -15,6 +16,7 @@ export type Route =
   | { page: 'choose-practice' }
   | { page: 'check-in'; practiceId: string; visitId: string }
   | { page: 'patient-home' }
+  | { page: 'patient-sign-up' }
 
 export function parseRoute(pathname: string): Route {
   const parts = pathname.split('/').filter(Boolean).map(decodeURIComponent)
@@ -29,6 +31,9 @@ export function parseRoute(pathname: string): Route {
   }
   if (parts[0] === 'patient' && parts.length === 1) {
     return { page: 'patient-home' }
+  }
+  if (parts[0] === 'patient' && parts.length === 2 && parts[1] === 'sign-up') {
+    return { page: 'patient-sign-up' }
   }
   return { page: 'board' }
 }
@@ -49,3 +54,5 @@ export function checkInPath(practiceId: string, visitId: string): string {
 // Where a patient signs in and sees their visits. The sign-in says which
 // office they belong to, so the path doesn't need to.
 export const PATIENT_HOME_PATH = '/patient'
+
+export const PATIENT_SIGN_UP_PATH = '/patient/sign-up'

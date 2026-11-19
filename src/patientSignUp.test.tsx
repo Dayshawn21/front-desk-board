@@ -37,7 +37,7 @@ describe('patient sign-up', () => {
     const offices = screen.getByRole('radiogroup', {
       name: 'Your dental office',
     })
-    expect(within(offices).getAllByRole('radio')).toHaveLength(2)
+    expect(await within(offices).findAllByRole('radio')).toHaveLength(2)
     expect(screen.getByLabelText('First name')).toHaveAttribute(
       'autocomplete',
       'given-name',

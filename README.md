@@ -37,6 +37,11 @@ front-end engineering skills: React, TypeScript, Tailwind, TanStack Query, and t
    password `demo1234`. "Your visits" lists today's visit with a **Check in** link and
    a **Book a visit** button. Now open Ravi's link, `/check-in/maple/a-11`: Owen gets
    "We couldn't find that visit", because it isn't his.
+8. Patient sign-up: on the patient sign-in page, choose **Create an account**
+   ([/patient/sign-up](https://front-desk-board.vercel.app/patient/sign-up)), pick an
+   office, and enter a made-up name, phone, `@example.com` email, and a password of 8+
+   characters. You land on "Your visits", signed in, and can book. The new patient
+   also shows in the board's New appointment patient list.
 
 Demo patient logins: every made-up patient's email is `first.last@example.com`
 (accents dropped, so Tomás Reyes is `tomas.reyes@example.com`), all with the password
@@ -147,6 +152,16 @@ Built in six daily steps.
       (`sessionStorage`), apart from the staff sign-in, and **Reset demo data** signs
       every patient out ("Please sign in again"). Focus moves to the new heading on
       sign-in and sign-out
+- [x] Patient sign-up (`/patient/sign-up`, linked from the sign-in form): office (with
+      today's hours), first and last name, phone, email, and a password of at least 8
+      characters, with the browser's autocomplete hints (`new-password` and so on). The
+      mock server trims and checks each field and says what to fix, refuses an email
+      that already has an account ("Sign in instead"), stores a salted PBKDF2 hash of
+      the password (never the password), adds the patient to their office's list (so
+      the desk can book them), and signs them in; the page becomes "Your visits" at
+      `/patient` with focus on its heading. A failed try clears the password and keeps
+      the rest. Signed in already, the page says so instead of offering a second
+      account. Reset demo data removes sign-ups
 - [x] Patient check-in from a phone (`/check-in/<practice>/<visit>`): the patient sees
       the visit and the details on file (with "tell the front desk" if something is
       wrong), ticks "I've filled in my visit forms" and "I've reviewed my health
@@ -271,8 +286,10 @@ an interrupted run picks up where it stopped.
 - **Patient sign-in.** The rules are real (sign in, then only your own visits), but
   the "server" runs in the browser, so they're a model of a server, not security:
   anyone can read `localStorage` or the bundle. The demo passwords are one shared,
-  published password, stored in plain text in `src/mocks/patientLogins.ts`; the
-  session token sits in `sessionStorage`. A real server would hash each patient's own
+  published password, stored in plain text in `src/mocks/patientLogins.ts`. Accounts
+  from the sign-up page store a salted PBKDF2 hash instead, but in this browser's
+  `localStorage`. The session token sits in `sessionStorage`. Sign-up details never
+  reach Claude: the AI assist's server only knows the built-in seed patients. A real server would hash each patient's own
   password, rate-limit sign-in attempts, keep the session in an HttpOnly cookie, and
   check it on every request. The emails are on `example.com`, which can never be a
   real inbox, so no real names or addresses get into the demo.
@@ -324,7 +341,7 @@ an interrupted run picks up where it stopped.
 - `src/hooks/`: `useStatusChanges` (save, toast, Undo), `useBooking`, `useSchedule`
   (TanStack Query), `useTheme`, `useMediaQuery`, `useModalDialog`
 - `src/components/patient/`: the patient pages (`ChoosePracticePage`, `BookVisitPage`,
-  `PatientHomePage`, `CheckInPage`), the sign-in gate and form (`RequirePatient`, with
+  `PatientHomePage`, `PatientSignUpPage`, `CheckInPage`), the sign-in gate and form (`RequirePatient`, with
   `usePatientSession` and `src/session/patientStorage.ts`), and
   their frame (`PatientShell`); `src/lib/route.ts` picks the page from the URL path (no
   router package; `vercel.json` sends `/book`, `/patient` and `/check-in` paths to
@@ -335,7 +352,7 @@ an interrupted run picks up where it stopped.
   `patientBooking` (which times a patient sees),
   `overlap`, `lanes`, `permissions`, `assist` (AI answer checks), `time`
 - `src/api/schedule.ts`: the mock server (shared between tabs through `localStorage`);
-  `src/api/patientPortal.ts`: its patient side (sign-in, sessions, and calls that
+  `src/api/patientPortal.ts`: its patient side (sign-up, sign-in, sessions, and calls that
   only return or change the signed-in patient's own visits), with the demo logins in
   `src/mocks/patientLogins.ts`;
   `server/` and `api/`: the AI route
