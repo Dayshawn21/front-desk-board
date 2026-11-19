@@ -229,7 +229,18 @@ an interrupted run picks up where it stopped.
   old version gets a 409 Conflict and the UI offers to reload, instead of silently
   overwriting another person's change.
 
-## Run it
+## Where things are
+
+- `src/App.tsx`: signed in or not, inside an error boundary
+- `src/components/Board.tsx`: the signed-in screen (state and layout); `BoardHeader`,
+  `ScheduleGrid`, `PatientFlow`, `CheckInDrawer`, `BookingDrawer` beside it
+- `src/hooks/`: `useStatusChanges` (save, toast, Undo), `useBooking`, `useSchedule`
+  (TanStack Query), `useTheme`, `useMediaQuery`, `useModalDialog`
+- `src/lib/`: the rules as pure, tested functions: `statusChange` (kinds, Undo, toast
+  text), `workflow` (next step, cancel, no-show, lateness), `slots` (open-slot finder),
+  `overlap`, `lanes`, `permissions`, `assist` (AI answer checks), `time`
+- `src/api/schedule.ts`: the mock server; `server/` and `api/`: the AI route
+- `e2e/`: Playwright flows and axe checks; `evals/`: the AI eval
 
 Requires Node 24 (see `.nvmrc`).
 
