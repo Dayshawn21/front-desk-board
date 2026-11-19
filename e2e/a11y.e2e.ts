@@ -313,6 +313,25 @@ test.describe('patient pages', () => {
       await expectNoViolations(page)
     })
 
+    test('patient sign-in, network limit reached', async ({ page }) => {
+      // The preview server has no API routes: fake the route's 429.
+      await page.route('**/api/patient-sign-in', (route) =>
+        route.fulfill({
+          status: 429,
+          contentType: 'application/json',
+          body: JSON.stringify({
+            error:
+              'Too many sign-in attempts from your network. Try again in 15 minutes.',
+          }),
+        }),
+      )
+      await page.goto('/patient')
+      await signInAsPatient(page, 'owen.hart@example.com')
+      await expect(page.getByRole('alert')).toContainText('your network')
+      await expectNoSideways(page)
+      await expectNoViolations(page)
+    })
+
     test('forgot password, link sent', async ({ page }) => {
       await page.goto('/patient/forgot-password')
       await page.getByLabel('Email').fill('owen.hart@example.com')
