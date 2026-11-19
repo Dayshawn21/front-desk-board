@@ -61,7 +61,11 @@ Try again.
 **Guardrails.** The API key is read only on the server (`ANTHROPIC_API_KEY` in
 `.env.local` or the host's settings) and never reaches the browser bundle. Requests are
 capped at 300 characters, answers at 4,096 tokens, and only fake data is ever sent. The
-server logs the kind of failure, never the request or error details.
+server logs the kind of failure, never the request or error details. On Vercel, a
+firewall rate-limit rule allows 10 requests per minute per IP to `/api/parse-booking`
+and answers 429 above that, before the function runs (the panel then says "Too many
+requests. Wait a minute and try again."). A monthly spend limit on the API key is the
+hard cap.
 
 **Eval** (`evals/parse-booking`, results in `.claude/hillclimb/parse-booking`). 15 fake
 cases, 2 runs each, graded in code (no AI judge): all fields right, nothing made up, and
@@ -112,9 +116,9 @@ an interrupted run picks up where it stopped.
 
 ## What I'd do next
 
-- **Protect the AI endpoint.** It's public with no sign-in, so anyone can spend the key's
-  budget: add real auth, a per-user rate limit (in a shared store, since serverless
-  instances don't share memory), and a spend limit on the key.
+- **Protect the AI endpoint further.** It's rate limited per IP, but public with no
+  sign-in, so many IPs together could still spend the key's budget up to its spend
+  limit. With real auth, limit per signed-in user and practice instead of per IP.
 - **A bigger eval from real phrasing.** 15 hand-written cases is a regression check. Grow
   it to 50+ from how staff actually type requests, and run it in CI on prompt changes.
 - **Cancel reasons, a confirm step, and no-shows.** Cancelling uses Undo today, not an
