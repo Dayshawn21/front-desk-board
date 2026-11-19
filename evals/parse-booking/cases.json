@@ -51,7 +51,7 @@
       "visitType": "filling",
       "durationMinutes": null,
       "chairId": "maple-c3",
-      "timeOfDay": "morning",
+      "timeOfDay": ["morning", null],
       "earliest": null
     },
     "notUsedMentions": "tomorrow"
