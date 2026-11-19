@@ -45,12 +45,12 @@ let changeCounter = 0
 // A crash anywhere in the board shows a recoverable message (and is logged)
 // instead of a blank page.
 function App() {
-  const { user } = useAuth()
+  const { user, signOut } = useAuth()
   // Here, not in the menu, so "System" keeps following the device even on
   // the sign-in page.
   const [theme, setTheme] = useTheme()
   return user ? (
-    <ErrorBoundary key={user.id} where="board">
+    <ErrorBoundary key={user.id} where="board" onSignOut={signOut}>
       <Board theme={theme} onThemeChange={setTheme} />
     </ErrorBoundary>
   ) : (
@@ -303,20 +303,23 @@ function Board({
 
       {/* inert: while a drawer is open, nothing behind it can be focused or clicked */}
       <main inert={modalOpen} className="flex flex-col gap-4 p-6">
-        {can('book') && (
-          <div className="flex justify-end">
-            <button
-              type="button"
-              ref={newAppointmentRef}
-              onClick={() => openBooking(null)}
-              disabled={!schedule.data}
-              className="h-11 rounded-lg bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
-            >
-              New appointment
-            </button>
-          </div>
-        )}
-        <ViewTabs value={view} onChange={setView}>
+        <ViewTabs
+          value={view}
+          onChange={setView}
+          actions={
+            can('book') && (
+              <button
+                type="button"
+                ref={newAppointmentRef}
+                onClick={() => openBooking(null)}
+                disabled={!schedule.data}
+                className="h-11 rounded-lg bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-800 disabled:opacity-60"
+              >
+                New appointment
+              </button>
+            )
+          }
+        >
           {schedule.isPending ? (
             <p role="status" className="text-sm text-slate-600">
               Loading schedule…

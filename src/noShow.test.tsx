@@ -10,7 +10,7 @@ import type { Role } from './types'
 async function renderAs(role: Role = 'front-desk') {
   const user = userEvent.setup()
   renderWithQuery(<App />, { role })
-  await screen.findByRole('button', { name: /jon kim/i }) // schedule loaded
+  await screen.findByRole('button', { name: /^jon kim,/i }) // schedule loaded
   return user
 }
 

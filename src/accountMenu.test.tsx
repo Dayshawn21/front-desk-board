@@ -8,7 +8,7 @@ import type { Role } from './types'
 async function renderAs(role: Role) {
   const user = userEvent.setup()
   renderWithQuery(<App />, { role })
-  await screen.findByRole('button', { name: /jon kim/i }) // schedule loaded
+  await screen.findByRole('button', { name: /^jon kim,/i }) // schedule loaded
   const button = screen.getByRole('button', { name: /account menu/i })
   return { user, button }
 }

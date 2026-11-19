@@ -6,7 +6,7 @@ import { renderWithQuery } from './test/render'
 
 async function openFlowTab(user: UserEvent) {
   renderWithQuery(<App />)
-  await screen.findByRole('button', { name: /jon kim/i }) // schedule loaded
+  await screen.findByRole('button', { name: /^jon kim,/i }) // schedule loaded
   await user.click(screen.getByRole('tab', { name: /patient flow/i }))
 }
 
@@ -79,7 +79,7 @@ describe('patient flow tab', () => {
   it('switches tabs with the arrow keys', async () => {
     const user = userEvent.setup()
     renderWithQuery(<App />)
-    await screen.findByRole('button', { name: /jon kim/i })
+    await screen.findByRole('button', { name: /^jon kim,/i })
 
     screen.getByRole('tab', { name: /schedule/i }).focus()
     await user.keyboard('{ArrowRight}')

@@ -1,5 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import { roleLabel } from '../lib/display'
+import { initials, roleLabel } from '../lib/display'
 import { THEME_CHOICES, type ThemeChoice } from '../lib/theme'
 import type { StaffUser } from '../types'
 
@@ -15,16 +15,6 @@ const themeLabel: Record<ThemeChoice, string> = {
   light: 'Light',
   dark: 'Dark',
   system: 'System',
-}
-
-// "Dr. Amara Okafor" -> "AO". Honorifics aren't initials.
-function initials(name: string): string {
-  return name
-    .replace(/^(Dr|Mr|Mrs|Ms)\.?\s+/i, '')
-    .split(/\s+/)
-    .map((word) => word[0]?.toUpperCase() ?? '')
-    .join('')
-    .slice(0, 2)
 }
 
 // A disclosure (button + panel), not an ARIA menu: the panel mixes text

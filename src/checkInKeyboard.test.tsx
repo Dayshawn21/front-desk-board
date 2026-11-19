@@ -5,9 +5,12 @@ import App from './App'
 import { renderWithQuery } from './test/render'
 import type { Role } from './types'
 
-async function openWithKeyboard(user: UserEvent, name: RegExp, role?: Role) {
+// Focus the visit's card (its label starts "Name, …"), open it with Enter.
+async function openWithKeyboard(user: UserEvent, name: string, role?: Role) {
   renderWithQuery(<App />, { role })
-  const card = await screen.findByRole('button', { name })
+  const card = await screen.findByRole('button', {
+    name: new RegExp(`^${name},`, 'i'),
+  })
   card.focus()
   await user.keyboard('{Enter}')
   const dialog = screen.getByRole('dialog', { name })
@@ -15,7 +18,7 @@ async function openWithKeyboard(user: UserEvent, name: RegExp, role?: Role) {
 }
 
 const openJonKimWithKeyboard = (user: UserEvent, role?: Role) =>
-  openWithKeyboard(user, /jon kim/i, role)
+  openWithKeyboard(user, 'Jon Kim', role)
 
 describe('check-in drawer keyboard support', () => {
   it('moves focus into the drawer when it opens', async () => {
@@ -90,7 +93,7 @@ describe('check-in drawer keyboard support', () => {
 
   it('moves focus to the status heading when the next step is not allowed', async () => {
     const user = userEvent.setup()
-    const { dialog } = await openWithKeyboard(user, /lena ortiz/i) // front desk
+    const { dialog } = await openWithKeyboard(user, 'Lena Ortiz') // front desk
 
     within(dialog)
       .getByRole('button', { name: /check in/i })

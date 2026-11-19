@@ -3,6 +3,7 @@ import { logError } from '../lib/logError'
 
 type Props = {
   where: string // goes into the log, e.g. "board"
+  onSignOut?: () => void // a way out if Try again keeps failing
   children: ReactNode
 }
 
@@ -61,6 +62,15 @@ export class ErrorBoundary extends Component<Props, State> {
             >
               Try again
             </button>
+            {this.props.onSignOut && (
+              <button
+                type="button"
+                onClick={this.props.onSignOut}
+                className="h-11 rounded-lg border border-slate-300 bg-white px-4 text-sm font-semibold text-slate-800 hover:bg-slate-100"
+              >
+                Back to sign-in
+              </button>
+            )}
             <button
               type="button"
               onClick={() => window.location.reload()}

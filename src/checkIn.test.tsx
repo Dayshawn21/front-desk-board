@@ -5,14 +5,17 @@ import App from './App'
 import { fetchSchedule } from './api/schedule'
 import { renderWithQuery } from './test/render'
 
-async function openPatient(user: UserEvent, name: RegExp) {
+// Click the visit's card (its label starts "Name, …"), return its drawer.
+async function openPatient(user: UserEvent, name: string) {
   renderWithQuery(<App />) // front desk, the default role
-  await user.click(await screen.findByRole('button', { name }))
+  await user.click(
+    await screen.findByRole('button', { name: new RegExp(`^${name},`, 'i') }),
+  )
   return screen.getByRole('dialog', { name })
 }
 
-const openJonKim = (user: UserEvent) => openPatient(user, /jon kim/i)
-const openLenaOrtiz = (user: UserEvent) => openPatient(user, /lena ortiz/i)
+const openJonKim = (user: UserEvent) => openPatient(user, 'Jon Kim')
+const openLenaOrtiz = (user: UserEvent) => openPatient(user, 'Lena Ortiz')
 
 describe('check-in drawer', () => {
   afterEach(() => {
@@ -64,7 +67,7 @@ describe('check-in drawer', () => {
     ).not.toBeInTheDocument()
 
     await user.keyboard('{Escape}')
-    await user.click(screen.getByRole('button', { name: /jon kim/i }))
+    await user.click(screen.getByRole('button', { name: /^jon kim,/i }))
     expect(
       within(screen.getByRole('dialog', { name: /jon kim/i })).getByRole(
         'checkbox',

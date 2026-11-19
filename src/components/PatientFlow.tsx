@@ -172,11 +172,19 @@ export function PatientFlow({
         })}
       </div>
       {noShows.length > 0 && (
-        <p className="text-sm text-slate-600">
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-600">
           <span className="font-medium text-slate-700">No-shows today:</span>{' '}
-          {noShows
-            .map((a) => `${patientName(a.patientId)} (${formatTime(a.start)})`)
-            .join(', ')}
+          {noShows.map((a) => (
+            <span key={a.id}>
+              <button
+                type="button"
+                onClick={() => onOpen(a.id)}
+                className="font-semibold underline decoration-1 underline-offset-2 hover:decoration-2"
+              >
+                {patientName(a.patientId)} ({formatTime(a.start)})
+              </button>{' '}
+            </span>
+          ))}
         </p>
       )}
     </div>

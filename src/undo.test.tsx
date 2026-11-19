@@ -7,7 +7,7 @@ import type { Role } from './types'
 
 async function renderAs(role: Role = 'front-desk') {
   renderWithQuery(<App />, { role })
-  await screen.findByRole('button', { name: /jon kim/i }) // schedule loaded
+  await screen.findByRole('button', { name: /^jon kim,/i }) // schedule loaded
 }
 
 async function openFlowTab(user: UserEvent) {
@@ -80,7 +80,7 @@ describe('undo', () => {
     const user = userEvent.setup()
     await renderAs('front-desk')
 
-    await user.click(screen.getByRole('button', { name: /jon kim/i }))
+    await user.click(screen.getByRole('button', { name: /^jon kim,/i }))
     const dialog = screen.getByRole('dialog', { name: /jon kim/i })
     await user.click(
       within(dialog).getByRole('button', { name: /undo check-in/i }),

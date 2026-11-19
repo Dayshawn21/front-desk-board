@@ -41,7 +41,7 @@ describe('App', () => {
     const user = userEvent.setup()
     // Only the office manager may switch practices.
     renderWithQuery(<App />, { role: 'office-manager' })
-    await screen.findByRole('button', { name: /jon kim/i })
+    await screen.findByRole('button', { name: /^jon kim,/i })
 
     const practiceSelect = screen.getByLabelText(/practice/i)
     await waitFor(() => expect(practiceSelect).toBeEnabled())
@@ -51,7 +51,7 @@ describe('App', () => {
       await screen.findByRole('button', { name: /hana sato/i }),
     ).toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: /jon kim/i }),
+      screen.queryByRole('button', { name: /^jon kim,/i }),
     ).not.toBeInTheDocument()
   })
 

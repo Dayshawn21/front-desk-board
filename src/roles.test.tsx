@@ -7,7 +7,7 @@ import type { Role } from './types'
 
 async function renderAs(role: Role) {
   renderWithQuery(<App />, { role })
-  await screen.findByRole('button', { name: /jon kim/i }) // schedule loaded
+  await screen.findByRole('button', { name: /^jon kim,/i }) // schedule loaded
 }
 
 describe('roles', () => {
@@ -25,7 +25,7 @@ describe('roles', () => {
     const user = userEvent.setup()
     await renderAs('front-desk')
 
-    await user.click(screen.getByRole('button', { name: /jon kim/i }))
+    await user.click(screen.getByRole('button', { name: /^jon kim,/i }))
     const dialog = screen.getByRole('dialog', { name: /jon kim/i })
 
     expect(
@@ -59,7 +59,7 @@ describe('roles', () => {
     const user = userEvent.setup()
     await renderAs('provider')
 
-    await user.click(screen.getByRole('button', { name: /jon kim/i }))
+    await user.click(screen.getByRole('button', { name: /^jon kim,/i }))
     const dialog = screen.getByRole('dialog', { name: /jon kim/i })
 
     expect(

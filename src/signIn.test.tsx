@@ -19,7 +19,7 @@ async function signOut(user: ReturnType<typeof userEvent.setup>) {
 async function signInAs(name: RegExp) {
   const user = userEvent.setup()
   await user.click(screen.getByRole('button', { name }))
-  await screen.findByRole('button', { name: /jon kim/i }) // schedule loaded
+  await screen.findByRole('button', { name: /^jon kim,/i }) // schedule loaded
   return user
 }
 

@@ -11,6 +11,24 @@ export const roleLabel: Record<Role, string> = {
   'office-manager': 'Office manager',
 }
 
+// One line per role for the sign-in page: what signing in as them shows.
+// Kept in step with src/lib/permissions.ts.
+export const roleSummary: Record<Role, string> = {
+  'front-desk': 'Checks patients in, books and cancels visits',
+  provider: 'Seats patients; the checklist is read-only',
+  'office-manager': 'Everything, plus switching practices and reopening visits',
+}
+
+// "Dr. Amara Okafor" -> "AO". Honorifics aren't initials.
+export function initials(name: string): string {
+  return name
+    .replace(/^(Dr|Mr|Mrs|Ms)\.?\s+/i, '')
+    .split(/\s+/)
+    .map((word) => word[0]?.toUpperCase() ?? '')
+    .join('')
+    .slice(0, 2)
+}
+
 export const typeLabel: Record<AppointmentType, string> = {
   cleaning: 'Cleaning',
   exam: 'Exam',

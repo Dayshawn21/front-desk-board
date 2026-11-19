@@ -29,7 +29,7 @@ afterEach(() => vi.restoreAllMocks())
 async function openBooking() {
   const user = userEvent.setup()
   renderWithQuery(<App />)
-  await screen.findByRole('button', { name: /jon kim/i })
+  await screen.findByRole('button', { name: /^jon kim,/i })
   await user.click(screen.getByRole('button', { name: /new appointment/i }))
   const dialog = screen.getByRole('dialog', { name: /new appointment/i })
   return { user, dialog }

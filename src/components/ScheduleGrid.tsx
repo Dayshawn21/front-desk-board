@@ -9,12 +9,12 @@ import {
   toMinutes,
 } from '../lib/time'
 import { minutesLate } from '../lib/workflow'
-import type { ScheduleDay } from '../types'
+import type { Appointment, ScheduleDay } from '../types'
 import { LateNote } from './LateNote'
 
 const SLOT_MINUTES = 15
 const ROW_PX = 32
-const HEADER_PX = 40
+const HEADER_PX = 48
 
 type ScheduleGridProps = {
   day: ScheduleDay
@@ -55,17 +55,38 @@ export function ScheduleGrid({
     return p ? `${p.firstName} ${p.lastName}` : 'Unknown patient'
   }
 
-  // One line per conflicting pair (skip the mirror entry B→A).
-  const conflictLines = [...conflicts.entries()].flatMap(([id, others]) =>
+  // One entry per conflicting pair (skip the mirror entry B→A).
+  const conflictPairs = [...conflicts.entries()].flatMap(([id, others]) =>
     others
       .filter((otherId) => id < otherId)
-      .map((otherId) => {
-        const a = apptsById.get(id)!
-        const b = apptsById.get(otherId)!
-        const chair = chairsById.get(a.chairId)?.name ?? 'Unknown chair'
-        return `${chair}: ${patientName(a.patientId)} (${formatTimeRange(a.start, a.end)}) overlaps ${patientName(b.patientId)} (${formatTimeRange(b.start, b.end)})`
-      }),
+      .map((otherId) => ({
+        a: apptsById.get(id)!,
+        b: apptsById.get(otherId)!,
+      })),
   )
+
+  // A patient's name that opens their visit (banner and lists above the grid).
+  const visitLink = (appt: Appointment, text = patientName(appt.patientId)) =>
+    onSelectAppointment ? (
+      <button
+        type="button"
+        onClick={() => onSelectAppointment(appt.id)}
+        className="font-semibold underline decoration-1 underline-offset-2 hover:decoration-2"
+      >
+        {text}
+      </button>
+    ) : (
+      <span className="font-semibold">{text}</span>
+    )
+
+  const statusKey = [
+    'scheduled',
+    'confirmed',
+    'arrived',
+    'in-chair',
+    'completed',
+    'no-show',
+  ] as const
 
   const nowMinutes = now ? toMinutes(now) : null
   const showNow =
@@ -73,35 +94,63 @@ export function ScheduleGrid({
 
   return (
     <div className="flex flex-col gap-3">
-      {conflictLines.length > 0 && (
+      {conflictPairs.length > 0 && (
         <div
           role="status"
           className="flex flex-col gap-1 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
         >
           <p className="font-semibold">
-            {conflictLines.length === 1
+            {conflictPairs.length === 1
               ? '1 scheduling conflict'
-              : `${conflictLines.length} scheduling conflicts`}
+              : `${conflictPairs.length} scheduling conflicts`}
           </p>
-          {conflictLines.map((line) => (
-            <p key={line}>{line}</p>
+          {conflictPairs.map(({ a, b }) => (
+            <p key={`${a.id}-${b.id}`}>
+              {chairsById.get(a.chairId)?.name ?? 'Unknown chair'}:{' '}
+              {visitLink(a)} ({formatTimeRange(a.start, a.end)}) overlaps{' '}
+              {visitLink(b)} ({formatTimeRange(b.start, b.end)})
+            </p>
           ))}
         </div>
       )}
 
-      {cancelled.length > 0 && (
-        <p className="text-sm text-slate-600">
-          <span className="font-medium text-slate-700">Cancelled today:</span>{' '}
-          {cancelled
-            .map((a) => {
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+        {cancelled.length > 0 ? (
+          <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-slate-600">
+            <span className="font-medium text-slate-700">Cancelled today:</span>{' '}
+            {cancelled.map((a) => {
               const reason = a.cancelReason
                 ? `, ${cancelReasonLabel[a.cancelReason].toLowerCase()}`
                 : ''
-              return `${patientName(a.patientId)} (${formatTime(a.start)}${reason})`
-            })
-            .join(', ')}
-        </p>
-      )}
+              return (
+                <span key={a.id}>
+                  {visitLink(
+                    a,
+                    `${patientName(a.patientId)} (${formatTime(a.start)}${reason})`,
+                  )}{' '}
+                </span>
+              )
+            })}
+          </p>
+        ) : (
+          <span />
+        )}
+        {/* What the card colours mean (the cards also say it in words). */}
+        <ul
+          aria-label="Status key"
+          className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-slate-600"
+        >
+          {statusKey.map((status) => (
+            <li key={status} className="flex items-center gap-1.5">
+              <span
+                aria-hidden="true"
+                className={`size-3 rounded-sm border ${statusStyle[status].card}`}
+              />
+              {statusStyle[status].label}
+            </li>
+          ))}
+        </ul>
+      </div>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
         <div
@@ -115,7 +164,7 @@ export function ScheduleGrid({
           {day.chairs.map((chair, i) => (
             <div key={chair.id} className="contents">
               <div
-                className="flex flex-col justify-center border-b border-l border-slate-200 px-2"
+                className="flex flex-col justify-center border-b border-l border-slate-200 px-2.5 py-1.5"
                 style={{ gridColumn: i + 2, gridRow: 1 }}
               >
                 <span className="text-sm font-semibold">{chair.name}</span>

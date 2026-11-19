@@ -8,15 +8,18 @@ import type { Role } from './types'
 async function renderAs(role: Role = 'front-desk') {
   const user = userEvent.setup()
   renderWithQuery(<App />, { role })
-  await screen.findByRole('button', { name: /jon kim/i }) // schedule loaded
+  await screen.findByRole('button', { name: /^jon kim,/i }) // schedule loaded
   return user
 }
 
+// Click the visit's card (its label starts "Name, …"), return its drawer.
 async function openVisit(
   user: ReturnType<typeof userEvent.setup>,
-  name: RegExp,
+  name: string,
 ) {
-  await user.click(screen.getByRole('button', { name }))
+  await user.click(
+    screen.getByRole('button', { name: new RegExp(`^${name},`, 'i') }),
+  )
   return screen.getByRole('dialog', { name })
 }
 
@@ -44,18 +47,14 @@ describe('cancel visit', () => {
     const user = await renderAs()
 
     // Owen Hart: scheduled
-    expect(
-      cancelButton(await openVisit(user, /owen hart/i)),
-    ).toBeInTheDocument()
+    expect(cancelButton(await openVisit(user, 'Owen Hart'))).toBeInTheDocument()
     await user.keyboard('{Escape}')
     // Grace Liu: confirmed
-    expect(
-      cancelButton(await openVisit(user, /grace liu/i)),
-    ).toBeInTheDocument()
+    expect(cancelButton(await openVisit(user, 'Grace Liu'))).toBeInTheDocument()
     await user.keyboard('{Escape}')
     // Jon Kim: arrived, so the visit has started
     expect(
-      cancelButton(await openVisit(user, /jon kim/i)),
+      cancelButton(await openVisit(user, 'Jon Kim')),
     ).not.toBeInTheDocument()
   })
 
@@ -63,13 +62,13 @@ describe('cancel visit', () => {
     const user = await renderAs('provider')
 
     expect(
-      cancelButton(await openVisit(user, /owen hart/i)),
+      cancelButton(await openVisit(user, 'Owen Hart')),
     ).not.toBeInTheDocument()
   })
 
   it('asks why before cancelling, and Keep visit backs out', async () => {
     const user = await renderAs()
-    const dialog = await openVisit(user, /owen hart/i)
+    const dialog = await openVisit(user, 'Owen Hart')
 
     await user.click(
       within(dialog).getByRole('button', { name: 'Cancel visit…' }),
@@ -108,7 +107,7 @@ describe('cancel visit', () => {
 
   it('cancels, confirms with Undo, and takes the visit off the schedule', async () => {
     const user = await renderAs()
-    const dialog = await openVisit(user, /owen hart/i)
+    const dialog = await openVisit(user, 'Owen Hart')
 
     await cancelVisit(user, dialog, /late cancel/i)
 
@@ -140,7 +139,7 @@ describe('cancel visit', () => {
 
   it('Undo puts the visit back as it was', async () => {
     const user = await renderAs()
-    const dialog = await openVisit(user, /grace liu/i)
+    const dialog = await openVisit(user, 'Grace Liu')
     await cancelVisit(user, dialog, /patient cancelled/i)
     await user.keyboard('{Escape}')
 
@@ -156,7 +155,7 @@ describe('cancel visit', () => {
 
   it('frees the time for a new booking', async () => {
     const user = await renderAs()
-    const dialog = await openVisit(user, /owen hart/i)
+    const dialog = await openVisit(user, 'Owen Hart')
     await cancelVisit(user, dialog)
     await user.keyboard('{Escape}')
 
