@@ -4,6 +4,7 @@ import { useBooking } from '../hooks/useBooking'
 import {
   useCreateAppointment,
   usePractices,
+  useResetDemoData,
   useSchedule,
   useUpdateAppointment,
 } from '../hooks/useSchedule'
@@ -48,6 +49,7 @@ export function Board({ theme, onThemeChange }: BoardProps) {
   const schedule = useSchedule(practiceId, DEMO_DATE)
   const update = useUpdateAppointment(practiceId, DEMO_DATE)
   const create = useCreateAppointment(practiceId, DEMO_DATE)
+  const resetDemoData = useResetDemoData()
 
   const statusChanges = useStatusChanges({
     day: schedule.data,
@@ -85,6 +87,15 @@ export function Board({ theme, onThemeChange }: BoardProps) {
     setPracticeId(id)
   }
 
+  const resetDemo = () => {
+    // Nothing on screen may point at a visit from before the reset.
+    setSelectedId(null)
+    statusChanges.clear()
+    update.reset()
+    resetDemoData()
+    setNotice({ key: nextToastKey(), text: 'Demo data reset' })
+  }
+
   // Same as the sign-in page: after the page swaps, focus starts at its heading.
   useEffect(() => headingRef.current?.focus(), [])
 
@@ -104,6 +115,7 @@ export function Board({ theme, onThemeChange }: BoardProps) {
         theme={theme}
         onThemeChange={onThemeChange}
         onSignOut={signOut}
+        onResetDemo={resetDemo}
       />
 
       {/* inert: while a drawer is open, nothing behind it can be focused or clicked */}

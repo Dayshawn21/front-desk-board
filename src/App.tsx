@@ -1,6 +1,7 @@
 import { Board } from './components/Board'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { SignInPage } from './components/SignInPage'
+import { useLiveScheduleUpdates } from './hooks/useSchedule'
 import { useTheme } from './hooks/useTheme'
 import { useAuth } from './session/SessionContext'
 
@@ -13,6 +14,8 @@ function App() {
   // Here, not in the menu, so "System" keeps following the device even on
   // the sign-in page.
   const [theme, setTheme] = useTheme()
+  // Changes made in other tabs show up here without a reload.
+  useLiveScheduleUpdates()
   return user ? (
     <ErrorBoundary key={user.id} where="board" onSignOut={signOut}>
       <Board theme={theme} onThemeChange={setTheme} />

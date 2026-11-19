@@ -16,6 +16,7 @@ type BoardHeaderProps = {
   theme: ThemeChoice
   onThemeChange: (choice: ThemeChoice) => void
   onSignOut: () => void
+  onResetDemo: () => void
 }
 
 // Brand and day on the left; practice and the account menu on the right.
@@ -30,6 +31,7 @@ export function BoardHeader({
   theme,
   onThemeChange,
   onSignOut,
+  onResetDemo,
 }: BoardHeaderProps) {
   const practiceName = practices?.find((p) => p.id === practiceId)?.name ?? ''
 
@@ -89,6 +91,7 @@ export function BoardHeader({
           theme={theme}
           onThemeChange={onThemeChange}
           onSignOut={onSignOut}
+          onResetDemo={onResetDemo}
         />
       </div>
     </header>

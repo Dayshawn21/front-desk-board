@@ -41,17 +41,18 @@ including from a plain-language request ("60 min cleaning for Ana Diaz this afte
 
 ## What's pretend
 
-The API runs in the browser (data resets on reload), sign-in is "pick a user" with no
+The API runs in the browser, in `localStorage` shared by every tab (a storage event
+tells the other tabs to refetch; Reset demo data puts the seed back), sign-in is "pick a user" with no
 password, and roles only hide buttons. A real system enforces practice scoping and
 roles on the server.
 
 ## Next
 
 Per-user limits on the AI endpoint once there's real auth; a version on each visit so
-concurrent edits get a 409 instead of overwriting; live updates between screens; drag to
+concurrent edits get a 409 instead of overwriting; server-pushed updates between devices; drag to
 book and move visits, with a keyboard alternative.
 
 ## Numbers
 
-287 unit tests and 35 Playwright tests (user flows, the AI assist with its route faked, and
+314 unit tests and 37 Playwright tests (user flows, the AI assist with its route faked, and
 axe in light and dark) run in CI on every push.

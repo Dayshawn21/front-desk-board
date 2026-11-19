@@ -23,13 +23,23 @@ export class ApiError extends Error {
   }
 }
 
-// The mock "database": a private copy of the seed, so saves never change the seed itself.
+// The mock "database": a copy of the seed, so saves never change the seed.
+//
+// It lives in localStorage, so every tab of this site shares one db (a
+// patient booking in one tab shows up on the board in another) and a reload
+// keeps changes. Each call reads the db fresh, changes it, and writes it
+// back in one synchronous step, so two tabs can't overwrite each other's
+// saves. If storage is blocked or full, the db stays in this tab's memory.
 type Db = {
   practices: Practice[]
   chairs: Chair[]
   patients: Patient[]
   appointments: Appointment[]
+  nextBookingId: number // in the db, so two tabs never hand out the same id
 }
+
+// Versioned, so a future change to the data's shape can start fresh.
+export const MOCK_DB_KEY = 'front-desk-board.mock-db.v1'
 
 function createDb(): Db {
   return structuredClone({
@@ -37,16 +47,81 @@ function createDb(): Db {
     chairs: seed.chairs,
     patients: seed.patients,
     appointments: seed.appointments,
+    nextBookingId: 1,
   })
 }
 
-let db = createDb()
-let nextBookingId = 1
+let memoryDb = createDb() // used when localStorage can't be
+let useStorage = true
+
+function isDb(value: unknown): value is Db {
+  const db = value as Db | null
+  return (
+    typeof db === 'object' &&
+    db !== null &&
+    Array.isArray(db.practices) &&
+    Array.isArray(db.chairs) &&
+    Array.isArray(db.patients) &&
+    Array.isArray(db.appointments) &&
+    typeof db.nextBookingId === 'number'
+  )
+}
+
+function loadDb(): Db {
+  if (!useStorage) return memoryDb
+  try {
+    const raw = localStorage.getItem(MOCK_DB_KEY)
+    if (raw === null) return createDb()
+    const parsed: unknown = JSON.parse(raw)
+    // Unreadable or old-shaped data: start from the seed again.
+    return isDb(parsed) ? parsed : createDb()
+  } catch (error) {
+    if (error instanceof SyntaxError) return createDb() // bad JSON
+    useStorage = false // storage itself is blocked
+    return memoryDb
+  }
+}
+
+function saveDb(db: Db) {
+  memoryDb = db
+  if (!useStorage) return
+  try {
+    localStorage.setItem(MOCK_DB_KEY, JSON.stringify(db))
+  } catch {
+    // Full or blocked: keep working in this tab's memory from now on.
+    useStorage = false
+  }
+}
+
+// Puts the seed data back, for this tab and every other open tab (removing
+// the key fires a "storage" event in the others).
+export function resetDemoData() {
+  memoryDb = createDb()
+  try {
+    localStorage.removeItem(MOCK_DB_KEY)
+  } catch {
+    // Storage blocked: this tab's memory was reset above.
+  }
+}
 
 // Tests call this so every test starts from the same data.
 export function resetMockDb() {
-  db = createDb()
-  nextBookingId = 1
+  useStorage = true
+  resetDemoData()
+}
+
+// Calls onChange when ANOTHER tab changes the mock db: the browser fires a
+// "storage" event in every other tab of the site when localStorage changes
+// (never in the tab that made the change, which refetches on its own).
+// key is null when the other tab cleared all of storage. Returns an
+// unsubscribe function. A real server would push events (WebSocket or SSE).
+export function subscribeToMockDb(onChange: () => void): () => void {
+  if (typeof window === 'undefined') return () => {}
+  const onStorage = (event: StorageEvent) => {
+    if (event.key === MOCK_DB_KEY || event.key === null) onChange()
+  }
+  window.addEventListener('storage', onStorage)
+  return () => window.removeEventListener('storage', onStorage)
 }
 
 function sleep(ms: number) {
@@ -73,7 +148,7 @@ function forPractice<T extends { practiceId: string }>(
 
 export async function fetchPractices(): Promise<Practice[]> {
   await sleep(LATENCY_MS)
-  return structuredClone(db.practices)
+  return structuredClone(loadDb().practices)
 }
 
 export async function fetchSchedule(
@@ -86,6 +161,7 @@ export async function fetchSchedule(
     throw new ApiError('Could not load the schedule (simulated failure).', 503)
   }
 
+  const db = loadDb()
   const practice = db.practices.find((p) => p.id === practiceId)
   if (!practice) {
     throw new ApiError(`Unknown practice: ${practiceId}`, 404)
@@ -117,6 +193,7 @@ export async function updateAppointment(
     throw new ApiError('Could not save changes (simulated failure).', 503)
   }
 
+  const db = loadDb()
   // Tenant check: an appointment in another practice is treated as not found.
   const appt = db.appointments.find(
     (a) => a.id === appointmentId && a.practiceId === practiceId,
@@ -155,6 +232,7 @@ export async function updateAppointment(
   }
 
   Object.assign(appt, structuredClone(patch))
+  saveDb(db)
   return structuredClone(appt)
 }
 
@@ -174,6 +252,7 @@ export async function createAppointment(
     throw new ApiError('Could not book the visit (simulated failure).', 503)
   }
 
+  const db = loadDb()
   // Tenant checks: the patient and chair must belong to this practice.
   const practice = db.practices.find((p) => p.id === practiceId)
   const patient = db.patients.find(
@@ -215,7 +294,7 @@ export async function createAppointment(
 
   const appointment: Appointment = {
     ...structuredClone(input),
-    id: `b-${nextBookingId++}`,
+    id: `b-${db.nextBookingId++}`,
     practiceId,
     status: 'scheduled',
     checklist: {
@@ -227,18 +306,6 @@ export async function createAppointment(
     notes: '',
   }
   db.appointments.push(appointment)
+  saveDb(db)
   return structuredClone(appointment)
-}
-
-// ── Shared between tabs (stubs; implemented in the next commit) ──
-
-export const MOCK_DB_KEY = 'front-desk-board.mock-db.v1'
-
-// Puts the seed data back, for this tab and every other open tab.
-export function resetDemoData() {}
-
-// Calls onChange when another tab changes the mock db. Returns an unsubscribe.
-export function subscribeToMockDb(onChange: () => void): () => void {
-  void onChange
-  return () => {}
 }

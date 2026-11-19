@@ -92,6 +92,9 @@ Built in six daily steps.
       wrong" with Try again and Reload instead of a blank page, moves focus to that
       message, and logs it (add `?crash` to the URL, then sign in, to see it). Errors a
       boundary can't catch (event handlers, rejected promises) are logged too
+- [x] Shared demo data: every tab in the browser shares one mock database, so a change
+      in one tab shows up on the board in another without a reload, and a reload keeps
+      it. **Reset demo data** in the account menu puts the demo back to its start
 - [x] End-to-end tests (Playwright) in a real browser: book a visit and check a patient
       in, the double-booking banner, click-to-book, and the AI assist (fill, warn about
       another day, rate limit). The AI tests fake the server route, so CI never calls
@@ -186,9 +189,16 @@ an interrupted run picks up where it stopped.
 ## What is mocked
 
 - **The API.** `src/api/schedule.ts` is an in-browser mock with fake latency. Data is
-  scoped by `practiceId` there; in a real system the server enforces that. Saves and new
-  bookings live in that tab's memory only, so two tabs or two users do not see each other's changes,
-  and a page reload resets the data.
+  scoped by `practiceId` there; in a real system the server enforces that. The mock
+  database lives in `localStorage`, so every tab in the same browser shares it and a
+  reload keeps changes; **Reset demo data** in the account menu puts the seed back in
+  every open tab. Each call reads, changes, and writes the whole database in one
+  synchronous step, so two tabs don't overwrite each other. Other browsers or devices
+  don't share it, and if storage is blocked or full the data stays in that tab's memory.
+- **Live updates.** When one tab saves, the browser fires a `storage` event in the
+  other tabs; the app listens (`subscribeToMockDb`) and marks every cached schedule
+  stale, so TanStack Query refetches what's on screen. A real server would push the
+  same "this practice changed" message over a WebSocket or server-sent events.
 - **Sign-in and roles.** Sign-in is pretend: you pick one of three fake staff users
   (`src/mocks/users.ts`) and there are no passwords. Anything checked in the browser can
   be bypassed, so a real app would sign in through an identity provider and the server
@@ -223,8 +233,9 @@ an interrupted run picks up where it stopped.
 - **Headless UI primitives.** The dialog focus trap, tabs, and toast are hand-built and
   tested here on purpose. In production I'd use headless primitives (Radix or React
   Aria, or shadcn/ui on top of Radix) so the team isn't maintaining focus logic.
-- **Multi-user updates.** Have the server push change events (WebSocket or SSE) and
-  invalidate the affected practice's schedule query, so every open screen updates.
+- **Multi-user updates from a server.** Tabs in one browser already update each other
+  (see What is mocked). With a real backend, the server would push change events
+  (WebSocket or SSE) naming the practice, and only that practice's query would refetch.
 - **Safe concurrent edits.** Add a `version` to each appointment; a save sent with an
   old version gets a 409 Conflict and the UI offers to reload, instead of silently
   overwriting another person's change.
@@ -239,7 +250,8 @@ an interrupted run picks up where it stopped.
 - `src/lib/`: the rules as pure, tested functions: `statusChange` (kinds, Undo, toast
   text), `workflow` (next step, cancel, no-show, lateness), `slots` (open-slot finder),
   `overlap`, `lanes`, `permissions`, `assist` (AI answer checks), `time`
-- `src/api/schedule.ts`: the mock server; `server/` and `api/`: the AI route
+- `src/api/schedule.ts`: the mock server (shared between tabs through `localStorage`);
+  `server/` and `api/`: the AI route
 - `e2e/`: Playwright flows and axe checks; `evals/`: the AI eval
 
 Requires Node 24 (see `.nvmrc`).

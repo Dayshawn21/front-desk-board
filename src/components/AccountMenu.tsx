@@ -10,6 +10,7 @@ type AccountMenuProps = {
   theme: ThemeChoice
   onThemeChange: (choice: ThemeChoice) => void
   onSignOut: () => void
+  onResetDemo: () => void // puts the demo's data back, in every tab
 }
 
 const themeLabel: Record<ThemeChoice, string> = {
@@ -28,9 +29,11 @@ export function AccountMenu({
   theme,
   onThemeChange,
   onSignOut,
+  onResetDemo,
 }: AccountMenuProps) {
   const [open, setOpen] = useState(false)
   const panelId = useId()
+  const resetHintId = useId()
   const containerRef = useRef<HTMLDivElement>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
 
@@ -135,6 +138,27 @@ export function AccountMenu({
             >
               Sign out
             </button>
+          </div>
+          {/* A demo-only tool, kept apart from the account actions. */}
+          <div className="mt-4 border-t border-slate-200 pt-3">
+            <button
+              type="button"
+              aria-describedby={resetHintId}
+              onClick={() => {
+                onResetDemo()
+                setOpen(false)
+                buttonRef.current?.focus()
+              }}
+              className="h-11 w-full rounded-lg px-4 text-sm font-medium text-teal-800 underline-offset-2 hover:bg-slate-100 hover:underline"
+            >
+              Reset demo data
+            </button>
+            <p
+              id={resetHintId}
+              className="mt-1 text-center text-xs text-slate-600"
+            >
+              Puts every visit back to the start of the demo, in every open tab.
+            </p>
           </div>
         </div>
       )}

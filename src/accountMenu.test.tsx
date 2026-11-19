@@ -90,6 +90,7 @@ describe('account menu', () => {
     await user.click(button)
     await user.tab() // the checked theme option
     await user.tab() // Sign out
+    await user.tab() // Reset demo data
     await user.tab() // past the menu, into the page
 
     expect(panel()).not.toBeInTheDocument()
