@@ -18,7 +18,9 @@ describe('App', () => {
       'status',
     )
     expect(
-      await screen.findByRole('button', { name: /jon kim, filling/i }),
+      await screen.findByRole('button', {
+        name: /^jon kim, arrived, filling/i,
+      }),
     ).toBeInTheDocument()
     expect(screen.getByText('Chair 2')).toBeInTheDocument()
   })

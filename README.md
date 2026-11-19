@@ -45,6 +45,12 @@ Work in progress. Built in daily steps.
       Diaz this afternoon with Hygienist Patel") and Claude fills in the New appointment
       form. The slot finder then suggests times and a person books; the AI never picks a
       time or books. Measured with an eval (below)
+- [x] End-to-end tests (Playwright) in a real browser: book a visit and check a patient
+      in, the double-booking banner, and click-to-book
+- [x] Automated accessibility checks (axe-core, WCAG 2.2 AA rules) on the sign-in page,
+      schedule (desktop and phone width), patient flow, check-in drawer, New appointment
+      panel, account menu, and toast. axe catches only part of WCAG; keyboard and focus
+      behaviour is covered by the other tests
 
 ## AI booking assist
 
@@ -147,7 +153,9 @@ Requires Node 24 (see `.nvmrc`).
 
 ## Checks
 
-    npm run check   # typecheck, lint, format check, tests
+    npm run check   # typecheck, lint, format check, unit tests
     npm run build
+    npm run e2e     # Playwright: user flows and axe accessibility checks
 
-CI runs the same checks on every push.
+The first e2e run needs a browser: `npx playwright install chromium`. CI runs all of
+these on every push.

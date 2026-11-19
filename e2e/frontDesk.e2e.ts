@@ -28,7 +28,7 @@ test('front desk books a visit, then checks a patient in', async ({ page }) => {
   await expect(booking).toBeHidden()
   await expect(
     page.getByRole('button', {
-      name: /^Ana Diaz, Exam, 11:30 AM to 12:00 PM, Scheduled/,
+      name: /^Ana Diaz, Scheduled, Exam, 11:30 AM to 12:00 PM/,
     }),
   ).toBeVisible()
 
@@ -59,7 +59,7 @@ test('shows the existing double-booking, and a booked time is not offered again'
   ).toBeVisible()
   await expect(
     page.getByRole('button', {
-      name: /^Jon Kim,.*overlaps another appointment/,
+      name: /^Jon Kim,.*Overlaps another appointment/,
     }),
   ).toBeVisible()
 

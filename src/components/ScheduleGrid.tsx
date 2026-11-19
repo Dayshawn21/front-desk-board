@@ -188,7 +188,10 @@ export function ScheduleGrid({
                 onClick={() => onSelectAppointment?.(appt.id)}
                 key={appt.id}
                 type="button"
-                aria-label={`${name}, ${typeLabel[appt.type]}, ${formatTime(start)} to ${formatTime(end)}, ${status.label}${hasConflict ? ', overlaps another appointment' : ''}`}
+                // Same words, same order as the visible card (WCAG 2.5.3,
+                // Label in Name), so voice control users can say what they
+                // see. axe checks this in e2e/a11y.e2e.ts.
+                aria-label={`${name}, ${status.label}, ${typeLabel[appt.type]}, ${formatTime(start)} to ${formatTime(end)}${hasConflict ? ', Overlaps another appointment' : ''}`}
                 className={`relative z-10 my-0.5 flex min-w-0 flex-col gap-0.5 overflow-hidden rounded-lg border px-2 py-1 text-left ${status.card} ${hasConflict ? 'ring-2 ring-red-600' : ''}`}
                 style={{
                   gridColumn: column,
@@ -201,16 +204,17 @@ export function ScheduleGrid({
                 <span className="flex items-center gap-1.5">
                   <span className="truncate text-[13px] font-semibold">
                     {name}
-                  </span>
+                  </span>{' '}
                   <span
                     className={`ml-auto shrink-0 rounded-full px-1.5 text-[11px] font-semibold ${status.pill}`}
                   >
                     {status.label}
                   </span>
-                </span>
+                </span>{' '}
                 <span className="truncate text-xs text-slate-700">
-                  {typeLabel[appt.type]} · {formatTime(start)}–{formatTime(end)}
-                </span>
+                  {typeLabel[appt.type]} · {formatTime(start)} to{' '}
+                  {formatTime(end)}
+                </span>{' '}
                 {hasConflict && (
                   <span className="flex items-center gap-1 text-xs font-semibold text-red-700">
                     <svg
