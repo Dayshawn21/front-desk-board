@@ -45,6 +45,10 @@ Work in progress. Built in daily steps.
       Diaz this afternoon with Hygienist Patel") and Claude fills in the New appointment
       form. The slot finder then suggests times and a person books; the AI never picks a
       time or books. Measured with an eval (below)
+- [x] Error boundary around the board: a crash while rendering shows "Something went
+      wrong" with Try again and Reload instead of a blank page, moves focus to that
+      message, and logs it (add `?crash` to the URL, then sign in, to see it). Errors a
+      boundary can't catch (event handlers, rejected promises) are logged too
 - [x] End-to-end tests (Playwright) in a real browser: book a visit and check a patient
       in, the double-booking banner, and click-to-book
 - [x] Automated accessibility checks (axe-core: WCAG 2.2 AA rules plus best practices) on
@@ -148,6 +152,11 @@ an interrupted run picks up where it stopped.
   invented patients and chairs, plus the typed request. In production that list would
   come from the database for the signed-in practice, and the request text could contain
   real patient details, so it would need a data agreement with the AI provider.
+- **Error logging.** `src/lib/logError.ts` writes one structured line to the browser
+  console. A real app would send it to an error service (Sentry or similar) with source
+  maps uploaded, since the production build's component names are minified. A report
+  holds only the error's name and message, where it happened, the component stack, and
+  the time: never props, state, or form values, which could contain patient details.
 - **The clock.** The demo always runs on Tue Nov 17, 2026 at 9:40 AM so it looks the same
   whenever it's opened. Times are practice wall-clock strings with no timezone.
 

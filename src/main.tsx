@@ -4,9 +4,11 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import './index.css'
 import App from './App.tsx'
+import { installGlobalErrorLogging } from './lib/logError'
 import { createQueryClient } from './lib/queryClient'
 import { SessionProvider } from './session/SessionProvider'
 
+installGlobalErrorLogging()
 const queryClient = createQueryClient()
 
 createRoot(document.getElementById('root')!).render(

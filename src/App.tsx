@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { AccountMenu } from './components/AccountMenu'
 import { BookingDrawer } from './components/BookingDrawer'
+import { ErrorBoundary } from './components/ErrorBoundary'
 import { CheckInDrawer } from './components/CheckInDrawer'
 import { PatientFlow } from './components/PatientFlow'
 import { SignInPage } from './components/SignInPage'
@@ -37,12 +38,29 @@ let changeCounter = 0
 
 // Signed out: the sign-in page. Signed in: the board, keyed by user so a
 // new sign-in starts with fresh screen state (no drawer or toast left over).
+// A crash anywhere in the board shows a recoverable message (and is logged)
+// instead of a blank page.
 function App() {
   const { user } = useAuth()
-  return user ? <Board key={user.id} /> : <SignInPage />
+  return user ? (
+    <ErrorBoundary key={user.id} where="board">
+      <Board />
+    </ErrorBoundary>
+  ) : (
+    <SignInPage />
+  )
+}
+
+// ?crash in the URL breaks the board on purpose, to demo and test the
+// error screen (like ?fail for a failed load).
+function throwIfDemoCrash() {
+  if (new URLSearchParams(window.location.search).has('crash')) {
+    throw new Error('Demo crash: ?crash is in the URL')
+  }
 }
 
 function Board() {
+  throwIfDemoCrash()
   const { user, practiceId, setPracticeId, signOut, can } = useSession()
   const headingRef = useRef<HTMLHeadingElement>(null)
   const [view, setView] = useState<ViewId>('schedule')

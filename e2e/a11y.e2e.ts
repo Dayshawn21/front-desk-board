@@ -94,3 +94,21 @@ test.describe('signed in', () => {
     await expectNoViolations(page)
   })
 })
+
+test('error screen (board crashed on purpose with ?crash)', async ({
+  page,
+}) => {
+  const logged: string[] = []
+  page.on('console', (msg) => {
+    if (msg.type() === 'error') logged.push(msg.text())
+  })
+  await page.goto('/?crash')
+  await page.getByRole('button', { name: /rosa jimenez/i }).click()
+
+  const heading = page.getByRole('heading', { name: 'Something went wrong' })
+  await expect(heading).toBeFocused()
+  expect(logged.some((line) => line.includes('[front-desk-board] error'))).toBe(
+    true,
+  )
+  await expectNoViolations(page)
+})

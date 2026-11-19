@@ -1,9 +1,18 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  type MockInstance,
+  vi,
+} from 'vitest'
 import App from './App'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import {
+  type ErrorReport,
   installGlobalErrorLogging,
   LOG_PREFIX,
   logError,
@@ -13,7 +22,7 @@ import { renderWithQuery } from './test/render'
 
 // React also logs caught errors to console.error; keep test output quiet and
 // look only at our own log lines.
-let consoleError: ReturnType<typeof vi.spyOn>
+let consoleError: MockInstance<typeof console.error>
 beforeEach(() => {
   consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
 })
@@ -21,7 +30,10 @@ afterEach(() => {
   window.history.replaceState(null, '', '/')
 })
 const ourLogs = () =>
-  consoleError.mock.calls.filter(([first]) => first === LOG_PREFIX)
+  consoleError.mock.calls.filter(([first]) => first === LOG_PREFIX) as [
+    string,
+    ErrorReport,
+  ][]
 
 let shouldThrow = true
 function Flaky() {
@@ -123,19 +135,22 @@ describe('logError', () => {
   })
 
   it('also logs errors a boundary cannot catch (event handlers, promises)', () => {
-    const stop = installGlobalErrorLogging(window)
+    // A stand-in for window: Vitest reports error events on the real window
+    // as unhandled test errors.
+    const target = new EventTarget()
+    const stop = installGlobalErrorLogging(target as unknown as Window)
 
-    window.dispatchEvent(
+    target.dispatchEvent(
       new ErrorEvent('error', { error: new Error('in a click handler') }),
     )
     const rejection = new Event('unhandledrejection') as PromiseRejectionEvent
     Object.defineProperty(rejection, 'reason', {
       value: new Error('in a promise'),
     })
-    window.dispatchEvent(rejection)
+    target.dispatchEvent(rejection)
 
     stop()
-    window.dispatchEvent(
+    target.dispatchEvent(
       new ErrorEvent('error', { error: new Error('after stop') }),
     )
 
