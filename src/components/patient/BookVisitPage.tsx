@@ -1,31 +1,109 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { ApiError } from '../../api/schedule'
 import { DEMO_DATE, DEMO_DAY_LABEL, DEMO_NOW } from '../../config'
-import { useCreateAppointment, useSchedule } from '../../hooks/useSchedule'
+import { usePatientSignIn } from '../../hooks/usePatientSignIn'
+import { useCreateAppointment } from '../../hooks/useSchedule'
 import {
   PATIENT_VISITS,
   patientTimes,
   patientVisitLabel,
   spokenDuration,
 } from '../../lib/patientBooking'
-import { checkInPath } from '../../lib/route'
+import { checkInPath, patientHomePath } from '../../lib/route'
 import { formatTime, formatTimeRange, toMinutes } from '../../lib/time'
-import type { Appointment, AppointmentType } from '../../types'
+import type {
+  Appointment,
+  AppointmentType,
+  Patient,
+  ScheduleDay,
+} from '../../types'
 import { PatientShell } from './PatientShell'
+import { PatientSignIn } from './PatientSignIn'
+import { PracticeDay } from './PracticeDay'
 
 const TAKEN = 'Sorry, that time was just taken. Please pick another time.'
 const SUBTITLE = 'Online booking'
 
-// The patient's side: pick who the visit is for, what it's for, and one of
-// today's open times, then book. Times come from the same slot finder the
-// front desk uses, and the mock server re-checks the time when booking (a
-// 409 if someone else just took it). The new visit is "Scheduled" on the
-// board, in every open tab, for the desk to confirm.
+// The patient's side: sign in (the demo way), then pick what the visit is
+// for and one of today's open times, and book. Times come from the same
+// slot finder the front desk uses, and the mock server re-checks the time
+// when booking (a 409 if someone else just took it). The new visit is
+// "Scheduled" on the board, in every open tab, for the desk to confirm.
 export function BookVisitPage({ practiceId }: { practiceId: string }) {
-  const schedule = useSchedule(practiceId, DEMO_DATE)
+  return (
+    <PracticeDay
+      practiceId={practiceId}
+      subtitle={SUBTITLE}
+      loadingText="Loading open times…"
+      failedText="We couldn't load open times"
+    >
+      {(day) => <BookingSteps day={day} />}
+    </PracticeDay>
+  )
+}
+
+function BookingSteps({ day }: { day: ScheduleDay }) {
+  const { patient, signIn, signOut } = usePatientSignIn(
+    day.practice.id,
+    day.patients,
+  )
+  const signInHeadingRef = useRef<HTMLHeadingElement>(null)
+  // Set when the patient signs in or out here (not on page load), so the
+  // new step's heading takes focus.
+  const [moved, setMoved] = useState(false)
+
+  useEffect(() => {
+    if (moved && !patient) signInHeadingRef.current?.focus()
+  }, [moved, patient])
+
+  if (!patient) {
+    return (
+      <PatientShell practiceName={day.practice.name} subtitle={SUBTITLE}>
+        <PatientSignIn
+          heading="Sign in to book"
+          intro={`Then pick a time today, ${DEMO_DAY_LABEL}.`}
+          patients={day.patients}
+          headingRef={signInHeadingRef}
+          onSignIn={(id) => {
+            setMoved(true)
+            signIn(id)
+          }}
+        />
+      </PatientShell>
+    )
+  }
+
+  // Keyed by patient: a different patient starts a fresh form.
+  return (
+    <BookingForm
+      key={patient.id}
+      day={day}
+      patient={patient}
+      focusHeading={moved}
+      onSignOut={() => {
+        setMoved(true)
+        signOut()
+      }}
+    />
+  )
+}
+
+type BookingFormProps = {
+  day: ScheduleDay
+  patient: Patient
+  focusHeading: boolean // just signed in: start screen readers here
+  onSignOut: () => void
+}
+
+function BookingForm({
+  day,
+  patient,
+  focusHeading,
+  onSignOut,
+}: BookingFormProps) {
+  const practiceId = day.practice.id
   const create = useCreateAppointment(practiceId, DEMO_DATE)
 
-  const [patientId, setPatientId] = useState('')
   const [visitType, setVisitType] = useState<AppointmentType | null>(null)
   const [start, setStart] = useState<string | null>(null)
   const [booked, setBooked] = useState<Appointment | null>(null)
@@ -33,8 +111,7 @@ export function BookVisitPage({ practiceId }: { practiceId: string }) {
 
   const formHeadingRef = useRef<HTMLHeadingElement>(null)
   const doneHeadingRef = useRef<HTMLHeadingElement>(null)
-  const focusFormNext = useRef(false)
-  const patientHintId = useId()
+  const focusFormNext = useRef(focusHeading)
   const ids = useId()
 
   // A new view replaced the old one: move focus to its heading so screen
@@ -48,49 +125,8 @@ export function BookVisitPage({ practiceId }: { practiceId: string }) {
     }
   }, [booked])
 
-  if (schedule.isPending) {
-    return (
-      <PatientShell subtitle={SUBTITLE}>
-        <p role="status" className="text-slate-600">
-          Loading open times…
-        </p>
-      </PatientShell>
-    )
-  }
-
-  if (schedule.isError) {
-    const notFound =
-      schedule.error instanceof ApiError && schedule.error.status === 404
-    return (
-      <PatientShell subtitle={SUBTITLE}>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {notFound
-            ? "We couldn't find that practice"
-            : "We couldn't load open times"}
-        </h1>
-        <p className="text-slate-700">
-          {notFound
-            ? 'Check the link from your dental office, or give them a call.'
-            : schedule.error.message}
-        </p>
-        {!notFound && (
-          <button
-            type="button"
-            onClick={() => schedule.refetch()}
-            className="h-12 rounded-xl border border-slate-300 bg-white px-5 font-medium"
-          >
-            Try again
-          </button>
-        )}
-      </PatientShell>
-    )
-  }
-
-  const day = schedule.data
   const practiceName = day.practice.name
-  const patients = [...day.patients].sort((a, b) =>
-    a.firstName.localeCompare(b.firstName),
-  )
+  const signedIn = { patient, onSignOut }
   const visit = PATIENT_VISITS.find((v) => v.type === visitType)
   const times = visit ? patientTimes(day, visit.minutes, DEMO_NOW) : []
   // Read from the fresh list: if another tab just took this time, it's
@@ -98,11 +134,11 @@ export function BookVisitPage({ practiceId }: { practiceId: string }) {
   const slot = times.find((t) => t.start === start)
 
   const book = () => {
-    if (!slot || !visit || !patientId) return
+    if (!slot || !visit) return
     setError(null)
     create.mutate(
       {
-        patientId,
+        patientId: patient.id,
         chairId: slot.chairId,
         start: slot.start,
         end: slot.end,
@@ -121,7 +157,6 @@ export function BookVisitPage({ practiceId }: { practiceId: string }) {
   }
 
   const startOver = () => {
-    setPatientId('')
     setVisitType(null)
     setStart(null)
     setError(null)
@@ -131,11 +166,14 @@ export function BookVisitPage({ practiceId }: { practiceId: string }) {
   }
 
   if (booked) {
-    const patient = day.patients.find((p) => p.id === booked.patientId)
     const chair = day.chairs.find((c) => c.id === booked.chairId)
     const label = patientVisitLabel(booked.type)
     return (
-      <PatientShell practiceName={practiceName} subtitle={SUBTITLE}>
+      <PatientShell
+        practiceName={practiceName}
+        subtitle={SUBTITLE}
+        signedIn={signedIn}
+      >
         <div className="flex flex-col gap-2">
           <h1
             ref={doneHeadingRef}
@@ -150,7 +188,7 @@ export function BookVisitPage({ practiceId }: { practiceId: string }) {
         </div>
         <div className="flex flex-col gap-1 rounded-2xl border border-teal-200 bg-teal-50 p-5">
           <p className="text-lg font-semibold text-slate-900">
-            {label} for {patient?.firstName} {patient?.lastName}
+            {label} for {patient.firstName} {patient.lastName}
           </p>
           <p className="text-slate-800">
             {DEMO_DAY_LABEL}, {formatTimeRange(booked.start, booked.end)}
@@ -171,13 +209,21 @@ export function BookVisitPage({ practiceId }: { practiceId: string }) {
           </a>{' '}
           when you arrive. No clipboard, no waiting at the desk.
         </p>
-        <button
-          type="button"
-          onClick={startOver}
-          className="h-12 rounded-xl border border-slate-300 bg-white px-5 font-medium text-slate-900 hover:bg-slate-100"
-        >
-          Book another visit
-        </button>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <a
+            href={patientHomePath(practiceId)}
+            className="flex h-12 flex-1 items-center justify-center rounded-xl bg-teal-700 px-5 font-semibold text-white hover:bg-teal-800"
+          >
+            See your visits
+          </a>
+          <button
+            type="button"
+            onClick={startOver}
+            className="h-12 flex-1 rounded-xl border border-slate-300 bg-white px-5 font-medium text-slate-900 hover:bg-slate-100"
+          >
+            Book another visit
+          </button>
+        </div>
       </PatientShell>
     )
   }
@@ -186,8 +232,13 @@ export function BookVisitPage({ practiceId }: { practiceId: string }) {
   const afternoon = times.filter((t) => toMinutes(t.start) >= 12 * 60)
 
   return (
-    <PatientShell practiceName={practiceName} subtitle={SUBTITLE}>
+    <PatientShell
+      practiceName={practiceName}
+      subtitle={SUBTITLE}
+      signedIn={signedIn}
+    >
       <div className="flex flex-col gap-1.5">
+        <p className="text-slate-700">Hi {patient.firstName},</p>
         <h1
           ref={formHeadingRef}
           tabIndex={-1}
@@ -207,30 +258,6 @@ export function BookVisitPage({ practiceId }: { practiceId: string }) {
           book()
         }}
       >
-        <div className="flex flex-col gap-2">
-          <label htmlFor={`${patientHintId}-select`} className="font-semibold">
-            Who is the visit for?
-          </label>
-          <p id={patientHintId} className="text-sm text-slate-600">
-            Demo: choose one of the practice's made-up patients. A real page
-            would ask you to sign in first.
-          </p>
-          <select
-            id={`${patientHintId}-select`}
-            aria-describedby={patientHintId}
-            value={patientId}
-            onChange={(event) => setPatientId(event.target.value)}
-            className="h-12 rounded-xl border border-slate-300 bg-white px-3 text-base"
-          >
-            <option value="">Choose a patient</option>
-            {patients.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.firstName} {p.lastName}
-              </option>
-            ))}
-          </select>
-        </div>
-
         <fieldset className="flex flex-col gap-2">
           <legend className="mb-2 font-semibold">What do you need?</legend>
           {PATIENT_VISITS.map((v) => (
@@ -271,7 +298,7 @@ export function BookVisitPage({ practiceId }: { practiceId: string }) {
           ))}
         </fieldset>
 
-        {patientId && visit && (
+        {visit && (
           <fieldset className="flex flex-col gap-4">
             <legend className="mb-1 font-semibold">Pick a time</legend>
             {times.length === 0 ? (
@@ -334,7 +361,7 @@ export function BookVisitPage({ practiceId }: { practiceId: string }) {
           </p>
         )}
 
-        {patientId && visit && times.length > 0 && (
+        {visit && times.length > 0 && (
           <button
             type="submit"
             disabled={!slot || create.isPending}

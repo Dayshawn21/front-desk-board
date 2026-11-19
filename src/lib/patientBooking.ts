@@ -1,4 +1,4 @@
-import type { AppointmentType, ScheduleDay } from '../types'
+import type { AppointmentStatus, AppointmentType, ScheduleDay } from '../types'
 import { typeLabel } from './display'
 import { findOpenSlots, type OpenSlot } from './slots'
 
@@ -75,4 +75,20 @@ export function spokenDuration(minutes: number): string {
 // board's label ("Crown").
 export function patientVisitLabel(type: AppointmentType): string {
   return PATIENT_VISITS.find((v) => v.type === type)?.label ?? typeLabel[type]
+}
+
+// A visit's status in a patient's words, for their "Your visits" list.
+export const patientStatusLabel: Record<AppointmentStatus, string> = {
+  scheduled: 'Booked',
+  confirmed: 'Confirmed',
+  arrived: 'Checked in',
+  'in-chair': 'With the dentist',
+  completed: 'Done',
+  cancelled: 'Cancelled',
+  'no-show': 'Missed',
+}
+
+// A patient can check in from their phone until they've arrived.
+export function canPatientCheckIn(status: AppointmentStatus): boolean {
+  return status === 'scheduled' || status === 'confirmed'
 }

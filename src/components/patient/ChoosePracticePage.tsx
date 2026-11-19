@@ -1,15 +1,31 @@
 import { usePractices } from '../../hooks/useSchedule'
-import { bookingPath } from '../../lib/route'
+import { bookingPath, patientHomePath } from '../../lib/route'
 import { formatTimeRange } from '../../lib/time'
 import { PatientShell } from './PatientShell'
 
-const SUBTITLE = 'Online booking'
+// The patient picks their dental office first: at /book to book there, at
+// /patient to sign in there. Each office is a plain link to that page, so
+// it can be opened in a new tab or shared like any other link.
+const PURPOSES = {
+  book: {
+    subtitle: 'Online booking',
+    intro: 'Pick the office you visit, then choose a time today.',
+    path: bookingPath,
+  },
+  'sign-in': {
+    subtitle: 'Patient sign-in',
+    intro: 'Pick the office you visit, then sign in.',
+    path: patientHomePath,
+  },
+}
 
-// /book: the patient picks their dental office first, then books there.
-// Each office is a plain link to its booking page, so it can be opened in
-// a new tab or shared like any other link.
-export function ChoosePracticePage() {
+export function ChoosePracticePage({
+  purpose,
+}: {
+  purpose: keyof typeof PURPOSES
+}) {
   const practices = usePractices()
+  const { subtitle: SUBTITLE, intro, path } = PURPOSES[purpose]
 
   if (practices.isPending) {
     return (
@@ -45,15 +61,13 @@ export function ChoosePracticePage() {
         <h1 className="text-3xl font-semibold tracking-tight">
           Choose your dental office
         </h1>
-        <p className="text-slate-700">
-          Pick the office you visit, then choose a time today.
-        </p>
+        <p className="text-slate-700">{intro}</p>
       </div>
       <ul className="flex flex-col gap-3">
         {practices.data.map((practice) => (
           <li key={practice.id}>
             <a
-              href={bookingPath(practice.id)}
+              href={path(practice.id)}
               className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 transition-colors hover:border-teal-600 hover:bg-teal-50"
             >
               <span className="flex flex-1 flex-col gap-0.5">

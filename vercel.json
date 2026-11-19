@@ -3,6 +3,8 @@
   "rewrites": [
     { "source": "/book", "destination": "/index.html" },
     { "source": "/book/:path*", "destination": "/index.html" },
-    { "source": "/check-in/:path*", "destination": "/index.html" }
+    { "source": "/check-in/:path*", "destination": "/index.html" },
+    { "source": "/patient", "destination": "/index.html" },
+    { "source": "/patient/:path*", "destination": "/index.html" }
   ]
 }

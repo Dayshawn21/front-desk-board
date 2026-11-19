@@ -34,7 +34,9 @@ describe('choosing an office at /patient', () => {
     expect(
       screen.getByRole('link', { name: /Riverbend Family Dental/ }),
     ).toHaveAttribute('href', '/patient/riverbend')
-    expect(screen.getByText('Patient sign-in')).toBeInTheDocument()
+    expect(
+      within(screen.getByRole('banner')).getByText('Patient sign-in'),
+    ).toBeInTheDocument()
   })
 })
 
@@ -99,7 +101,10 @@ describe('signing in as a patient', () => {
   })
 
   it('shows a cancelled visit as cancelled, with nothing to check in', async () => {
-    await updateAppointment('maple', 'a-04', { status: 'cancelled' })
+    await updateAppointment('maple', 'a-04', {
+      status: 'cancelled',
+      cancelReason: 'patient-cancelled',
+    })
     const { user } = openAt('/patient/maple')
     await signInAs(user, 'Owen Hart')
 

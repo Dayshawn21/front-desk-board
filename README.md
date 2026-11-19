@@ -22,14 +22,18 @@ front-end engineering skills: React, TypeScript, Tailwind, TanStack Query, and t
    patient but can't book, check in, or cancel.
 5. The patient's side: keep the board open and, in a second tab, open
    [/book](https://front-desk-board.vercel.app/book) (also linked from the sign-in
-   page) and choose **Maple Street Dental**. Pick a patient, a visit type, and a time,
-   and book. The visit appears
+   page) and choose **Maple Street Dental**. Sign in as a patient (pick **Grace Liu**),
+   then pick a visit type and a time, and book. The visit appears
    on the board in the first tab, as Scheduled, without a reload. **Reset demo data** in
    the account menu starts over.
 6. Patient check-in: on the board, open **Ravi Menon** (10:15) and press **Open
    check-in page** (or **Copy link**). On that page, tick "I've filled in my visit
    forms" and tap **I'm here**. Back on the board, Ravi is Arrived and his checklist
    shows Forms complete.
+7. Patient sign-in: open [/patient](https://front-desk-board.vercel.app/patient)
+   (also linked from the sign-in page), choose **Maple Street Dental**, and sign in as
+   **Owen Hart**. "Your visits" lists today's visit with a **Check in** link and a
+   **Book a visit** button; booking from there skips the sign-in step.
 
 The AI assist is rate limited (10 requests a minute per visitor). Add `?fail`,
 `?failBook`, or `?crash` to the URL to see the error states.
@@ -107,14 +111,22 @@ Built in six daily steps.
       it. **Reset demo data** in the account menu puts the demo back to its start
 - [x] Patient online booking: `/book` lists the dental offices with today's hours, and
       each links to its own booking page (`/book/maple`, `/book/riverbend`): a public,
-      phone-first page in the app's look. The patient picks who the visit is for (one of the
-      practice's made-up patients), a visit type in patient words (Cleaning, Checkup,
+      phone-first page in the app's look. The patient signs in first (see patient
+      sign-in), then picks a visit type in patient words (Cleaning, Checkup,
       Consultation, Tooth pain), and one of today's open times, grouped morning and
       afternoon. Times come from the same slot finder as the board, start no earlier
       than the demo clock, and show once each (the first free chair takes it). The
       server's double-booking check still applies: if someone took the time first, the
       page says so, clears the time, and shows fresh ones. After booking, focus moves to
-      "You're booked", which also links to the visit's check-in page
+      "You're booked", which links to the visit's check-in page and to "Your visits"
+- [x] Patient sign-in: `/patient` lists the offices, and `/patient/<practice>` asks the
+      patient to sign in by picking one of that office's made-up patients (no password;
+      the page says so). Signed in, "Your visits" lists today's visits there with a
+      status in patient words (Booked, Confirmed, Checked in, With the dentist, Done,
+      Cancelled, Missed), a **Check in** link for each one not yet arrived, and **Book a
+      visit**. The header shows who is signed in with **Sign out**. The sign-in is
+      remembered for the tab (`sessionStorage`), is per office, and is separate from
+      the staff sign-in. Focus moves to the new heading on sign-in and sign-out
 - [x] Patient check-in from a phone (`/check-in/<practice>/<visit>`): the patient sees
       the visit and the details on file (with "tell the front desk" if something is
       wrong), ticks "I've filled in my visit forms" and "I've reviewed my health
@@ -132,7 +144,8 @@ Built in six daily steps.
 - [x] Automated accessibility checks (axe-core: WCAG 2.2 AA rules plus best practices) on
       the sign-in page,
       schedule (desktop and phone width), patient flow, check-in drawer, New appointment
-      panel, account menu, and toast. axe catches only part of WCAG; keyboard and focus
+      panel, account menu, toast, and the patient pages (choose an office, sign in, your
+      visits, booking, check-in) at phone width. axe catches only part of WCAG; keyboard and focus
       behaviour is covered by the other tests
 - [x] Lighthouse on the live site, including the signed-in board (a scripted user
       flow that signs in, then opens the check-in drawer). Accessibility, Best
@@ -235,11 +248,12 @@ an interrupted run picks up where it stopped.
   would decide who you are. The chosen user is remembered in `sessionStorage` for that
   tab. Role rules (`src/lib/permissions.ts`) only hide buttons in the UI; a real server
   would enforce the same rules on every request.
-- **Who the patient is.** The booking page lists the practice's made-up patients to
-  pick from, like the staff sign-in. A real page would never show a patient list: the
-  patient would sign in (or confirm with a code texted to their phone) and the server
-  would know who they are. Nothing is typed in, so no real names can get into the demo,
-  or into the AI assist's patient list.
+- **Patient sign-in.** The patient sign-in lists the practice's made-up patients to
+  pick from, like the staff sign-in: no password, and anyone can pick anyone. A real
+  page would never show a patient list: the patient would sign in (or confirm with a
+  code texted to their phone) and the server would only return their own visits. Here
+  the browser loads the practice's whole day and filters it. Nothing is typed in, so
+  no real names can get into the demo, or into the AI assist's patient list.
 - **The check-in link.** It's `/check-in/<practice>/<visit id>`, so anyone who has or
   guesses it can check that visit in. A real link would carry a signed token that
   expires after the visit (and is sent by text), and the server would check it.
@@ -288,9 +302,12 @@ an interrupted run picks up where it stopped.
 - `src/hooks/`: `useStatusChanges` (save, toast, Undo), `useBooking`, `useSchedule`
   (TanStack Query), `useTheme`, `useMediaQuery`, `useModalDialog`
 - `src/components/patient/`: the patient pages (`ChoosePracticePage`, `BookVisitPage`,
-  `CheckInPage`) and
+  `PatientHomePage`, `CheckInPage`), the demo sign-in (`PatientSignIn`, with
+  `usePatientSignIn` and `src/session/patientStorage.ts`), the shared loader
+  (`PracticeDay`), and
   their frame (`PatientShell`); `src/lib/route.ts` picks the page from the URL path (no
-  router package; `vercel.json` sends `/book` and `/check-in` paths to `index.html`);
+  router package; `vercel.json` sends `/book`, `/patient` and `/check-in` paths to
+  `index.html`);
   `CheckInLink` is the link section in the check-in drawer
 - `src/lib/`: the rules as pure, tested functions: `statusChange` (kinds, Undo, toast
   text), `workflow` (next step, cancel, no-show, lateness), `slots` (open-slot finder),
