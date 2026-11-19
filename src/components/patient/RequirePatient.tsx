@@ -68,10 +68,16 @@ export function RequirePatient({
           error={
             session.signIn.error
               ? session.signIn.error instanceof ApiError &&
-                session.signIn.error.status === 401
+                (session.signIn.error.status === 401 ||
+                  session.signIn.error.status === 429)
                 ? session.signIn.error.message
                 : "We couldn't sign you in. Please try again."
               : null
+          }
+          // Too many wrong tries: offer a reset alongside the wait.
+          locked={
+            session.signIn.error instanceof ApiError &&
+            session.signIn.error.status === 429
           }
           onSubmit={(email, password) => {
             session.signIn.mutate(
@@ -136,6 +142,7 @@ type PatientSignInFormProps = {
   notice: string | null
   pending: boolean
   error: string | null
+  locked: boolean
   onSubmit: (email: string, password: string) => void
 }
 
@@ -146,6 +153,7 @@ function PatientSignInForm({
   notice,
   pending,
   error,
+  locked,
   onSubmit,
 }: PatientSignInFormProps) {
   const [email, setEmail] = useState('')
@@ -223,12 +231,20 @@ function PatientSignInForm({
         </div>
 
         {error && (
-          <p
+          <div
             role="alert"
-            className="rounded-xl border border-red-200 bg-red-50 p-4 text-red-800"
+            className="flex flex-col gap-2 rounded-xl border border-red-200 bg-red-50 p-4 text-red-800"
           >
-            {error}
-          </p>
+            <p>{error}</p>
+            {locked && (
+              <a
+                href={FORGOT_PASSWORD_PATH}
+                className="self-start font-medium text-teal-800 underline underline-offset-2"
+              >
+                Reset your password
+              </a>
+            )}
+          </div>
         )}
 
         <button

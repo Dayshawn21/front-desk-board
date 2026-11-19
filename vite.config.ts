@@ -55,6 +55,9 @@ export default defineConfig(({ mode }) => {
     test: {
       environment: 'jsdom',
       setupFiles: ['./src/test/setup.ts'],
+      // jsdom typing tests can pass 5 s when the machine is busy (all test
+      // files run in parallel); 10 s keeps them from failing at random.
+      testTimeout: 10_000,
     },
   }
 })

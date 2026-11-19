@@ -20,7 +20,8 @@ including from a plain-language request ("60 min cleaning for Ana Diaz this afte
 - **Patients see only their own visits.** Patients sign up or sign in with an email
   and password (sign-ups and reset passwords are stored as a salted PBKDF2 hash; forgot
   password "emails" a single-use, 30-minute link to a demo inbox; changing it
-  signed in needs the current one, with 5 wrong tries per 15 minutes); the mock server issues a session token, and every patient call returns
+  signed in needs the current one; sign-in, reset emails, and password changes
+  are rate limited per email or patient); the mock server issues a session token, and every patient call returns
   only that patient's details and visits. Someone else's check-in link, even signed
   in, is "not found", the same as a link that doesn't exist. The pages never get the
   practice's patient list, and open times carry no patient details.
@@ -69,5 +70,5 @@ book and move visits, with a keyboard alternative.
 
 ## Numbers
 
-454 unit tests and 77 Playwright tests (user flows, the AI assist with its route faked, and
+463 unit tests and 79 Playwright tests (user flows, the AI assist with its route faked, and
 axe in light and dark) run in CI on every push.

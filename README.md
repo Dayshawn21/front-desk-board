@@ -197,6 +197,12 @@ Built in six daily steps.
       don't extend the lock. It's counted per patient, so signing in again doesn't
       reset it; a successful change clears the count, and a refused new password
       (too short, unchanged) isn't counted as a wrong guess
+- [x] Rate limits on patient sign-in and forgot password, on the same rules: 5 wrong
+      passwords per email in 15 minutes lock that email's sign-in (with the wait and a
+      **Reset your password** link; unknown emails lock the same way, so a lock reveals
+      nothing, and a successful sign-in clears the count). Forgot password sends at
+      most 3 emails per address in 15 minutes; past that it gives the usual "If an
+      account exists…" answer and sends nothing, so it can't flood an inbox
 - [x] Patient check-in from a phone (`/check-in/<practice>/<visit>`): the patient sees
       the visit and the details on file (with "tell the front desk" if something is
       wrong), ticks "I've filled in my visit forms" and "I've reviewed my health
@@ -326,10 +332,10 @@ an interrupted run picks up where it stopped.
   `localStorage`, as are changed passwords. The session token sits in
   `sessionStorage`. The demo inbox stands in for email: anyone using this browser can
   read it, so it would never exist on a real site, where the link goes only to the
-  patient's inbox. Only change password is rate limited here, and the count lives
-  in this browser's `localStorage`, so clearing it resets the count. A real server
-  would keep the count itself, also limit by IP address, and limit sign-in and reset
-  requests too. Sign-up details never
+  patient's inbox. The rate limits (sign-in, forgot password, change password)
+  count in this browser's `localStorage`, so clearing it resets them. A real server
+  would keep the counts itself and also limit by IP address, so one attacker can't
+  try many emails. Sign-up details never
   reach Claude: the AI assist's server only knows the built-in seed patients. A real server would hash each patient's own
   password, rate-limit sign-in attempts, keep the session in an HttpOnly cookie, and
   check it on every request. The emails are on `example.com`, which can never be a

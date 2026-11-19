@@ -169,15 +169,24 @@ export async function patientSignIn(
   password: string,
 ): Promise<{ token: string }> {
   await sleep(LATENCY_MS)
+  const wanted = normalEmail(email)
+  // Counted for every email, known or not, so a lock reveals nothing.
+  const limitKey = `sign-in:${wanted}`
   const db = loadDb()
-  const patientId = await checkLogin(db, normalEmail(email), password)
+  throwIfLocked(db, limitKey, SIGN_IN_LIMIT)
+
+  const patientId = await checkLogin(db, wanted, password)
   // One message for a wrong password and an unknown email, so the form
   // doesn't tell anyone which emails have accounts.
   if (!patientId) {
+    // Fresh read: hashing was async, and another tab may have saved since.
+    const fresh = loadDb()
+    recordTry(fresh, limitKey, SIGN_IN_LIMIT)
+    saveDb(fresh)
     throw new ApiError("That email and password don't match.", 401)
   }
-  // Fresh read: hashing was async, and another tab may have saved since.
   const fresh = loadDb()
+  delete fresh.failedTries[limitKey] // a successful sign-in clears the count
   const token = startSession(fresh, patientId)
   saveDb(fresh)
   return { token }
@@ -448,8 +457,16 @@ export async function requestPasswordReset(email: string): Promise<void> {
   const tokenHash = await sha256(token)
 
   const db = loadDb()
+  // Over the limit, the answer is the same but nothing is sent. Counted for
+  // every address, known or not.
+  const limitKey = `reset-email:${to}`
+  if (lockedForMinutes(db, limitKey, RESET_EMAIL_LIMIT) > 0) return
+  recordTry(db, limitKey, RESET_EMAIL_LIMIT)
   const patientId = patientIdForEmail(db, to)
-  if (!patientId) return
+  if (!patientId) {
+    saveDb(db)
+    return
+  }
   const practiceName =
     db.practices.find(
       (p) => p.id === db.patients.find((x) => x.id === patientId)?.practiceId,
@@ -540,36 +557,50 @@ function endSessions(db: Db, patientId: string, keep?: string) {
 
 // --- Change password (signed in) ---------------------------------------
 
-// Rate limit: 5 wrong current passwords per patient in 15 minutes. Then
-// the form is locked until the oldest of those tries is 15 minutes old.
-// While locked, the password isn't even checked, so guessing gets nowhere.
-// Counted per patient, not per session, so signing in again doesn't reset
-// it. (A real server would also limit by IP address.)
-const CHANGE_PASSWORD_TRIES = 5
-const CHANGE_PASSWORD_WINDOW_MS = 15 * 60_000
+// Rate limits. Each limit counts recent tries (ms timestamps in
+// db.failedTries) under a key such as "sign-in:owen.hart@example.com".
+// Once a key has `tries` within `windowMs`, it's locked until the oldest of
+// those is `windowMs` old. While locked, nothing is checked (so guessing a
+// password gets nowhere), and tries made while locked aren't counted (so
+// the lock doesn't keep growing). A real server would keep these counts
+// itself and also limit by IP address.
+type Limit = { tries: number; windowMs: number }
 
-function recentFailures(db: Db, key: string, now: number): number[] {
+const FIFTEEN_MINUTES = 15 * 60_000
+// Wrong passwords, per email: the account's own guard against guessing.
+const SIGN_IN_LIMIT: Limit = { tries: 5, windowMs: FIFTEEN_MINUTES }
+// Wrong current passwords, per patient.
+const CHANGE_PASSWORD_LIMIT: Limit = { tries: 5, windowMs: FIFTEEN_MINUTES }
+// Reset emails, per address: stops the form being used to flood an inbox.
+const RESET_EMAIL_LIMIT: Limit = { tries: 3, windowMs: FIFTEEN_MINUTES }
+
+function recentTries(db: Db, key: string, limit: Limit, now: number) {
   return (Object.hasOwn(db.failedTries, key) ? db.failedTries[key] : []).filter(
-    (t) => t > now - CHANGE_PASSWORD_WINDOW_MS,
+    (t) => t > now - limit.windowMs,
   )
 }
 
-function throwIfLocked(db: Db, key: string) {
+// Minutes until the key unlocks, or 0 if it isn't locked.
+function lockedForMinutes(db: Db, key: string, limit: Limit): number {
   const now = Date.now()
-  const recent = recentFailures(db, key, now)
-  if (recent.length < CHANGE_PASSWORD_TRIES) return
-  const unlocksAt =
-    recent[recent.length - CHANGE_PASSWORD_TRIES] + CHANGE_PASSWORD_WINDOW_MS
-  const minutes = Math.max(1, Math.ceil((unlocksAt - now) / 60_000))
+  const recent = recentTries(db, key, limit, now)
+  if (recent.length < limit.tries) return 0
+  const unlocksAt = recent[recent.length - limit.tries] + limit.windowMs
+  return Math.max(1, Math.ceil((unlocksAt - now) / 60_000))
+}
+
+function throwIfLocked(db: Db, key: string, limit: Limit) {
+  const minutes = lockedForMinutes(db, key, limit)
+  if (minutes === 0) return
   throw new ApiError(
     `Too many tries. Try again in ${minutes} minute${minutes === 1 ? '' : 's'}, or reset your password.`,
     429,
   )
 }
 
-function recordFailure(db: Db, key: string) {
+function recordTry(db: Db, key: string, limit: Limit) {
   const now = Date.now()
-  db.failedTries[key] = [...recentFailures(db, key, now), now]
+  db.failedTries[key] = [...recentTries(db, key, limit, now), now]
 }
 
 // Changes the signed-in patient's password. They must give the current
@@ -587,12 +618,12 @@ export async function changeMyPassword(
   if (!email) throw new ApiError(SIGNED_OUT, 401)
 
   const limitKey = `change-password:${patient.id}`
-  throwIfLocked(db, limitKey)
+  throwIfLocked(db, limitKey, CHANGE_PASSWORD_LIMIT)
 
   if ((await checkLogin(db, email, current)) !== patient.id) {
     // Fresh read after the async check, so tries from two tabs both count.
     const fresh = loadDb()
-    recordFailure(fresh, limitKey)
+    recordTry(fresh, limitKey, CHANGE_PASSWORD_LIMIT)
     saveDb(fresh)
     throw new ApiError("Your current password isn't right.", 400)
   }
