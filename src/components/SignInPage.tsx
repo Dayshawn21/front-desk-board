@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { initials, roleLabel, roleSummary } from '../lib/display'
 import { practices } from '../mocks/seed'
 import { users } from '../mocks/users'
-import { CHOOSE_PRACTICE_PATH, PATIENT_SIGN_IN_PATH } from '../lib/route'
+import { CHOOSE_PRACTICE_PATH, PATIENT_HOME_PATH } from '../lib/route'
 import { useAuth } from '../session/SessionContext'
 import { BrandMark } from './BrandMark'
 
@@ -87,7 +87,7 @@ export function SignInPage() {
           </a>{' '}
           in one tab and watch it appear on the board in another, or{' '}
           <a
-            href={PATIENT_SIGN_IN_PATH}
+            href={PATIENT_HOME_PATH}
             className="font-medium text-teal-800 underline underline-offset-2"
           >
             sign in as a patient

@@ -1,11 +1,12 @@
 import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
-import { ApiError } from '../../api/schedule'
-import { DEMO_DATE } from '../../config'
-import { useSchedule, useUpdateAppointment } from '../../hooks/useSchedule'
+import type { MyVisit } from '../../api/patientPortal'
+import { useCheckInMyVisit } from '../../hooks/usePatientSession'
+import { usePractices } from '../../hooks/useSchedule'
 import { patientVisitLabel } from '../../lib/patientBooking'
+import { PATIENT_HOME_PATH } from '../../lib/route'
 import { formatTimeRange } from '../../lib/time'
-import type { Appointment, ScheduleDay } from '../../types'
 import { PatientShell } from './PatientShell'
+import { type PatientSession, RequirePatient } from './RequirePatient'
 
 const SUBTITLE = 'Check-in'
 const NOT_SAVED =
@@ -16,67 +17,72 @@ const NOT_CHECKED_IN =
 type CheckInPageProps = { practiceId: string; visitId: string }
 
 // The page a patient opens on their phone when they arrive (the link comes
-// from the front desk, or from their booking confirmation). It loads the
-// practice's day through the same mock API as the board and saves through
-// it too, so the board, in any tab, shows the change.
+// from the front desk, or from their booking confirmation). The link alone
+// shows nothing: the patient signs in first, and the page can only show a
+// visit that's in their own account, which the server returns for their
+// session. Anyone else's visit is "not found", even signed in.
 export function CheckInPage({ practiceId, visitId }: CheckInPageProps) {
-  const schedule = useSchedule(practiceId, DEMO_DATE)
-
-  if (schedule.isPending) {
-    return (
-      <PatientShell subtitle={SUBTITLE}>
-        <p role="status" className="text-slate-600">
-          Finding your visit…
-        </p>
-      </PatientShell>
-    )
-  }
-
-  const notFound =
-    schedule.error instanceof ApiError && schedule.error.status === 404
-  if (schedule.isError && !notFound) {
-    return (
-      <PatientShell subtitle={SUBTITLE}>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          We couldn't load your visit
-        </h1>
-        <p className="text-slate-700">{schedule.error.message}</p>
-        <button
-          type="button"
-          onClick={() => schedule.refetch()}
-          className="h-12 rounded-xl border border-slate-300 bg-white px-5 font-medium"
-        >
-          Try again
-        </button>
-      </PatientShell>
-    )
-  }
-
-  // The API is scoped by practice, so another practice's visit isn't found.
-  const appointment = schedule.data?.appointments.find((a) => a.id === visitId)
-  if (!schedule.data || !appointment) {
-    return (
-      <PatientShell
-        practiceName={schedule.data?.practice.name}
-        subtitle={SUBTITLE}
-      >
-        <h1 className="text-2xl font-semibold tracking-tight">
-          We couldn't find that visit
-        </h1>
-        <p className="text-slate-700">
-          Check the link from your dental office, or tell the front desk when
-          you arrive.
-        </p>
-      </PatientShell>
-    )
-  }
+  const practices = usePractices()
+  const practiceName = practices.data?.find((p) => p.id === practiceId)?.name
 
   return (
-    <CheckInView
-      key={appointment.id}
-      day={schedule.data}
-      appointment={appointment}
-    />
+    <RequirePatient
+      subtitle={SUBTITLE}
+      practiceName={practiceName}
+      heading="Sign in to check in"
+      intro="Then tick your forms and tell us you're here."
+    >
+      {(session) => {
+        const { account } = session
+        const visit =
+          account.practice.id === practiceId
+            ? account.visits.find((v) => v.id === visitId)
+            : undefined
+        return visit ? (
+          <CheckInView key={visit.id} session={session} visit={visit} />
+        ) : (
+          <VisitNotFound session={session} />
+        )
+      }}
+    </RequirePatient>
+  )
+}
+
+function useFocusWhen(when: boolean) {
+  const ref = useRef<HTMLHeadingElement>(null)
+  useEffect(() => {
+    if (when) ref.current?.focus()
+  }, [when])
+  return ref
+}
+
+function VisitNotFound({ session }: { session: PatientSession }) {
+  const { account, signOut, justSignedIn } = session
+  const headingRef = useFocusWhen(justSignedIn)
+  return (
+    <PatientShell
+      practiceName={account.practice.name}
+      subtitle={SUBTITLE}
+      signedIn={{ patient: account.patient, onSignOut: signOut }}
+    >
+      <h1
+        ref={headingRef}
+        tabIndex={-1}
+        className="text-2xl font-semibold tracking-tight outline-none"
+      >
+        We couldn't find that visit
+      </h1>
+      <p className="text-slate-700">
+        It isn't one of your visits today. Check the link from your dental
+        office, or tell the front desk when you arrive.
+      </p>
+      <a
+        href={PATIENT_HOME_PATH}
+        className="flex h-12 items-center justify-center rounded-xl bg-teal-700 px-5 font-semibold text-white hover:bg-teal-800"
+      >
+        See your visits
+      </a>
+    </PatientShell>
   )
 }
 
@@ -85,15 +91,16 @@ export function CheckInPage({ practiceId, visitId }: CheckInPageProps) {
 type PatientTicks = { formsComplete: boolean; medicalHistoryReviewed: boolean }
 
 function CheckInView({
-  day,
-  appointment,
+  session,
+  visit: appointment,
 }: {
-  day: ScheduleDay
-  appointment: Appointment
+  session: PatientSession
+  visit: MyVisit
 }) {
-  const update = useUpdateAppointment(appointment.practiceId, DEMO_DATE)
-  const patient = day.patients.find((p) => p.id === appointment.patientId)
-  const chair = day.chairs.find((c) => c.id === appointment.chairId)
+  const { token, account, signOut, justSignedIn } = session
+  const update = useCheckInMyVisit(token)
+  const patient = account.patient
+  const checkInHeadingRef = useFocusWhen(justSignedIn)
 
   // The patient's ticks live here while the page is open; each one is saved
   // right away. Saves send only the patient's boxes, and the server merges
@@ -132,7 +139,7 @@ function CheckInView({
     update.mutate(
       {
         id: appointment.id,
-        patch: { checklist: { [key]: value } },
+        change: { checklist: { [key]: value } },
       },
       {
         onSuccess: () => setSaveState('saved'),
@@ -150,8 +157,8 @@ function CheckInView({
     update.mutate(
       {
         id: appointment.id,
-        patch: {
-          status: 'arrived',
+        change: {
+          arrived: true,
           checklist: ticks,
         },
       },
@@ -170,12 +177,18 @@ function CheckInView({
       <p className="text-slate-800">
         Today, {formatTimeRange(appointment.start, appointment.end)}
       </p>
-      {chair && <p className="text-slate-700">With {chair.provider}</p>}
+      {appointment.provider && (
+        <p className="text-slate-700">With {appointment.provider}</p>
+      )}
     </div>
   )
 
   const shell = (children: ReactNode) => (
-    <PatientShell practiceName={day.practice.name} subtitle={SUBTITLE}>
+    <PatientShell
+      practiceName={account.practice.name}
+      subtitle={SUBTITLE}
+      signedIn={{ patient, onSignOut: signOut }}
+    >
       {children}
     </PatientShell>
   )
@@ -208,8 +221,8 @@ function CheckInView({
             You're checked in
           </h1>
           <p className="text-slate-700">
-            Thanks{patient ? `, ${patient.firstName}` : ''}. Have a seat; we'll
-            call you when it's time.
+            Thanks, {patient.firstName}. Have a seat; we'll call you when it's
+            time.
           </p>
         </div>
         {visitCard}
@@ -220,8 +233,14 @@ function CheckInView({
   return shell(
     <>
       <div className="flex flex-col gap-1.5">
-        <p className="text-slate-700">Hi {patient?.firstName ?? 'there'},</p>
-        <h1 className="text-3xl font-semibold tracking-tight">Check in</h1>
+        <p className="text-slate-700">Hi {patient.firstName},</p>
+        <h1
+          ref={checkInHeadingRef}
+          tabIndex={-1}
+          className="text-3xl font-semibold tracking-tight outline-none"
+        >
+          Check in
+        </h1>
         <p className="text-slate-700">
           Check your details, tick what you've done, and tap I'm here.
         </p>
@@ -229,29 +248,27 @@ function CheckInView({
 
       {visitCard}
 
-      {patient && (
-        <section
-          aria-labelledby={`${ids}-details`}
-          className="flex flex-col gap-3"
-        >
-          <h2 id={`${ids}-details`} className="font-semibold">
-            Your details
-          </h2>
-          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-xl border border-slate-200 bg-white p-4">
-            <dt className="text-slate-600">Name</dt>
-            <dd>
-              {patient.firstName} {patient.lastName}
-            </dd>
-            <dt className="text-slate-600">Phone</dt>
-            <dd>{patient.phone}</dd>
-            <dt className="text-slate-600">Insurance</dt>
-            <dd>{patient.insuranceProvider ?? 'None on file'}</dd>
-          </dl>
-          <p className="text-sm text-slate-600">
-            Something wrong or changed? Tell the front desk when you come in.
-          </p>
-        </section>
-      )}
+      <section
+        aria-labelledby={`${ids}-details`}
+        className="flex flex-col gap-3"
+      >
+        <h2 id={`${ids}-details`} className="font-semibold">
+          Your details
+        </h2>
+        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 rounded-xl border border-slate-200 bg-white p-4">
+          <dt className="text-slate-600">Name</dt>
+          <dd>
+            {patient.firstName} {patient.lastName}
+          </dd>
+          <dt className="text-slate-600">Phone</dt>
+          <dd>{patient.phone}</dd>
+          <dt className="text-slate-600">Insurance</dt>
+          <dd>{patient.insuranceProvider ?? 'None on file'}</dd>
+        </dl>
+        <p className="text-sm text-slate-600">
+          Something wrong or changed? Tell the front desk when you come in.
+        </p>
+      </section>
 
       <fieldset className="flex flex-col gap-2">
         <legend className="mb-2 flex w-full items-baseline justify-between font-semibold">

@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { signInAsPatient } from './patientSignIn'
+import { signInAsPatient } from './patientSignIn.js'
 
 // A patient books online in one tab; the front desk's board, open in
 // another tab of the same browser, shows the visit without a reload.

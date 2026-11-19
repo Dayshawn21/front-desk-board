@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright'
 import { expect, type Page, test } from '@playwright/test'
-import { signInAsPatient } from './patientSignIn'
+import { signInAsPatient } from './patientSignIn.js'
 
 // Automated accessibility checks (axe-core) on each main screen, in a real
 // browser so colour contrast and layout are measured. axe finds roughly a

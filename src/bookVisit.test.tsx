@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import App from './App'
@@ -34,6 +34,10 @@ async function choose(
   visit: RegExp = /^Cleaning/,
 ) {
   await user.click(screen.getByRole('radio', { name: visit }))
+  // Open times load from the server: wait for them.
+  await waitFor(() =>
+    expect(screen.queryByText('Loading open times…')).not.toBeInTheDocument(),
+  )
 }
 
 const timeGroup = () => screen.getByRole('group', { name: 'Pick a time' })

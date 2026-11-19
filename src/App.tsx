@@ -27,21 +27,14 @@ function App() {
   if (route.page === 'choose-practice') {
     return (
       <ErrorBoundary where="choose-practice">
-        <ChoosePracticePage purpose="book" />
-      </ErrorBoundary>
-    )
-  }
-  if (route.page === 'patient-choose-practice') {
-    return (
-      <ErrorBoundary where="patient-choose-practice">
-        <ChoosePracticePage purpose="sign-in" />
+        <ChoosePracticePage />
       </ErrorBoundary>
     )
   }
   if (route.page === 'patient-home') {
     return (
       <ErrorBoundary where="patient-home">
-        <PatientHomePage key={route.practiceId} practiceId={route.practiceId} />
+        <PatientHomePage />
       </ErrorBoundary>
     )
   }

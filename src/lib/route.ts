@@ -1,4 +1,4 @@
-// The app's few pages, read from the URL path. No router package: six
+// The app's few pages, read from the URL path. No router package: five
 // kinds of page don't need one. On Vercel, vercel.json sends these paths to
 // index.html; `vite preview` and the dev server already do.
 //
@@ -6,8 +6,7 @@
 //   /book             a patient chooses their dental office
 //   /book/<practice>  a patient books a visit online
 //   /check-in/<practice>/<visit>  a patient checks in from their phone
-//   /patient          a patient chooses their office to sign in
-//   /patient/<practice>  a patient signs in, then sees today's visits
+//   /patient          a patient signs in, then sees today's visits
 //   anything else     the staff board
 
 export type Route =
@@ -15,8 +14,7 @@ export type Route =
   | { page: 'book'; practiceId: string }
   | { page: 'choose-practice' }
   | { page: 'check-in'; practiceId: string; visitId: string }
-  | { page: 'patient-choose-practice' }
-  | { page: 'patient-home'; practiceId: string }
+  | { page: 'patient-home' }
 
 export function parseRoute(pathname: string): Route {
   const parts = pathname.split('/').filter(Boolean).map(decodeURIComponent)
@@ -30,10 +28,7 @@ export function parseRoute(pathname: string): Route {
     return { page: 'check-in', practiceId: parts[1], visitId: parts[2] }
   }
   if (parts[0] === 'patient' && parts.length === 1) {
-    return { page: 'patient-choose-practice' }
-  }
-  if (parts[0] === 'patient' && parts.length === 2) {
-    return { page: 'patient-home', practiceId: parts[1] }
+    return { page: 'patient-home' }
   }
   return { page: 'board' }
 }
@@ -51,10 +46,6 @@ export function checkInPath(practiceId: string, visitId: string): string {
   return `/check-in/${encodeURIComponent(practiceId)}/${encodeURIComponent(visitId)}`
 }
 
-// Where a patient signs in: the list of practices, then the practice's
-// patient page (sign-in, then "Your visits").
-export const PATIENT_SIGN_IN_PATH = '/patient'
-
-export function patientHomePath(practiceId: string): string {
-  return `/patient/${encodeURIComponent(practiceId)}`
-}
+// Where a patient signs in and sees their visits. The sign-in says which
+// office they belong to, so the path doesn't need to.
+export const PATIENT_HOME_PATH = '/patient'

@@ -223,3 +223,17 @@ describe('open times and booking', () => {
     )
   })
 })
+
+describe('booking in the past', () => {
+  it("won't book a time before the demo clock", async () => {
+    const token = await signInAs('grace.liu@example.com')
+    await expectApiError(
+      bookMyVisit(token, {
+        practiceId: 'maple',
+        type: 'exam',
+        start: `${DEMO_DATE}T08:00:00`,
+      }),
+      409,
+    )
+  })
+})

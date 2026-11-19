@@ -1,35 +1,15 @@
 import { usePractices } from '../../hooks/useSchedule'
-import {
-  bookingPath,
-  PATIENT_SIGN_IN_PATH,
-  patientHomePath,
-} from '../../lib/route'
+import { bookingPath, PATIENT_HOME_PATH } from '../../lib/route'
 import { formatTimeRange } from '../../lib/time'
 import { PatientShell } from './PatientShell'
 
-// The patient picks their dental office first: at /book to book there, at
-// /patient to sign in there. Each office is a plain link to that page, so
-// it can be opened in a new tab or shared like any other link.
-const PURPOSES = {
-  book: {
-    subtitle: 'Online booking',
-    intro: 'Pick the office you visit, then choose a time today.',
-    path: bookingPath,
-  },
-  'sign-in': {
-    subtitle: 'Patient sign-in',
-    intro: 'Pick the office you visit, then sign in.',
-    path: patientHomePath,
-  },
-}
+const SUBTITLE = 'Online booking'
 
-export function ChoosePracticePage({
-  purpose,
-}: {
-  purpose: keyof typeof PURPOSES
-}) {
+// /book: the patient picks their dental office first, then books there.
+// Each office is a plain link to its booking page, so it can be opened in
+// a new tab or shared like any other link.
+export function ChoosePracticePage() {
   const practices = usePractices()
-  const { subtitle: SUBTITLE, intro, path } = PURPOSES[purpose]
 
   if (practices.isPending) {
     return (
@@ -65,13 +45,15 @@ export function ChoosePracticePage({
         <h1 className="text-3xl font-semibold tracking-tight">
           Choose your dental office
         </h1>
-        <p className="text-slate-700">{intro}</p>
+        <p className="text-slate-700">
+          Pick the office you visit, then choose a time today.
+        </p>
       </div>
       <ul className="flex flex-col gap-3">
         {practices.data.map((practice) => (
           <li key={practice.id}>
             <a
-              href={path(practice.id)}
+              href={bookingPath(practice.id)}
               className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 transition-colors hover:border-teal-600 hover:bg-teal-50"
             >
               <span className="flex flex-1 flex-col gap-0.5">
@@ -101,18 +83,16 @@ export function ChoosePracticePage({
           </li>
         ))}
       </ul>
-      {purpose === 'book' && (
-        <p className="text-slate-700">
-          Already booked?{' '}
-          <a
-            href={PATIENT_SIGN_IN_PATH}
-            className="font-medium text-teal-800 underline underline-offset-2"
-          >
-            Sign in to see your visits
-          </a>{' '}
-          and check in when you arrive.
-        </p>
-      )}
+      <p className="text-slate-700">
+        Already booked?{' '}
+        <a
+          href={PATIENT_HOME_PATH}
+          className="font-medium text-teal-800 underline underline-offset-2"
+        >
+          Sign in to see your visits
+        </a>{' '}
+        and check in when you arrive.
+      </p>
     </PatientShell>
   )
 }

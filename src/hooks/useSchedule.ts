@@ -16,6 +16,7 @@ import {
 export const queryKeys = {
   practices: ['practices'] as const,
   allSchedules: ['schedule'] as const, // every practice and day
+  patient: ['patient'] as const, // the patient pages (usePatientSession)
   schedule: (practiceId: string, date: string) =>
     ['schedule', practiceId, date] as const,
 }
@@ -80,6 +81,8 @@ export function useLiveScheduleUpdates() {
     () =>
       subscribeToMockDb(() => {
         void queryClient.invalidateQueries({ queryKey: queryKeys.allSchedules })
+        // The patient pages too: their visits and the open times.
+        void queryClient.invalidateQueries({ queryKey: queryKeys.patient })
       }),
     [queryClient],
   )
@@ -92,5 +95,6 @@ export function useResetDemoData() {
   return () => {
     resetDemoData()
     void queryClient.invalidateQueries({ queryKey: queryKeys.allSchedules })
+    void queryClient.invalidateQueries({ queryKey: queryKeys.patient })
   }
 }

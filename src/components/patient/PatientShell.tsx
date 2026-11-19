@@ -1,13 +1,15 @@
 import type { ReactNode } from 'react'
-import { PATIENT_SIGN_IN_PATH } from '../../lib/route'
-import type { Patient } from '../../types'
+import { PATIENT_HOME_PATH } from '../../lib/route'
 import { BrandMark } from '../BrandMark'
 
 type PatientShellProps = {
   practiceName?: string // unknown while loading, or for a bad link
   subtitle: string // what this page is, e.g. "Online booking"
   // The signed-in patient, shown in the header with a way to sign out.
-  signedIn?: { patient: Patient; onSignOut: () => void }
+  signedIn?: {
+    patient: { firstName: string; lastName: string }
+    onSignOut: () => void
+  }
   children: ReactNode
 }
 
@@ -55,7 +57,7 @@ export function PatientShell({
         {!signedIn && (
           <>
             <a
-              href={PATIENT_SIGN_IN_PATH}
+              href={PATIENT_HOME_PATH}
               className="font-medium text-teal-800 underline underline-offset-2"
             >
               Patient sign-in

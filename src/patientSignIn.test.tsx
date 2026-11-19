@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import App from './App'
-import { updateAppointment } from './api/schedule'
+import { MOCK_DB_KEY, resetDemoData, updateAppointment } from './api/schedule'
 import { renderWithQuery } from './test/render'
 import { signInWithForm } from './test/patient'
 
@@ -170,5 +170,21 @@ describe('your visits', () => {
     expect(
       screen.getByRole('link', { name: /sign in as a patient/i }),
     ).toHaveAttribute('href', '/patient')
+  })
+
+  it('asks to sign in again when the session ends in another tab', async () => {
+    const { user } = openAt('/patient')
+    await signInWithForm(user, 'owen.hart@example.com')
+    await screen.findByRole('heading', { name: 'Your visits' })
+
+    // Another tab presses Reset demo data, which signs every patient out.
+    resetDemoData()
+    window.dispatchEvent(new StorageEvent('storage', { key: MOCK_DB_KEY }))
+
+    expect(
+      await screen.findByRole('heading', { name: 'Sign in' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Please sign in again.')).toBeInTheDocument()
+    expect(screen.queryByText(/Hi Owen/)).not.toBeInTheDocument()
   })
 })

@@ -1,5 +1,4 @@
 import { useEffect, useId, useRef } from 'react'
-import { usePatientSignIn } from '../../hooks/usePatientSignIn'
 import {
   canPatientCheckIn,
   patientStatusLabel,
@@ -7,80 +6,43 @@ import {
 } from '../../lib/patientBooking'
 import { bookingPath, checkInPath } from '../../lib/route'
 import { formatTime, formatTimeRange } from '../../lib/time'
-import type { ScheduleDay } from '../../types'
 import { PatientShell } from './PatientShell'
-import { PatientSignIn } from './PatientSignIn'
-import { PracticeDay } from './PracticeDay'
+import { type PatientSession, RequirePatient } from './RequirePatient'
 
 const SUBTITLE = 'Your visits'
 
-// /patient/<practice>: the patient signs in (the demo way), then sees
-// today's visits at this practice, with a check-in link for each one they
-// haven't arrived for yet, and a way to book another.
-export function PatientHomePage({ practiceId }: { practiceId: string }) {
+// /patient: the patient signs in, then sees today's visits at their
+// office (from the server, for their session only), with a check-in link
+// for each one they haven't arrived for yet, and a way to book another.
+export function PatientHomePage() {
   return (
-    <PracticeDay
-      practiceId={practiceId}
-      subtitle={SUBTITLE}
-      loadingText="Loading…"
-      failedText="We couldn't load your visits"
+    <RequirePatient
+      subtitle="Patient sign-in"
+      heading="Sign in"
+      intro="See today's visits, check in when you arrive, or book a visit."
     >
-      {(day) => <PatientHome day={day} />}
-    </PracticeDay>
+      {(session) => <YourVisits session={session} />}
+    </RequirePatient>
   )
 }
 
-function PatientHome({ day }: { day: ScheduleDay }) {
-  const practiceId = day.practice.id
-  const { patient, signIn, signOut } = usePatientSignIn(
-    practiceId,
-    day.patients,
-  )
+function YourVisits({ session }: { session: PatientSession }) {
+  const { account, signOut, justSignedIn } = session
+  const { patient, practice, visits } = account
   const headingRef = useRef<HTMLHeadingElement>(null)
-  const focusHeading = useRef(false)
   const ids = useId()
 
-  // Signing in or out swaps the page: move focus to the new heading so a
-  // screen reader says it. Not on page load.
+  // Just signed in: the page changed under the patient, so start screen
+  // readers at the new heading. Not on page load.
   useEffect(() => {
-    if (focusHeading.current) {
-      focusHeading.current = false
-      headingRef.current?.focus()
-    }
-  }, [patient?.id])
-
-  if (!patient) {
-    return (
-      <PatientShell practiceName={day.practice.name} subtitle="Patient sign-in">
-        <PatientSignIn
-          heading="Sign in"
-          intro="See today's visits, check in when you arrive, or book a visit."
-          patients={day.patients}
-          headingRef={headingRef}
-          onSignIn={(id) => {
-            focusHeading.current = true
-            signIn(id)
-          }}
-        />
-      </PatientShell>
-    )
-  }
-
-  const visits = day.appointments
-    .filter((a) => a.patientId === patient.id)
-    .sort((a, b) => a.start.localeCompare(b.start))
+    if (justSignedIn) headingRef.current?.focus()
+  }, [justSignedIn])
 
   return (
     <PatientShell
-      practiceName={day.practice.name}
+      practiceName={practice.name}
       subtitle={SUBTITLE}
-      signedIn={{
-        patient,
-        onSignOut: () => {
-          focusHeading.current = true
-          signOut()
-        },
-      }}
+      signedIn={{ patient, onSignOut: signOut }}
     >
       <div className="flex flex-col gap-1.5">
         <p className="text-slate-700">Hi {patient.firstName},</p>
@@ -102,7 +64,6 @@ function PatientHome({ day }: { day: ScheduleDay }) {
         ) : (
           <ul aria-label="Your visits today" className="flex flex-col gap-3">
             {visits.map((visit) => {
-              const chair = day.chairs.find((c) => c.id === visit.chairId)
               const label = patientVisitLabel(visit.type)
               return (
                 <li
@@ -121,13 +82,13 @@ function PatientHome({ day }: { day: ScheduleDay }) {
                     <p className="text-slate-800">
                       {formatTimeRange(visit.start, visit.end)}
                     </p>
-                    {chair && (
-                      <p className="text-slate-700">With {chair.provider}</p>
+                    {visit.provider && (
+                      <p className="text-slate-700">With {visit.provider}</p>
                     )}
                   </div>
                   {canPatientCheckIn(visit.status) && (
                     <a
-                      href={checkInPath(practiceId, visit.id)}
+                      href={checkInPath(practice.id, visit.id)}
                       className="flex h-12 items-center justify-center rounded-xl bg-teal-700 px-5 font-semibold text-white hover:bg-teal-800"
                     >
                       Check in
@@ -145,7 +106,7 @@ function PatientHome({ day }: { day: ScheduleDay }) {
       </section>
 
       <a
-        href={bookingPath(practiceId)}
+        href={bookingPath(practice.id)}
         className="flex h-12 items-center justify-center rounded-xl border border-slate-300 bg-white px-5 font-medium text-slate-900 hover:bg-slate-100"
       >
         Book a visit

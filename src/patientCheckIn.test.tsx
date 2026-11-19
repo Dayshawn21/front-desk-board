@@ -240,9 +240,10 @@ describe('getting the link to the patient', () => {
     window.history.pushState(null, '', '/book/maple')
     const user = userEvent.setup()
     renderWithQuery(<App />, { signedOut: true })
-    await user.click(await screen.findByRole('button', { name: 'Ana Diaz' }))
+    await signInWithForm(user, 'ana.diaz@example.com')
+    await screen.findByRole('heading', { name: 'Book a visit' })
     await user.click(screen.getByRole('radio', { name: /^Checkup/ }))
-    await user.click(screen.getByText('11:30 AM', { exact: true }))
+    await user.click(await screen.findByText('11:30 AM', { exact: true }))
     await user.click(screen.getByRole('button', { name: 'Book 11:30 AM' }))
     await screen.findByRole('heading', { name: "You're booked" })
 

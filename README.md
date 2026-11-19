@@ -22,18 +22,27 @@ front-end engineering skills: React, TypeScript, Tailwind, TanStack Query, and t
    patient but can't book, check in, or cancel.
 5. The patient's side: keep the board open and, in a second tab, open
    [/book](https://front-desk-board.vercel.app/book) (also linked from the sign-in
-   page) and choose **Maple Street Dental**. Sign in as a patient (pick **Grace Liu**),
-   then pick a visit type and a time, and book. The visit appears
+   page) and choose **Maple Street Dental**. Sign in as a patient
+   (`grace.liu@example.com`, password `demo1234`), then pick a visit type and a time,
+   and book. The visit appears
    on the board in the first tab, as Scheduled, without a reload. **Reset demo data** in
    the account menu starts over.
 6. Patient check-in: on the board, open **Ravi Menon** (10:15) and press **Open
-   check-in page** (or **Copy link**). On that page, tick "I've filled in my visit
-   forms" and tap **I'm here**. Back on the board, Ravi is Arrived and his checklist
+   check-in page** (or **Copy link**). The link alone shows nothing: sign in as Ravi
+   (`ravi.menon@example.com`, `demo1234`), tick "I've filled in my visit forms", and
+   tap **I'm here**. Back on the board, Ravi is Arrived and his checklist
    shows Forms complete.
 7. Patient sign-in: open [/patient](https://front-desk-board.vercel.app/patient)
-   (also linked from the sign-in page), choose **Maple Street Dental**, and sign in as
-   **Owen Hart**. "Your visits" lists today's visit with a **Check in** link and a
-   **Book a visit** button; booking from there skips the sign-in step.
+   (also linked from the sign-in page) and sign in as `owen.hart@example.com`,
+   password `demo1234`. "Your visits" lists today's visit with a **Check in** link and
+   a **Book a visit** button. Now open Ravi's link, `/check-in/maple/a-11`: Owen gets
+   "We couldn't find that visit", because it isn't his.
+
+Demo patient logins: every made-up patient's email is `first.last@example.com`
+(accents dropped, so Tomás Reyes is `tomas.reyes@example.com`), all with the password
+`demo1234`. For example: `owen.hart@example.com` and `ravi.menon@example.com` (Maple
+Street, both expected today), `ana.diaz@example.com` (Maple Street, visit done),
+`kofi.mensah@example.com` (Riverbend).
 
 The AI assist is rate limited (10 requests a minute per visitor). Add `?fail`,
 `?failBook`, or `?crash` to the URL to see the error states.
@@ -120,14 +129,24 @@ Built in six daily steps.
       server's double-booking check still applies: if someone took the time first, the
       page says so, clears the time, and shows fresh ones. After booking, focus moves to
       "You're booked", which links to the visit's check-in page and to "Your visits"
-- [x] Patient sign-in: `/patient` lists the offices, and `/patient/<practice>` asks the
-      patient to sign in by picking one of that office's made-up patients (no password;
-      the page says so). Signed in, "Your visits" lists today's visits there with a
-      status in patient words (Booked, Confirmed, Checked in, With the dentist, Done,
-      Cancelled, Missed), a **Check in** link for each one not yet arrived, and **Book a
-      visit**. The header shows who is signed in with **Sign out**. The sign-in is
-      remembered for the tab (`sessionStorage`), is per office, and is separate from
-      the staff sign-in. Focus moves to the new heading on sign-in and sign-out
+- [x] Patient sign-in (`/patient`): an email and password form (demo logins above),
+      checked by the mock server, which hands back a session token. A wrong password
+      and an unknown email get the same message, so the form doesn't reveal who has
+      an account. Every patient page sits behind it: signed out, `/patient`,
+      `/book/<practice>` and `/check-in/…` show only the sign-in form, never the visit.
+      Every patient call carries the token, and the server decides whose data comes
+      back: the patient's own details and today's visits, never the practice's patient
+      list or another patient's visit. Opening someone else's check-in link, even
+      signed in, shows "We couldn't find that visit", the same as a link that doesn't
+      exist, so visit ids can't be probed. Booking is for the signed-in patient only, at
+      their own office (another office's page says "You're a patient at …"), and open
+      times carry no patient details. "Your visits" shows each visit's status in patient
+      words (Booked, Confirmed, Checked in, With the dentist, Done, Cancelled, Missed),
+      with **Check in** for each one not yet arrived and **Book a visit**. The header
+      shows who is signed in, with **Sign out**. The token is remembered for the tab
+      (`sessionStorage`), apart from the staff sign-in, and **Reset demo data** signs
+      every patient out ("Please sign in again"). Focus moves to the new heading on
+      sign-in and sign-out
 - [x] Patient check-in from a phone (`/check-in/<practice>/<visit>`): the patient sees
       the visit and the details on file (with "tell the front desk" if something is
       wrong), ticks "I've filled in my visit forms" and "I've reviewed my health
@@ -249,15 +268,17 @@ an interrupted run picks up where it stopped.
   would decide who you are. The chosen user is remembered in `sessionStorage` for that
   tab. Role rules (`src/lib/permissions.ts`) only hide buttons in the UI; a real server
   would enforce the same rules on every request.
-- **Patient sign-in.** The patient sign-in lists the practice's made-up patients to
-  pick from, like the staff sign-in: no password, and anyone can pick anyone. A real
-  page would never show a patient list: the patient would sign in (or confirm with a
-  code texted to their phone) and the server would only return their own visits. Here
-  the browser loads the practice's whole day and filters it. Nothing is typed in, so
-  no real names can get into the demo, or into the AI assist's patient list.
-- **The check-in link.** It's `/check-in/<practice>/<visit id>`, so anyone who has or
-  guesses it can check that visit in. A real link would carry a signed token that
-  expires after the visit (and is sent by text), and the server would check it.
+- **Patient sign-in.** The rules are real (sign in, then only your own visits), but
+  the "server" runs in the browser, so they're a model of a server, not security:
+  anyone can read `localStorage` or the bundle. The demo passwords are one shared,
+  published password, stored in plain text in `src/mocks/patientLogins.ts`; the
+  session token sits in `sessionStorage`. A real server would hash each patient's own
+  password, rate-limit sign-in attempts, keep the session in an HttpOnly cookie, and
+  check it on every request. The emails are on `example.com`, which can never be a
+  real inbox, so no real names or addresses get into the demo.
+- **The check-in link.** It's `/check-in/<practice>/<visit id>`. On its own it shows
+  nothing: the patient signs in, and only their own visit opens. A real link would
+  also carry a signed token that expires after the visit (and is sent by text).
 - **The AI assist's data.** Claude only ever sees fake seed data: the practice's
   invented patients and chairs, plus the typed request. In production that list would
   come from the database for the signed-in practice, and the request text could contain
@@ -303,9 +324,8 @@ an interrupted run picks up where it stopped.
 - `src/hooks/`: `useStatusChanges` (save, toast, Undo), `useBooking`, `useSchedule`
   (TanStack Query), `useTheme`, `useMediaQuery`, `useModalDialog`
 - `src/components/patient/`: the patient pages (`ChoosePracticePage`, `BookVisitPage`,
-  `PatientHomePage`, `CheckInPage`), the demo sign-in (`PatientSignIn`, with
-  `usePatientSignIn` and `src/session/patientStorage.ts`), the shared loader
-  (`PracticeDay`), and
+  `PatientHomePage`, `CheckInPage`), the sign-in gate and form (`RequirePatient`, with
+  `usePatientSession` and `src/session/patientStorage.ts`), and
   their frame (`PatientShell`); `src/lib/route.ts` picks the page from the URL path (no
   router package; `vercel.json` sends `/book`, `/patient` and `/check-in` paths to
   `index.html`);
@@ -315,6 +335,9 @@ an interrupted run picks up where it stopped.
   `patientBooking` (which times a patient sees),
   `overlap`, `lanes`, `permissions`, `assist` (AI answer checks), `time`
 - `src/api/schedule.ts`: the mock server (shared between tabs through `localStorage`);
+  `src/api/patientPortal.ts`: its patient side (sign-in, sessions, and calls that
+  only return or change the signed-in patient's own visits), with the demo logins in
+  `src/mocks/patientLogins.ts`;
   `server/` and `api/`: the AI route
 - `e2e/`: Playwright flows and axe checks; `evals/`: the AI eval
 

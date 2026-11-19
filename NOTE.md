@@ -14,10 +14,14 @@ including from a plain-language request ("60 min cleaning for Ana Diaz this afte
 - **A patient side that uses the same rules.** The public booking pages (`/book`, then a practice)
   offer times from the same slot finder as the desk, and the same server check rejects
   a time someone just took. On arrival, the patient's check-in page (`/check-in/…`)
-  saves their ticks and "I'm here" through the same API as the desk's drawer, and a
-  demo patient sign-in (`/patient`) lists their visits with check-in links. Tabs
+  saves their ticks and "I'm here" through the same API as the desk's drawer. Tabs
   share one mock database, so both show up on the board in another tab without a
   reload. No router package: a path switch covers the few pages.
+- **Patients see only their own visits.** Patients sign in with an email and
+  password; the mock server issues a session token, and every patient call returns
+  only that patient's details and visits. Someone else's check-in link, even signed
+  in, is "not found", the same as a link that doesn't exist. The pages never get the
+  practice's patient list, and open times carry no patient details.
 
 - **Logic as pure, tested functions.** Overlaps, lane layout, open-slot search, and the
   status workflow live in `src/lib` with no React in them, so they were built test-first
@@ -51,8 +55,8 @@ including from a plain-language request ("60 min cleaning for Ana Diaz this afte
 
 The API runs in the browser, in `localStorage` shared by every tab (a storage event
 tells the other tabs to refetch; Reset demo data puts the seed back), sign-in is "pick a user" with no
-password, and roles only hide buttons. Patients sign in by picking themselves from a list, and a
-check-in link is just the visit id. A real system signs patients in, sends a signed,
+password, and roles only hide buttons. Patients sign in with one shared, published demo password, checked by
+code that runs in the browser, so the patient rules are modelled, not enforced. A real system signs patients in, sends a signed,
 expiring check-in link, and enforces practice scoping and roles on the server.
 
 ## Next
@@ -63,5 +67,5 @@ book and move visits, with a keyboard alternative.
 
 ## Numbers
 
-376 unit tests and 59 Playwright tests (user flows, the AI assist with its route faked, and
+394 unit tests and 62 Playwright tests (user flows, the AI assist with its route faked, and
 axe in light and dark) run in CI on every push.

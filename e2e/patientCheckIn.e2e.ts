@@ -1,5 +1,5 @@
 import { expect, test } from '@playwright/test'
-import { signInAsPatient } from './patientSignIn'
+import { signInAsPatient } from './patientSignIn.js'
 
 // The front desk opens a visit's check-in link (as if sent to the patient's
 // phone); the patient ticks their forms and taps "I'm here"; the board, in

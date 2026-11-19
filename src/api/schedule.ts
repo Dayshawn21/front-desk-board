@@ -13,7 +13,7 @@ import type {
 // Mock API. Simulates network latency and can be forced to fail.
 // Components call these functions only, never the seed data directly.
 
-const LATENCY_MS = import.meta.env.MODE === 'test' ? 0 : 400
+export const LATENCY_MS = import.meta.env.MODE === 'test' ? 0 : 400
 
 export class ApiError extends Error {
   status: number
@@ -31,16 +31,20 @@ export class ApiError extends Error {
 // keeps changes. Each call reads the db fresh, changes it, and writes it
 // back in one synchronous step, so two tabs can't overwrite each other's
 // saves. If storage is blocked or full, the db stays in this tab's memory.
-type Db = {
+export type Db = {
   practices: Practice[]
   chairs: Chair[]
   patients: Patient[]
   appointments: Appointment[]
   nextBookingId: number // in the db, so two tabs never hand out the same id
+  // Signed-in patients: session token -> patient id. Reset demo data
+  // empties it, which signs every patient out.
+  patientSessions: Record<string, string>
 }
 
-// Versioned, so a future change to the data's shape can start fresh.
-export const MOCK_DB_KEY = 'front-desk-board.mock-db.v1'
+// Versioned, so a change to the data's shape starts fresh (v2 added
+// patient sessions).
+export const MOCK_DB_KEY = 'front-desk-board.mock-db.v2'
 
 function createDb(): Db {
   return structuredClone({
@@ -49,6 +53,7 @@ function createDb(): Db {
     patients: seed.patients,
     appointments: seed.appointments,
     nextBookingId: 1,
+    patientSessions: {},
   })
 }
 
@@ -64,11 +69,15 @@ function isDb(value: unknown): value is Db {
     Array.isArray(db.chairs) &&
     Array.isArray(db.patients) &&
     Array.isArray(db.appointments) &&
-    typeof db.nextBookingId === 'number'
+    typeof db.nextBookingId === 'number' &&
+    typeof db.patientSessions === 'object' &&
+    db.patientSessions !== null
   )
 }
 
-function loadDb(): Db {
+// loadDb and saveDb are shared with the patient side of the mock server
+// (patientPortal.ts); components never call them.
+export function loadDb(): Db {
   if (!useStorage) return memoryDb
   try {
     const raw = localStorage.getItem(MOCK_DB_KEY)
@@ -83,7 +92,7 @@ function loadDb(): Db {
   }
 }
 
-function saveDb(db: Db) {
+export function saveDb(db: Db) {
   memoryDb = db
   if (!useStorage) return
   try {
@@ -125,7 +134,7 @@ export function subscribeToMockDb(onChange: () => void): () => void {
   return () => window.removeEventListener('storage', onStorage)
 }
 
-function sleep(ms: number) {
+export function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
@@ -133,7 +142,7 @@ function sleep(ms: number) {
 //   ?fail      → loading the schedule fails
 //   ?failSave  → saving a change fails
 //   ?failBook  → booking a new visit fails
-function shouldFail(flag: 'fail' | 'failSave' | 'failBook'): boolean {
+export function shouldFail(flag: 'fail' | 'failSave' | 'failBook'): boolean {
   return (
     typeof window !== 'undefined' &&
     new URLSearchParams(window.location.search).has(flag)
@@ -259,6 +268,19 @@ export async function createAppointment(
   }
 
   const db = loadDb()
+  const appointment = insertAppointment(db, practiceId, input)
+  saveDb(db)
+  return structuredClone(appointment)
+}
+
+// Checks a new visit (tenant, opening hours, the chair is still free) and
+// adds it to db. Throws ApiError if it can't be booked. Shared with the
+// patient's own booking.
+export function insertAppointment(
+  db: Db,
+  practiceId: string,
+  input: NewAppointment,
+): Appointment {
   // Tenant checks: the patient and chair must belong to this practice.
   const practice = db.practices.find((p) => p.id === practiceId)
   const patient = db.patients.find(
@@ -312,6 +334,5 @@ export async function createAppointment(
     notes: '',
   }
   db.appointments.push(appointment)
-  saveDb(db)
-  return structuredClone(appointment)
+  return appointment
 }
