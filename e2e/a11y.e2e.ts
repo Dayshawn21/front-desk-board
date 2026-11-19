@@ -192,7 +192,7 @@ test.describe('on a phone', () => {
 // width, in light and (in the chromium-dark project) dark.
 async function bookCheckup(page: Page) {
   await page.goto('/book/maple')
-  await page.getByLabel('Who is the visit for?').selectOption('p-grace')
+  await page.getByRole('button', { name: 'Grace Liu' }).click()
   await page.getByRole('radio', { name: /^Checkup/ }).check()
   // Click the visible label: the radio itself is visually hidden.
   await page
@@ -258,6 +258,23 @@ test.describe('patient pages', () => {
       await page.goto('/book')
       await expect(
         page.getByRole('heading', { name: 'Choose your dental office' }),
+      ).toBeVisible()
+      await expectNoSideways(page)
+      await expectNoViolations(page)
+    })
+
+    test('patient sign-in', async ({ page }) => {
+      await page.goto('/patient/maple')
+      await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
+      await expectNoSideways(page)
+      await expectNoViolations(page)
+    })
+
+    test('your visits', async ({ page }) => {
+      await page.goto('/patient/maple')
+      await page.getByRole('button', { name: 'Owen Hart' }).click()
+      await expect(
+        page.getByRole('heading', { name: 'Your visits' }),
       ).toBeVisible()
       await expectNoSideways(page)
       await expectNoViolations(page)

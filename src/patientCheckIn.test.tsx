@@ -197,10 +197,7 @@ describe('getting the link to the patient', () => {
     window.history.pushState(null, '', '/book/maple')
     const user = userEvent.setup()
     renderWithQuery(<App />, { signedOut: true })
-    await user.selectOptions(
-      await screen.findByLabelText('Who is the visit for?'),
-      'Ana Diaz',
-    )
+    await user.click(await screen.findByRole('button', { name: 'Ana Diaz' }))
     await user.click(screen.getByRole('radio', { name: /^Checkup/ }))
     await user.click(screen.getByText('11:30 AM', { exact: true }))
     await user.click(screen.getByRole('button', { name: 'Book 11:30 AM' }))

@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { bookingPath, checkInPath, parseRoute } from './route'
+import {
+  bookingPath,
+  checkInPath,
+  parseRoute,
+  PATIENT_SIGN_IN_PATH,
+  patientHomePath,
+} from './route'
 
 describe('parseRoute', () => {
   it('sends the root, and anything unknown, to the staff board', () => {
@@ -69,6 +75,30 @@ describe('check-in links', () => {
       page: 'check-in',
       practiceId: 'riverbend',
       visitId: 'a-16',
+    })
+  })
+})
+
+describe('patient sign-in', () => {
+  it('lets the patient choose their office at /patient', () => {
+    expect(PATIENT_SIGN_IN_PATH).toBe('/patient')
+    expect(parseRoute('/patient')).toEqual({ page: 'patient-choose-practice' })
+    expect(parseRoute('/patient/')).toEqual({ page: 'patient-choose-practice' })
+  })
+
+  it("reads a practice's patient page (sign-in, then their visits)", () => {
+    expect(parseRoute('/patient/maple')).toEqual({
+      page: 'patient-home',
+      practiceId: 'maple',
+    })
+    expect(parseRoute('/patient/maple/extra')).toEqual({ page: 'board' })
+  })
+
+  it('patientHomePath builds the link parseRoute reads', () => {
+    expect(patientHomePath('riverbend')).toBe('/patient/riverbend')
+    expect(parseRoute(patientHomePath('maple'))).toEqual({
+      page: 'patient-home',
+      practiceId: 'maple',
     })
   })
 })

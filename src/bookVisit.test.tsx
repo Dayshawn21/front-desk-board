@@ -7,33 +7,39 @@ import { DEMO_DATE, DEMO_NOW } from './config'
 import { patientTimes } from './lib/patientBooking'
 import { renderWithQuery } from './test/render'
 
-// The patient's page is public: no staff sign-in.
-async function openBookingPage(path = '/book/maple') {
+// The patient's page is public: no staff sign-in. The patient signs in
+// first (the demo patient sign-in), then sees the booking form.
+function openSignedOut(path = '/book/maple') {
   window.history.pushState(null, '', path)
   const user = userEvent.setup()
-  renderWithQuery(<App />, { signedOut: true })
+  const view = renderWithQuery(<App />, { signedOut: true })
+  return { user, ...view }
+}
+
+async function openBookingPage(path = '/book/maple', patient = 'Ana Diaz') {
+  const { user } = openSignedOut(path)
+  await screen.findByRole('heading', { name: 'Sign in to book' })
+  await user.click(screen.getByRole('button', { name: patient }))
   await screen.findByRole('heading', { name: 'Book a visit' })
   return user
 }
 
 async function choose(
   user: ReturnType<typeof userEvent.setup>,
-  patient = 'Ana Diaz',
   visit: RegExp = /^Cleaning/,
 ) {
-  await user.selectOptions(
-    await screen.findByLabelText('Who is the visit for?'),
-    patient,
-  )
   await user.click(screen.getByRole('radio', { name: visit }))
 }
 
 const timeGroup = () => screen.getByRole('group', { name: 'Pick a time' })
 
 describe('book a visit (patient page)', () => {
-  it("shows the practice's booking page, not the staff sign-in", async () => {
-    await openBookingPage()
+  it('asks the patient to sign in first, not the staff sign-in', async () => {
+    openSignedOut()
 
+    expect(
+      await screen.findByRole('heading', { name: 'Sign in to book' }),
+    ).toBeInTheDocument()
     expect(screen.getByText('Maple Street Dental')).toBeInTheDocument()
     expect(
       screen.queryByRole('heading', { name: 'Sign in' }),
@@ -42,15 +48,49 @@ describe('book a visit (patient page)', () => {
     expect(screen.getByText(/made-up patients/i)).toBeInTheDocument()
   })
 
-  it('opens the other practice from its own link', async () => {
-    await openBookingPage('/book/riverbend')
-    expect(screen.getByText('Riverbend Family Dental')).toBeInTheDocument()
-    const patient = screen.getByLabelText('Who is the visit for?')
+  it('books for whoever signed in, with no patient list on the form', async () => {
+    await openBookingPage()
+
+    expect(screen.getByRole('heading', { name: 'Book a visit' })).toHaveFocus()
     expect(
-      within(patient).getByRole('option', { name: 'Hana Sato' }),
+      within(screen.getByRole('banner')).getByText('Ana Diaz'),
     ).toBeInTheDocument()
     expect(
-      within(patient).queryByRole('option', { name: 'Ana Diaz' }),
+      screen.queryByLabelText('Who is the visit for?'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('goes straight to the form when already signed in', async () => {
+    const first = openSignedOut()
+    await screen.findByRole('heading', { name: 'Sign in to book' })
+    await first.user.click(screen.getByRole('button', { name: 'Ana Diaz' }))
+    await screen.findByRole('heading', { name: 'Book a visit' })
+    first.unmount()
+
+    // Like a reload: the same tab, a fresh app.
+    openSignedOut()
+    expect(
+      await screen.findByRole('heading', { name: 'Book a visit' }),
+    ).toBeInTheDocument()
+  })
+
+  it('signing out goes back to the sign-in step', async () => {
+    const user = await openBookingPage()
+    await user.click(screen.getByRole('button', { name: 'Sign out' }))
+    expect(
+      screen.getByRole('heading', { name: 'Sign in to book' }),
+    ).toHaveFocus()
+  })
+
+  it('opens the other practice from its own link', async () => {
+    openSignedOut('/book/riverbend')
+    await screen.findByRole('heading', { name: 'Sign in to book' })
+    expect(screen.getByText('Riverbend Family Dental')).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Hana Sato' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: 'Ana Diaz' }),
     ).not.toBeInTheDocument()
   })
 
@@ -109,6 +149,9 @@ describe('book a visit (patient page)', () => {
       screen.getByText(/Tuesday, Nov 17, 11:30 AM – 12:30 PM/),
     ).toBeInTheDocument()
     expect(screen.getByText(/Cleaning for Ana Diaz/)).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: 'See your visits' }),
+    ).toHaveAttribute('href', '/patient/maple')
 
     // It's on the practice's schedule, waiting for the desk to confirm.
     const day = await fetchSchedule('maple', DEMO_DATE)
@@ -128,7 +171,7 @@ describe('book a visit (patient page)', () => {
 
   it('asks for another time when someone else just took it', async () => {
     const user = await openBookingPage()
-    await choose(user, 'Ana Diaz', /^Checkup/)
+    await choose(user, /^Checkup/)
     const day = await fetchSchedule('maple', DEMO_DATE)
     const [first] = patientTimes(day, 30, DEMO_NOW)
     await user.click(
@@ -151,11 +194,11 @@ describe('book a visit (patient page)', () => {
     expect(
       screen.queryByRole('heading', { name: "You're booked" }),
     ).not.toBeInTheDocument()
-    // The choice is cleared, and the patient and visit type are kept.
+    // The choice is cleared; the patient and visit type are kept.
     expect(
       screen.getByRole('button', { name: 'Pick a time to book' }),
     ).toBeInTheDocument()
-    expect(screen.getByLabelText('Who is the visit for?')).toHaveValue('p-ana')
+    expect(screen.getByRole('radio', { name: /^Checkup/ })).toBeChecked()
   })
 
   it('can start over to book another visit', async () => {

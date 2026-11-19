@@ -13,10 +13,10 @@ test('a patient books online and the visit appears on the front desk board', asy
 
   const patient = await context.newPage()
   await patient.goto('/book/maple')
+  await patient.getByRole('button', { name: 'Grace Liu' }).click()
   await expect(
     patient.getByRole('heading', { name: 'Book a visit' }),
   ).toBeVisible()
-  await patient.getByLabel('Who is the visit for?').selectOption('p-grace')
   await patient.getByRole('radio', { name: /^Checkup/ }).check()
   // Click the visible label: the radio itself is visually hidden.
   await patient
@@ -44,6 +44,41 @@ test('the sign-in page links to /book, where the patient picks a practice', asyn
   await page.getByRole('link', { name: /Riverbend Family Dental/ }).click()
   await expect(page).toHaveURL(/\/book\/riverbend$/)
   await expect(
-    page.getByRole('heading', { name: 'Book a visit' }),
+    page.getByRole('heading', { name: 'Sign in to book' }),
   ).toBeVisible()
+})
+
+test('a patient signs in, books, and sees the visit in their list', async ({
+  page,
+}) => {
+  await page.goto('/')
+  await page.getByRole('link', { name: /sign in as a patient/i }).click()
+  await expect(page).toHaveURL(/\/patient$/)
+  await page.getByRole('link', { name: /Maple Street Dental/ }).click()
+  await page.getByRole('button', { name: 'Owen Hart' }).click()
+  await expect(page.getByRole('heading', { name: 'Your visits' })).toBeVisible()
+  const visits = page.getByRole('list', { name: 'Your visits today' })
+  await expect(visits.getByRole('listitem')).toHaveCount(1)
+
+  // Signed in, booking goes straight to the form.
+  await page.getByRole('link', { name: 'Book a visit' }).click()
+  await page.getByRole('radio', { name: /^Checkup/ }).check()
+  await page
+    .getByRole('group', { name: 'Pick a time' })
+    .getByText('11:30 AM', { exact: true })
+    .click()
+  await page.getByRole('button', { name: 'Book 11:30 AM' }).click()
+  await expect(
+    page.getByRole('heading', { name: "You're booked" }),
+  ).toBeVisible()
+
+  await page.getByRole('link', { name: 'See your visits' }).click()
+  await expect(visits.getByRole('listitem')).toHaveCount(2)
+  await expect(visits).toContainText('11:30 AM')
+
+  // Signing out forgets the patient.
+  await page.getByRole('button', { name: 'Sign out' }).click()
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
+  await page.reload()
+  await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible()
 })
