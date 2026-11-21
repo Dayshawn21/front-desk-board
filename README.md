@@ -50,9 +50,12 @@ TanStack Query, and tested with Vitest, Playwright and axe.
 The [guided tour](docs/TOUR.md) covers roles, cancelling, no-shows, patient check-in
 from a phone, and the error states, and lists every [demo patient login](docs/TOUR.md).
 
-| AI booking assist                                                                                                                                                           | Patient check-in on a phone                                                                                                            |
-| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| ![The New appointment panel in dark mode: the AI filled in patient, visit type, length, chair and time of day, and three open times are offered](docs/images/ai-assist.png) | ![A patient's phone check-in page: visit details, two checklist items, and an I'm here button](docs/images/patient-check-in-phone.png) |
+<p>
+  <img src="docs/images/ai-assist.png" width="76%" alt="The New appointment panel in dark mode: the AI filled in patient, visit type, length, chair and time of day, and three open times are offered">
+  <img src="docs/images/patient-check-in-phone.png" width="21%" alt="A patient's phone check-in page: visit details, two checklist items, and an I'm here button">
+</p>
+
+_Left: the AI assist fills in the form, and the slot finder offers times. Right: a patient checks in from their phone._
 
 | Patient flow                                                                                                 | Dark mode                                                |
 | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
