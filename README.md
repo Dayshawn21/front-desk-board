@@ -1,3 +1,7 @@
+
+
+https://github.com/user-attachments/assets/c285bfa1-15a6-41fa-a3ff-a8b539812881
+
 # Front Desk Board
 
 A scheduling board for the front desk of a **fictional** dental office: chairs as
