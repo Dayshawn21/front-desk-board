@@ -32,6 +32,10 @@ TanStack Query, and tested with Vitest, Playwright and axe.
 - **Roles and multiple practices.** Front desk, provider and office manager each see
   only the actions they're allowed. Data is scoped per practice, and only the office
   manager can switch practices.
+- **A patient side on the same rules.** Patients book online and check in from their
+  phone, with times from the same slot finder and the same double-booking check. A
+  check-in shows up live on the desk's board. Patients see only their own visits, and
+  someone else's check-in link reads "not found", the same as a link that doesn't exist.
 - **Accessibility built in.** Dialogs trap and return focus, tabs follow the ARIA
   pattern, and changes are announced. axe runs on every screen in both themes, in CI.
 
