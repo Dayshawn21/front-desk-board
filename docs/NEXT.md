@@ -1,0 +1,26 @@
+# What I'd do next
+
+([Back to the README](../README.md))
+
+- **Protect the AI endpoint further.** It's rate limited per IP, but public with no
+  sign-in, so many IPs together could still spend the key's budget up to its spend
+  limit. With real auth, limit per signed-in user and practice instead of per IP.
+- **A bigger eval from real phrasing.** 15 hand-written cases is a regression check. Grow
+  it to 50+ from how staff actually type requests, and run it in CI on prompt changes.
+- **Act on cancel reasons and no-shows.** They're recorded now; next would be a
+  late-cancel fee or a text to the patient (at which point Undo can't reverse
+  everything, so the confirm step would say what will be sent), and a no-show report.
+- **Drag on the schedule.** Drag down a column to pick a time range, and drag a visit to
+  move it, with Undo, the same server re-check as booking, and a "Move to…" option in the
+  check-in drawer so nothing needs dragging (WCAG 2.5.7).
+- **Headless UI primitives.** The dialog focus trap, tabs, and toast are hand-built and
+  tested here on purpose. In production I'd use headless primitives (Radix or React
+  Aria, or shadcn/ui on top of Radix) so the team isn't maintaining focus logic.
+- **Multi-user updates from a server.** Tabs in one browser already update each other
+  (see What is mocked). With a real backend, the server would push change events
+  (WebSocket or SSE) naming the practice, and only that practice's query would refetch.
+- **Safe concurrent edits.** Checklist ticks already can't clash: a tick sends only its
+  own box and the server merges it, so the desk and the patient's phone can tick at
+  the same time. Notes and status still save last-write-wins. Next: a `version` on each
+  appointment, so a save sent with an old version gets a 409 Conflict and the UI offers
+  to reload instead of silently overwriting another person's change.

@@ -167,3 +167,31 @@ sequenceDiagram
 Failure paths: there's no API key (503), Claude refuses (422), Claude errors (502),
 or Vercel's rate limit applies (429). Each shows a message, and the form still
 works by hand.
+
+## Where things are
+
+- `src/App.tsx`: signed in or not, inside an error boundary
+- `src/components/Board.tsx`: the signed-in screen (state and layout); `BoardHeader`,
+  `ScheduleGrid`, `PatientFlow`, `CheckInDrawer`, `BookingDrawer` beside it
+- `src/hooks/`: `useStatusChanges` (save, toast, Undo), `useBooking`, `useSchedule`
+  (TanStack Query), `useTheme`, `useMediaQuery`, `useModalDialog`
+- `src/components/patient/`: the patient pages (`ChoosePracticePage`, `BookVisitPage`,
+  `PatientHomePage`, `PatientSignUpPage`, `CheckInPage`, `ChangePasswordPage`, and
+  `PasswordResetPages`: forgot password, demo inbox, new password), the sign-in gate and form (`RequirePatient`, with
+  `usePatientSession` and `src/session/patientStorage.ts`), and
+  their frame (`PatientShell`); `src/lib/route.ts` picks the page from the URL path (no
+  router package; `vercel.json` sends `/book`, `/patient` and `/check-in` paths to
+  `index.html`);
+  `CheckInLink` is the link section in the check-in drawer
+- `src/lib/`: the rules as pure, tested functions: `statusChange` (kinds, Undo, toast
+  text), `workflow` (next step, cancel, no-show, lateness), `slots` (open-slot finder),
+  `patientBooking` (which times a patient sees),
+  `overlap`, `lanes`, `permissions`, `assist` (AI answer checks), `time`
+- `src/api/schedule.ts`: the mock server (shared between tabs through `localStorage`);
+  `src/api/patientPortal.ts`: its patient side (sign-up, sign-in, password reset and change, sessions, and calls that
+  only return or change the signed-in patient's own visits), with the demo logins in
+  `src/mocks/patientLogins.ts`;
+  `server/` and `api/`: the AI route and the patient sign-in route
+  (`api/patient-sign-in.ts`, `server/signInGate.ts`; the browser side is
+  `src/api/signInGate.ts`)
+- `e2e/`: Playwright flows and axe checks; `evals/`: the AI eval
