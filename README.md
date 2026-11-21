@@ -1,7 +1,3 @@
-
-
-https://github.com/user-attachments/assets/c285bfa1-15a6-41fa-a3ff-a8b539812881
-
 # Front Desk Board
 
 A scheduling board for the front desk of a **fictional** dental office: chairs as
@@ -19,7 +15,9 @@ TanStack Query, and tested with Vitest, Playwright and axe.
 > numbers use the 555-01xx range reserved for fiction. Sign-in and the "server" are
 > browser mocks; see [what's real and what's mocked](#whats-real-and-whats-mocked).
 
-![The schedule: three chairs, colour-coded visit statuses, a "now" line at 9:40 AM, and a red banner for a double-booking in Chair 2](docs/images/board-light.png)
+**Watch the 68-second demo** (captions, no sound needed):
+
+https://github.com/user-attachments/assets/c285bfa1-15a6-41fa-a3ff-a8b539812881
 
 ## What it shows
 
@@ -57,6 +55,8 @@ TanStack Query, and tested with Vitest, Playwright and axe.
 
 The [guided tour](docs/TOUR.md) covers roles, cancelling, no-shows, patient check-in
 from a phone, and the error states, and lists every [demo patient login](docs/TOUR.md).
+
+![The schedule: three chairs, colour-coded visit statuses, a "now" line at 9:40 AM, and a red banner for a double-booking in Chair 2](docs/images/board-light.png)
 
 <p>
   <img src="docs/images/ai-assist.png" width="76%" alt="The New appointment panel in dark mode: the AI filled in patient, visit type, length, chair and time of day, and three open times are offered">
