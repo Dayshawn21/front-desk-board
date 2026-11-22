@@ -10,6 +10,7 @@ export type SlotRequest = {
   earliest?: string // slot may start at or after this
   latest?: string // slot must END at or before this
   limit?: number // default 3
+  ignoreId?: string // a visit being moved: it doesn't block its own new time
 }
 
 export type OpenSlot = { chairId: string; start: string; end: string }
@@ -61,7 +62,9 @@ export function findOpenSlots(
   const firstStart =
     open + Math.ceil((from - open) / STEP_MINUTES) * STEP_MINUTES
 
-  const active = day.appointments.filter((a) => a.status !== 'cancelled')
+  const active = day.appointments.filter(
+    (a) => a.status !== 'cancelled' && a.id !== request.ignoreId,
+  )
   const at = (minutes: number) => `${day.date}T${toClock(minutes)}:00`
 
   const slots: OpenSlot[] = []

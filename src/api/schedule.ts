@@ -5,7 +5,7 @@ import {
   lineItemsFor,
 } from '../lib/billing'
 import { rangesOverlap } from '../lib/overlap'
-import { toMinutes } from '../lib/time'
+import { toClock, toMinutes } from '../lib/time'
 import * as seed from '../mocks/seed'
 import type {
   Appointment,
@@ -316,6 +316,88 @@ export async function updateAppointment(
   const { checklist, ...rest } = structuredClone(patch)
   Object.assign(appt, rest)
   if (checklist) appt.checklist = { ...appt.checklist, ...checklist }
+  saveDb(db)
+  return structuredClone(appt)
+}
+
+// ── Moving a visit (another time or chair, same day) ──
+
+export type MoveTo = {
+  chairId: string
+  start: string // ISO local time; the visit keeps its length
+  // Undo of a move: put the visit back where it was, even if that place
+  // overlaps another visit now (the double-booking banner flags it). A real
+  // server would compare a version number instead; see docs/NEXT.md.
+  restore?: boolean
+}
+
+export async function moveAppointment(
+  practiceId: string,
+  appointmentId: string,
+  to: MoveTo,
+): Promise<Appointment> {
+  await sleep(LATENCY_MS)
+
+  if (shouldFail('failSave')) {
+    throw new ApiError('Could not move the visit (simulated failure).', 503)
+  }
+
+  const db = loadDb()
+  // Tenant checks: the visit and the chair must belong to this practice.
+  const appt = db.appointments.find(
+    (a) => a.id === appointmentId && a.practiceId === practiceId,
+  )
+  if (!appt) {
+    throw new ApiError(`Appointment not found: ${appointmentId}`, 404)
+  }
+  const chair = db.chairs.find(
+    (c) => c.id === to.chairId && c.practiceId === practiceId,
+  )
+  if (!chair) {
+    throw new ApiError('Chair not found in this practice.', 404)
+  }
+  if (appt.status !== 'scheduled' && appt.status !== 'confirmed') {
+    throw new ApiError("Only a visit that hasn't checked in can be moved.", 409)
+  }
+  if (to.start.slice(0, 10) !== appt.start.slice(0, 10)) {
+    throw new ApiError('A visit can only move within the same day.', 400)
+  }
+
+  const practice = db.practices.find((p) => p.id === practiceId)!
+  const start = toMinutes(to.start)
+  const end = start + toMinutes(appt.end) - toMinutes(appt.start)
+  if (
+    start < toMinutes(practice.openTime) ||
+    end > toMinutes(practice.closeTime)
+  ) {
+    throw new ApiError('That time is outside opening hours.', 400)
+  }
+  const moved = {
+    start: to.start,
+    end: `${to.start.slice(0, 11)}${toClock(end)}:00`,
+  }
+
+  // The server re-checks the slot, as for booking. The visit never blocks
+  // itself, and cancelled visits don't hold a chair.
+  const taken = db.appointments.some(
+    (a) =>
+      a.id !== appt.id &&
+      a.practiceId === practiceId &&
+      a.chairId === to.chairId &&
+      a.status !== 'cancelled' &&
+      a.start.slice(0, 10) === to.start.slice(0, 10) &&
+      rangesOverlap(a, moved),
+  )
+  if (taken && !to.restore) {
+    throw new ApiError(
+      `That time was just booked in ${chair.name}. Pick another time.`,
+      409,
+    )
+  }
+
+  appt.chairId = to.chairId
+  appt.start = moved.start
+  appt.end = moved.end
   saveDb(db)
   return structuredClone(appt)
 }

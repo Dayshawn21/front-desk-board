@@ -13,6 +13,7 @@ export const PERMISSIONS = [
   'book',
   'cancel',
   'no-show',
+  'move',
   'record-payment',
   'view-day-totals',
 ] as const
@@ -35,6 +36,7 @@ const rules: Record<Permission, Role[]> = {
   book: ['front-desk', 'office-manager'],
   cancel: ['front-desk', 'office-manager'],
   'no-show': ['front-desk', 'office-manager'],
+  move: ['front-desk', 'office-manager'], // a visit that hasn't checked in
   'record-payment': ['front-desk', 'office-manager'],
   'view-day-totals': ['office-manager'], // billed, collected, outstanding
 }
