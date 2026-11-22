@@ -15,6 +15,24 @@
   a visit onto a new time, calling the same move. The drawer stays the way that needs
   no dragging (WCAG 2.5.7). Moving to another day, and telling the patient, would come
   with reminders.
+- **Book and move on other days.** Booking, Move to… and the patient's /book page only
+  offer times today, but most front-desk booking is for later: six-month cleanings,
+  follow-ups, a crown's second visit. Next: a date control (today by default, with
+  "next available"), and times grouped by day.
+- **Faster for people who use it all day.** A design review found no shortcuts beyond
+  the tabs' arrow keys and Escape. Next: N for a new appointment and / to find a
+  patient, a patient picker you can type into instead of a long list, and a "needs
+  attention" list (late, double-booked, still owing) that empties as the desk works
+  through it.
+- **A calmer first screen on a phone.** The header, the conflict banner, the status
+  key, the tabs and the chair switcher fill about half the screen before the first
+  visit. Next: fold the key and banner, mark the chair with a conflict in the chair
+  switcher, and keep the drawer's main action in reach at the bottom.
+- **Small fixes from the same review.** The 9:40 "now" marker covers the bottom of the
+  9:30 time label; patient pages show "Front Desk Board" for a moment before the
+  practice's name loads; checked-out cards in Patient flow don't show what's still
+  owed; and the cancel reasons don't say what happens next (is the patient told, is
+  there a fee).
 - **Headless UI primitives.** The dialog focus trap, tabs, and toast are hand-built and
   tested here on purpose. In production I'd use headless primitives (Radix or React
   Aria, or shadcn/ui on top of Radix) so the team isn't maintaining focus logic.
