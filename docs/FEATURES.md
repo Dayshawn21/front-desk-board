@@ -46,6 +46,10 @@ What the demo does, feature by feature. ([Back to the README](../README.md))
   rounds down to a whole cent and the patient pays the rest, so the shares always add
   up; then the plan pays no more than the patient's remaining annual benefit. Money is
   integer cents everywhere
+- The patient's bill: on "Your visits", a checked-out visit shows the patient their
+  own line items, insurance estimate, share, what's paid and the balance, read only
+  ("Pay at the front desk"). The patient API never returns how anyone paid. A payment
+  at the desk shows on the patient's open tab without a reload
 - Today's billing (office manager): billed (patient shares of checked-out visits),
   collected and outstanding for the current practice, plus the insurance estimate
 - Undo: every status change shows a toast with Undo, and the drawer can move a visit

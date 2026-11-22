@@ -49,7 +49,8 @@ This is a front-end demo. The data, the staff sign-in and the patient accounts r
   voided; a real system would refund or void the charge with the payment processor,
   and keep an audit trail of who did it. No claim is sent, so the insurance part stays
   an estimate. The server re-works the balance from its own fees and plan rather than
-  trusting the browser, but like everything here it runs in the browser.
+  trusting the browser, but like everything here it runs in the browser. Patients see
+  their own bill read only; they can't pay online.
 - **The AI assist's data.** Claude only ever sees fake seed data: the practice's
   invented patients and chairs, plus the typed request. In production that list would
   come from the database for the signed-in practice, and the request text could contain

@@ -33,7 +33,8 @@ https://github.com/user-attachments/assets/c285bfa1-15a6-41fa-a3ff-a8b539812881
   person books. An eval measures how accurate it is.
 - **Checkout billing.** A checked-out visit shows its line items, an insurance
   estimate and the patient's share, with a pretend **Record payment** and Undo. The
-  estimate is a pure function in integer cents with a tested rounding rule. Fees and
+  estimate is a pure function in integer cents with a tested rounding rule. The
+  patient sees their own bill, read only, on "Your visits". Fees and
   plans are made up, nothing is charged, and claims aren't built
   ([what's mocked](docs/WHAT-IS-MOCKED.md)).
 - **Roles and multiple practices.** Front desk, provider and office manager each see
@@ -108,7 +109,7 @@ The details, and what a real system would do instead, are in
 
 ## Quality
 
-- **563 unit and component tests** (Vitest and React Testing Library). The logic was
+- **569 unit and component tests** (Vitest and React Testing Library). The logic was
   built test-first, each feature as a failing-tests commit followed by the code.
 - **End-to-end tests** (Playwright): booking, check-in, the double-booking banner, the
   AI assist with its route faked (so CI never calls Claude), live updates between tabs,

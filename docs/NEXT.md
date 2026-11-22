@@ -30,4 +30,5 @@
   eligibility checks, sending claims and posting ERA/EOB responses (which would turn
   the estimate into the real insurance amount), a payment processor (card terminals,
   refunds and voids instead of the demo's Undo), patient statements, payment plans, and
-  a running patient ledger with balances carried across visits.
+  a running patient ledger with balances carried across visits. Patients can see
+  their bill but not pay it online; that also needs the processor.

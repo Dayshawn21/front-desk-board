@@ -12,6 +12,9 @@ Everything here is fake data. Live demo: https://front-desk-board.vercel.app/ ([
    **Cash**, and **Record payment**: the balance drops to $140.00, Copay collected
    ticks itself, and the toast offers Undo. It's pretend: nothing is charged.
    **Tomás Reyes** (checked out) owes nothing; his plan pays the consult in full.
+   In a second tab, sign in at [/patient](https://front-desk-board.vercel.app/patient)
+   as `ana.diaz@example.com` (`demo1234`): her visit shows **Your bill**, read only,
+   and the balance updates when the desk records a payment.
 4. Click an empty spot on the schedule, or **New appointment**, to book. In the panel,
    type "60 min cleaning for Ana Diaz this afternoon with Hygienist Patel" and press
    **Fill in with AI**, then pick a time.
@@ -53,7 +56,7 @@ Everything here is fake data. Live demo: https://front-desk-board.vercel.app/ ([
 Demo patient logins: every made-up patient's email is `first.last@example.com`
 (accents dropped, so Tomás Reyes is `tomas.reyes@example.com`), all with the password
 `demo1234`. For example: `owen.hart@example.com` and `ravi.menon@example.com` (Maple
-Street, both expected today), `ana.diaz@example.com` (Maple Street, visit done),
+Street, both expected today), `ana.diaz@example.com` (Maple Street, visit done, with a bill),
 `kofi.mensah@example.com` (Riverbend).
 
 The AI assist is rate limited (10 requests a minute per visitor). Add `?fail`,
