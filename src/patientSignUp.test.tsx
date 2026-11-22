@@ -61,6 +61,26 @@ describe('patient sign-up', () => {
     )
   })
 
+  // The offices arrive after the API's latency. Their space is held from
+  // the start, so the name, phone and email fields don't jump down when
+  // they load (Lighthouse counted that jump against the page).
+  it("holds the offices' space while they load", () => {
+    openAt('/patient/sign-up')
+
+    const offices = screen.getByRole('radiogroup', {
+      name: 'Your dental office',
+    })
+    expect(within(offices).getByRole('status')).toHaveTextContent(
+      'Loading dental offices…',
+    )
+    // One placeholder per office, hidden from screen readers, and no
+    // radios to pick yet.
+    const placeholders = within(offices).getByTestId('office-placeholders')
+    expect(placeholders).toHaveAttribute('aria-hidden', 'true')
+    expect(placeholders.children).toHaveLength(2)
+    expect(within(offices).queryAllByRole('radio')).toHaveLength(0)
+  })
+
   it('creates the account and signs the patient in', async () => {
     const { user } = openAt('/patient/sign-up')
     await fillIn(user)

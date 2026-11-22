@@ -48,12 +48,21 @@ reads a little high.
 
 **`/book` was the weakest (83 phone, 89 desktop) until a fix.** The page showed a
 single "Loading…" line until the office list came back (after the mock API's 400 ms),
-then grew, pushing the footer down: a layout shift of 0.082, the only one on any patient
-page. It now shows the heading, the sign-in link and two placeholder cards the size of
+then grew, pushing the footer down: a layout shift of 0.082. It now shows the heading, the sign-in link and two placeholder cards the size of
 the real ones from the start. On the live site the shift is now 0.004 on a phone (0.013
 on desktop), and the table shows the middle of three runs. Total Blocking Time still
 varies from run to run: one of the three phone runs scored 76, with 1.1 s of blocking
 time, on the same build as the 98 and 99.
+
+**Sign up's 93 was mostly noise, but it had the same shift.** Three runs on the live
+site scored 98–99, so the 93 was a bad run. Every run showed a layout shift of 0.073,
+though: the office picker showed one "Loading…" line, then the two offices arrived and
+pushed the name, phone and email fields down. It now holds their space with placeholder
+cards, as `/book` does, and both pages take the office count from one place. On a local
+production build, over four runs of each build interleaved, the shift went from 0.073
+to 0.002. The score didn't move measurably: blocking time swung from 0 to 700 ms on
+both builds, and a shift that size costs only a point or two. The table shows the score
+from before this fix.
 
 Not covered: the reset-password page (it needs a live token), dark mode, and the open
 drawers and dialogs (axe checks those; Lighthouse only scores page loads).
