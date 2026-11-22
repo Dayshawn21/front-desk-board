@@ -72,6 +72,15 @@ What the demo does, feature by feature. ([Back to the README](../README.md))
   record stays. The visit leaves the grid (listed as "Cancelled today" with the
   reason) and its time can be booked again; the toast's Undo restores it unless that
   time was booked in the meantime
+- Move to…: front desk and office manager can move a scheduled or confirmed visit to
+  another time or chair today, from the drawer. It offers the next five open times
+  from now, the same length as the visit, from the same slot finder as booking, and
+  never where it already is. Buttons and radios, so nothing needs dragging. The mock
+  server keeps the length, re-checks the chair is free (a 409 with fresh times if
+  someone just took it), and refuses a visit the patient has arrived for. Moving
+  Lena Ortiz clears the demo's double-booking. The toast's Undo puts the visit back,
+  even into its old overlap, which the banner then flags again. The patient's Your
+  visits page shows the new time without a reload
 - No-show: once an expected visit's start time has passed, front desk and office
   manager can mark it a no-show (Priya Shah, 8:00, in the demo). It stays on the
   grid with its own style, leaves the patient flow columns (listed as "No-shows

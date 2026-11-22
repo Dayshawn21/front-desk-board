@@ -23,7 +23,9 @@ describe('sign-in page', () => {
 
     expect(
       screen.getByRole('button', { name: /rosa jimenez/i }),
-    ).toHaveAccessibleName(/checks patients in, books and cancels visits/i)
+    ).toHaveAccessibleName(
+      /checks patients in, books, moves and cancels visits/i,
+    )
     expect(
       screen.getByRole('button', { name: /amara okafor/i }),
     ).toHaveAccessibleName(/seats patients; the checklist is read-only/i)

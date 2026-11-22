@@ -22,7 +22,7 @@ https://github.com/user-attachments/assets/c285bfa1-15a6-41fa-a3ff-a8b539812881
 ## What it shows
 
 - **Server state done properly.** TanStack Query with per-practice cache keys,
-  mutations that invalidate and refetch, and Undo on every status change. A 409 is
+  mutations that invalidate and refetch, and Undo on every status change and move. A 409 is
   returned when someone else just took a time slot. Other open tabs update without a
   reload.
 - **Rules as pure, tested functions.** The status workflow, role permissions, overlap
@@ -116,11 +116,12 @@ The details, and what a real system would do instead, are in
 
 ## Quality
 
-- **571 unit and component tests** (Vitest and React Testing Library). The logic was
+- **607 unit and component tests** (Vitest and React Testing Library). The logic was
   built test-first, each feature as a failing-tests commit followed by the code.
 - **End-to-end tests** (Playwright): booking, check-in, the double-booking banner, the
   AI assist with its route faked (so CI never calls Claude), live updates between tabs,
-  recording a payment at checkout, and the patient pages.
+  moving a visit out of a double-booking, recording a payment at checkout, and the
+  patient pages.
 - **Accessibility:** axe (WCAG 2.2 AA rules) on every screen, at desktop and phone width.
   Lighthouse gives Accessibility, Best Practices and SEO 100 on every screen.
 - **CI** runs typecheck, lint, format check, unit tests, build and e2e on every push.

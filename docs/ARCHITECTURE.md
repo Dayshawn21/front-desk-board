@@ -126,6 +126,7 @@ Who holds each permission:
 | seat                                  |            |    ✓     |       ✓        |
 | reopen-checkout                       |            |          |       ✓        |
 | edit-checklist, book, cancel, no-show |     ✓      |          |       ✓        |
+| move (a visit not yet checked in)     |     ✓      |          |       ✓        |
 | switch-practice                       |            |          |       ✓        |
 | record-payment                        |     ✓      |          |       ✓        |
 | view-day-totals                       |            |          |       ✓        |
@@ -186,7 +187,7 @@ works by hand.
   `index.html`);
   `CheckInLink` is the link section in the check-in drawer
 - `src/lib/`: the rules as pure, tested functions: `statusChange` (kinds, Undo, toast
-  text), `workflow` (next step, cancel, no-show, lateness), `slots` (open-slot finder),
+  text), `workflow` (next step, cancel, no-show, lateness), `slots` (open-slot finder), `move` (which visits can move, the times offered),
   `patientBooking` (which times a patient sees), `billing` (line items, insurance
   estimate, balance, day totals),
   `overlap`, `lanes`, `permissions`, `assist` (AI answer checks), `time`

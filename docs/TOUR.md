@@ -5,7 +5,9 @@ Everything here is fake data. Live demo: https://front-desk-board.vercel.app/ ([
 1. Sign in as **Rosa Jimenez** (front desk). No password; pick a user.
 2. The red banner is a deliberate double-booking in Chair 2. Click **Lena Ortiz** to
    open the check-in drawer, then **Check in**. Undo is in the toast. **Priya Shah**
-   (8:00) never arrived: open her and **Mark no-show**.
+   (8:00) never arrived: open her and **Mark no-show**. Or fix the double-booking
+   instead: open Lena, press **Move to…**, pick **11:30 AM, Chair 2**, and **Move
+   visit**. The banner clears, and Undo in the toast puts her back.
 3. Billing at checkout: open **Ana Diaz** (8:00, checked out). The drawer's
    **Billing** section lists her cleaning's line items, the insurance estimate (her
    plan has only $60.00 left this year) and her $190.00 share. Enter 50, choose
@@ -30,7 +32,7 @@ Everything here is fake data. Live demo: https://front-desk-board.vercel.app/ ([
 5. Open the account menu (top right) to switch between light and dark, and sign out. Sign in as **Theo Grant** (office
    manager) to switch practices and see **Today's billing** (billed, collected,
    outstanding), or **Dr. Amara Okafor** (provider), who can seat a
-   patient but can't book, check in, or cancel.
+   patient but can't book, check in, move or cancel.
 6. The patient's side: keep the board open and, in a second tab, open
    [/book](https://front-desk-board.vercel.app/book) (also linked from the sign-in
    page) and choose **Maple Street Dental**. Sign in as a patient

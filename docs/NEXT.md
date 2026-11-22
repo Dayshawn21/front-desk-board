@@ -10,9 +10,11 @@
 - **Act on cancel reasons and no-shows.** They're recorded now; next would be a
   late-cancel fee or a text to the patient (at which point Undo can't reverse
   everything, so the confirm step would say what will be sent), and a no-show report.
-- **Drag on the schedule.** Drag down a column to pick a time range, and drag a visit to
-  move it, with Undo, the same server re-check as booking, and a "Move to…" option in the
-  check-in drawer so nothing needs dragging (WCAG 2.5.7).
+- **Drag on the schedule.** "Move to…" in the check-in drawer moves a visit today, with
+  Undo and the server re-check. Next: drag down a column to pick a time range, and drag
+  a visit onto a new time, calling the same move. The drawer stays the way that needs
+  no dragging (WCAG 2.5.7). Moving to another day, and telling the patient, would come
+  with reminders.
 - **Headless UI primitives.** The dialog focus trap, tabs, and toast are hand-built and
   tested here on purpose. In production I'd use headless primitives (Radix or React
   Aria, or shadcn/ui on top of Radix) so the team isn't maintaining focus logic.
@@ -24,6 +26,8 @@
   the same time. Notes and status still save last-write-wins. Next: a `version` on each
   appointment, so a save sent with an old version gets a 409 Conflict and the UI offers
   to reload instead of silently overwriting another person's change.
+  Undo of a move would send it too: today Undo puts the visit back even if its old
+  place has been booked since (the double-booking banner flags it).
 - **The rest of billing.** Checkout billing is a small slice: line items fixed by
   visit type, an estimate, and pretend payments. Not built: editing line items and
   tooth/surface detail, deductibles and frequency limits in the estimate, real

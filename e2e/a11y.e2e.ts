@@ -128,7 +128,7 @@ test('error screen (board crashed on purpose with ?crash)', async ({
   await expectNoViolations(page)
 })
 
-test.describe('signed in, cancel and no-show', () => {
+test.describe('signed in, cancel, move and no-show', () => {
   test.beforeEach(async ({ page }) => {
     await signInAsFrontDesk(page)
   })
@@ -142,6 +142,27 @@ test.describe('signed in, cancel and no-show', () => {
       .getByRole('button', { name: 'Cancel visit', exact: true })
       .click()
     await expect(drawer.getByText('Choose a reason.')).toBeVisible()
+    await expectNoViolations(page)
+  })
+
+  test('move to: picking a new time, with an error', async ({ page }) => {
+    await page.getByRole('button', { name: /^Lena Ortiz,/ }).click()
+    const drawer = page.getByRole('dialog', { name: 'Lena Ortiz' })
+    await drawer.getByRole('button', { name: 'Move to…' }).click()
+    // Submit without a time, so the error is on screen too.
+    await drawer.getByRole('button', { name: 'Move visit' }).click()
+    await expect(drawer.getByText('Choose a time.')).toBeVisible()
+    await expectNoViolations(page)
+  })
+
+  test('toast after moving a visit', async ({ page }) => {
+    await page.getByRole('button', { name: /^Lena Ortiz,/ }).click()
+    const drawer = page.getByRole('dialog', { name: 'Lena Ortiz' })
+    await drawer.getByRole('button', { name: 'Move to…' }).click()
+    await drawer.getByRole('radio').first().check()
+    await drawer.getByRole('button', { name: 'Move visit' }).click()
+    await expect(page.getByText(/^Lena Ortiz: moved to/)).toBeVisible()
+    await page.keyboard.press('Escape')
     await expectNoViolations(page)
   })
 
