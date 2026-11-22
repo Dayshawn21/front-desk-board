@@ -50,7 +50,7 @@ including from a plain-language request ("60 min cleaning for Ana Diaz this afte
 - **Measure before optimizing.** Profiling showed the board renders in ~60 ms on a
   slowed phone CPU; memoizing or lazy-loading the drawers (~7 KB) wouldn't pay for
   itself, so I didn't. Lighthouse gives 100 for accessibility, best practices, and SEO
-  on every screen tested, phone and desktop; performance is 83–100, most pages 96+.
+  on every screen tested, phone and desktop; performance is 93–100, most pages 96+.
 - **Fail visibly, log safely.** An error boundary shows a recoverable message instead of
   a blank page. Logs hold the error and component stack only, never props or form
   values, because in a dental office those can be patient data.
