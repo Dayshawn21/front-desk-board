@@ -183,6 +183,15 @@ export function CheckInDrawer({
     }
   }, [appointment.status, dialogRef])
 
+  // A save can remove the control that had focus (a move out of a
+  // double-booking takes Move to… back below the status, say). If focus
+  // fell to the page, put it on the line that says what just happened.
+  useEffect(() => {
+    if (document.activeElement === document.body) {
+      ;(lastChangeRef.current ?? statusHeadingRef.current)?.focus()
+    }
+  })
+
   const patient = day.patients.find((p) => p.id === appointment.patientId)
   const chair = day.chairs.find((c) => c.id === appointment.chairId)
   const name = patient
@@ -208,6 +217,30 @@ export function CheckInDrawer({
   const noShow = noShowAction(appointment.status, appointment.start, now)
   const canNoShow = noShow !== null && can(noShow.permission)
   const currentStep = flowSteps.indexOf(appointment.status)
+  const doubleBooked = conflictText.length > 0
+
+  // The sections that answer this visit's most likely job. The drawer puts
+  // them first: Move to… right under a double-booking, billing for a
+  // checked-out visit.
+  const moveSection = canMoveVisit(appointment.status) && can('move') && (
+    <MoveVisit
+      options={moveOptions(day, appointment, now)}
+      chairs={day.chairs}
+      isSaving={isMoving}
+      onMove={onMove}
+      saveError={moveError}
+    />
+  )
+  const billingSection = appointment.status === 'completed' && (
+    <BillingSection
+      billing={visitBilling(day, appointment)}
+      planName={patient?.insurance ? patient.insuranceProvider : null}
+      canRecord={can('record-payment')}
+      isSaving={isRecordingPayment}
+      onRecord={onRecordPayment}
+      saveError={paymentError}
+    />
+  )
   const doneCount = checklistItems.filter((item) => checklist[item.key]).length
 
   return (
@@ -259,12 +292,14 @@ export function CheckInDrawer({
           </button>
         </div>
 
-        {conflictText.length > 0 && (
+        {doubleBooked && (
           <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
             Overlaps {conflictText.join(' and ')} in{' '}
             {chair?.name ?? 'this chair'}.
           </div>
         )}
+        {/* The fix, right under the problem. */}
+        {doubleBooked && moveSection}
 
         <section
           aria-labelledby="status-heading"
@@ -298,7 +333,7 @@ export function CheckInDrawer({
               Next step: {action.label}. Not available to {roleLabel[role]}.
             </p>
           )}
-          {(canAdvance || canUndo) && (
+          {(canAdvance || canUndo || (noShow && canNoShow)) && (
             <div className="flex flex-wrap gap-2">
               {action && canAdvance && (
                 <button
@@ -311,6 +346,20 @@ export function CheckInDrawer({
                   className="h-11 rounded-lg bg-teal-700 px-4 text-sm font-semibold text-white hover:bg-teal-800 aria-disabled:opacity-60"
                 >
                   {isSaving ? 'Saving…' : action.label}
+                </button>
+              )}
+              {/* Late: not coming is as likely as checking in, so the two
+                  sit side by side. */}
+              {noShow && canNoShow && (
+                <button
+                  type="button"
+                  aria-disabled={isSaving}
+                  onClick={() => {
+                    if (!isSaving) onChangeStatus(noShow.status)
+                  }}
+                  className="h-11 rounded-lg border border-rose-300 px-4 text-sm font-semibold text-rose-800 hover:bg-rose-50 aria-disabled:opacity-60"
+                >
+                  {noShow.label}
                 </button>
               )}
               {undo && canUndo && (
@@ -355,6 +404,8 @@ export function CheckInDrawer({
           )}
         </section>
 
+        {billingSection}
+
         {/* Only while the patient is expected: after that there's nothing to check in. */}
         {(appointment.status === 'scheduled' ||
           appointment.status === 'confirmed') &&
@@ -365,15 +416,7 @@ export function CheckInDrawer({
             />
           )}
 
-        {canMoveVisit(appointment.status) && can('move') && (
-          <MoveVisit
-            options={moveOptions(day, appointment, now)}
-            chairs={day.chairs}
-            isSaving={isMoving}
-            onMove={onMove}
-            saveError={moveError}
-          />
-        )}
+        {!doubleBooked && moveSection}
 
         <div className="flex flex-col gap-4">
           {!canEdit && (
@@ -436,17 +479,6 @@ export function CheckInDrawer({
           )}
         </div>
 
-        {appointment.status === 'completed' && (
-          <BillingSection
-            billing={visitBilling(day, appointment)}
-            planName={patient?.insurance ? patient.insuranceProvider : null}
-            canRecord={can('record-payment')}
-            isSaving={isRecordingPayment}
-            onRecord={onRecordPayment}
-            saveError={paymentError}
-          />
-        )}
-
         {saveError && (
           <p
             role="alert"
@@ -456,9 +488,9 @@ export function CheckInDrawer({
           </p>
         )}
 
-        {/* Kept apart from the next-step button so they're hard to hit by
-            mistake. Both can be undone from the toast. */}
-        {((cancel && canCancel) || (noShow && canNoShow)) && (
+        {/* Kept apart from the next-step button so it's hard to hit by
+            mistake. It can be undone from the drawer or the toast. */}
+        {cancel && canCancel && (
           <div className="mt-auto flex flex-col gap-3 border-t border-slate-200 pt-4">
             {confirmingCancel ? (
               <form
@@ -537,18 +569,6 @@ export function CheckInDrawer({
               </form>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {noShow && canNoShow && (
-                  <button
-                    type="button"
-                    aria-disabled={isSaving}
-                    onClick={() => {
-                      if (!isSaving) onChangeStatus(noShow.status)
-                    }}
-                    className="h-11 rounded-lg border border-rose-300 px-4 text-sm font-semibold text-rose-800 hover:bg-rose-50 aria-disabled:opacity-60"
-                  >
-                    {noShow.label}
-                  </button>
-                )}
                 {cancel && canCancel && (
                   <button
                     ref={cancelTriggerRef}

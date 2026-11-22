@@ -7,7 +7,9 @@ What the demo does, feature by feature. ([Back to the README](../README.md))
 - Loading and error states (add `?fail` to the URL to see the error state)
 - Conflict detection for overlapping appointments (side-by-side cards, banner)
 - Check-in drawer: status steps, checklist, notes; Escape closes, focus is trapped
-  while open and returns to the card on close
+  while open and returns to the card on close. It leads with the job of the moment:
+  Move to… right under a double-booking, billing first for a checked-out visit, and
+  Mark no-show beside Check in once the patient is late
 - Patient flow tab: Expected → Arrived → In chair → Checked out, with one-click
   status changes
 - Roles: front desk / provider / office manager; actions a role can't take are
@@ -53,7 +55,10 @@ What the demo does, feature by feature. ([Back to the README](../README.md))
 - Today's billing (office manager): billed (patient shares of checked-out visits),
   collected and outstanding for the current practice, plus the insurance estimate
 - Undo: every status change shows a toast with Undo, and the drawer can move a visit
-  back one step; reopening a checked-out visit is office-manager only
+  back one step; reopening a checked-out visit is office-manager only. The drawer
+  traps Tab, so while it's open the latest move, payment, cancel or no-show for that
+  visit shows inside it ("Last change: … Undo") and the toast waits instead of
+  timing out
 - Open-slot finder (`src/lib/slots.ts`): given a duration and an optional chair and
   time window, suggests the earliest free slots inside opening hours, skipping
   cancelled visits. Pure function, built test-first; the AI assist feeds it

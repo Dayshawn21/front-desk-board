@@ -123,7 +123,7 @@ The details, and what a real system would do instead, are in
 
 ## Quality
 
-- **607 unit and component tests** (Vitest and React Testing Library). The logic was
+- **616 unit and component tests** (Vitest and React Testing Library). The logic was
   built test-first, each feature as a failing-tests commit followed by the code.
 - **End-to-end tests** (Playwright): booking, check-in, the double-booking banner, the
   AI assist with its route faked (so CI never calls Claude), live updates between tabs,

@@ -75,11 +75,14 @@ describe('moving a visit', () => {
     expect(
       within(drawer).getByText(/Exam · Chair 2 · 11:30 AM – 12:15 PM/),
     ).toBeInTheDocument()
-    // No longer double-booked, and focus is back on the button.
+    // No longer double-booked. Move to… goes back below the status, and
+    // focus is on the line that says what happened, next to its Undo.
     expect(
       within(drawer).queryByText(/overlaps jon kim/i),
     ).not.toBeInTheDocument()
-    expect(moveButton(drawer)).toHaveFocus()
+    expect(
+      within(drawer).getByText('Last change: moved to 11:30 AM, Chair 2'),
+    ).toHaveFocus()
   })
 
   it('asks for a time before moving, and Keep time backs out', async () => {
