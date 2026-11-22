@@ -28,11 +28,9 @@
   key, the tabs and the chair switcher fill about half the screen before the first
   visit. Next: fold the key and banner, mark the chair with a conflict in the chair
   switcher, and keep the drawer's main action in reach at the bottom.
-- **Small fixes from the same review.** The 9:40 "now" marker covers the bottom of the
-  9:30 time label; patient pages show "Front Desk Board" for a moment before the
-  practice's name loads; checked-out cards in Patient flow don't show what's still
-  owed; and the cancel reasons don't say what happens next (is the patient told, is
-  there a fee).
+- **Small fixes from the same review.** Checked-out cards in Patient flow don't show
+  what's still owed, and the cancel reasons don't say what happens next (is the
+  patient told, is there a fee).
 - **Headless UI primitives.** The dialog focus trap, tabs, and toast are hand-built and
   tested here on purpose. In production I'd use headless primitives (Radix or React
   Aria, or shadcn/ui on top of Radix) so the team isn't maintaining focus logic.

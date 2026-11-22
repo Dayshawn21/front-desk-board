@@ -30,7 +30,8 @@ What the demo does, feature by feature. ([Back to the README](../README.md))
   status key, and names in the conflict banner and cancelled/no-show lists that
   open the visit
 - Late visits: an expected visit past its start shows "Late 1h 40m" on its cards;
-  the now line sits above the cards with a time label
+  the now line sits above the cards with a time label, and hides the half-hour label
+  it would cover
 - Checklist and notes save on their own (a tick right away, notes when you leave
   the box or close the drawer), so closing never loses work
 - Phones: the schedule shows one chair at a time with a chair switcher (the time
