@@ -31,6 +31,11 @@ https://github.com/user-attachments/assets/c285bfa1-15a6-41fa-a3ff-a8b539812881
 - **AI with guardrails.** Claude turns a typed request into form fields, through a
   server route that keeps the API key off the browser. Code picks the open times, and a
   person books. An eval measures how accurate it is.
+- **Checkout billing.** A checked-out visit shows its line items, an insurance
+  estimate and the patient's share, with a pretend **Record payment** and Undo. The
+  estimate is a pure function in integer cents with a tested rounding rule. Fees and
+  plans are made up, nothing is charged, and claims aren't built
+  ([what's mocked](docs/WHAT-IS-MOCKED.md)).
 - **Roles and multiple practices.** Front desk, provider and office manager each see
   only the actions they're allowed. Data is scoped per practice, and only the office
   manager can switch practices.
@@ -95,18 +100,19 @@ _Left: the AI assist fills in the form, and the slot finder offers times. Right:
   tabs, with fake latency and switchable failures. Staff sign-in is "pick a user".
   Patient accounts, passwords and sessions model a real server's rules but run in the
   browser, so **they are not security**. Role permissions only hide buttons; a real
-  server would enforce them on every request.
+  server would enforce them on every request. Fees and insurance plans are made up,
+  and payments are pretend: nothing is charged and no claim is sent.
 
 The details, and what a real system would do instead, are in
 [What is mocked](docs/WHAT-IS-MOCKED.md).
 
 ## Quality
 
-- **478 unit and component tests** (Vitest and React Testing Library). The logic was
+- **563 unit and component tests** (Vitest and React Testing Library). The logic was
   built test-first, each feature as a failing-tests commit followed by the code.
 - **End-to-end tests** (Playwright): booking, check-in, the double-booking banner, the
   AI assist with its route faked (so CI never calls Claude), live updates between tabs,
-  and the patient pages.
+  recording a payment at checkout, and the patient pages.
 - **Accessibility:** axe (WCAG 2.2 AA rules) on every screen, at desktop and phone width.
   Lighthouse gives Accessibility, Best Practices and SEO 100 on every screen.
 - **CI** runs typecheck, lint, format check, unit tests, build and e2e on every push.
@@ -118,6 +124,8 @@ The details, and what a real system would do instead, are in
 - Push changes from a real server over WebSocket or SSE, instead of syncing between tabs.
 - Add a `version` to each appointment, so conflicting edits get a 409 instead of
   last-write-wins.
+- Billing past checkout: claims and ERA/EOB posting, a payment processor, statements,
+  payment plans and a running patient ledger.
 
 More in [docs/NEXT.md](docs/NEXT.md).
 

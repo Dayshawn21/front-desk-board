@@ -41,6 +41,15 @@ This is a front-end demo. The data, the staff sign-in and the patient accounts r
 - **The check-in link.** It's `/check-in/<practice>/<visit id>`. On its own it shows
   nothing: the patient signs in, and only their own visit opens. A real link would
   also carry a signed token that expires after the visit (and is sent by text).
+- **Billing.** The fee lists, procedure names, prices and insurance plans are made
+  up (no real CDT codes, which the ADA owns). The insurance share is an estimate from
+  a percentage per category and the remaining annual maximum; there are no
+  deductibles, frequency limits, waiting periods or real eligibility checks. Payments
+  are pretend: nothing is charged and no processor is called. Undo marks a payment
+  voided; a real system would refund or void the charge with the payment processor,
+  and keep an audit trail of who did it. No claim is sent, so the insurance part stays
+  an estimate. The server re-works the balance from its own fees and plan rather than
+  trusting the browser, but like everything here it runs in the browser.
 - **The AI assist's data.** Claude only ever sees fake seed data: the practice's
   invented patients and chairs, plus the typed request. In production that list would
   come from the database for the signed-in practice, and the request text could contain

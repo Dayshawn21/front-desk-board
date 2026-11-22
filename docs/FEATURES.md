@@ -34,6 +34,20 @@ What the demo does, feature by feature. ([Back to the README](../README.md))
 - Phones: the schedule shows one chair at a time with a chair switcher (the time
   column stays in view, nothing scrolls sideways), patient flow shows one column at a
   time starting with Arrived, and New appointment floats in thumb reach
+- Billing at checkout (fake fees and plans, pretend payments): a checked-out
+  visit's drawer lists its line items from the practice's made-up fee list
+  (fixed by visit type), an insurance estimate, the patient's share and any
+  balance. Front desk and office manager **Record payment** (card, cash or other;
+  partial payments leave a balance, more than the balance is refused by the mock
+  server), which also ticks Copay collected; the toast offers Undo, which voids the
+  payment. Providers see it read-only
+- Insurance estimate (`src/lib/billing.ts`, built test-first): each fee's category
+  (preventive, basic, major) gets the plan's percentage; each line's insurance share
+  rounds down to a whole cent and the patient pays the rest, so the shares always add
+  up; then the plan pays no more than the patient's remaining annual benefit. Money is
+  integer cents everywhere
+- Today's billing (office manager): billed (patient shares of checked-out visits),
+  collected and outstanding for the current practice, plus the insurance estimate
 - Undo: every status change shows a toast with Undo, and the drawer can move a visit
   back one step; reopening a checked-out visit is office-manager only
 - Open-slot finder (`src/lib/slots.ts`): given a duration and an optional chair and

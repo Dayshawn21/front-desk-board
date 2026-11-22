@@ -20,7 +20,7 @@ flowchart LR
     Route["App.tsx + lib/route.ts<br/>pick a page from the URL"]
     Staff["Staff board<br/>Board, ScheduleGrid, PatientFlow,<br/>CheckInDrawer, BookingDrawer"]
     Patient["Patient pages<br/>book, check in, sign in"]
-    Logic["lib/*<br/>plain functions, unit tested:<br/>workflow, permissions, slots,<br/>overlap, lanes, statusChange"]
+    Logic["lib/*<br/>plain functions, unit tested:<br/>workflow, permissions, slots,<br/>overlap, lanes, statusChange, billing"]
     Query["TanStack Query<br/>hooks/useSchedule.ts<br/>cache keyed by practice + date"]
     Mock["Mock API<br/>api/schedule.ts"]
     Store[("localStorage<br/>shared mock db")]
@@ -127,6 +127,8 @@ Who holds each permission:
 | reopen-checkout                       |            |          |       ✓        |
 | edit-checklist, book, cancel, no-show |     ✓      |          |       ✓        |
 | switch-practice                       |            |          |       ✓        |
+| record-payment                        |     ✓      |          |       ✓        |
+| view-day-totals                       |            |          |       ✓        |
 
 These hide buttons a role can't use. They are not security: a real server would
 check the same table on every request.
@@ -185,7 +187,8 @@ works by hand.
   `CheckInLink` is the link section in the check-in drawer
 - `src/lib/`: the rules as pure, tested functions: `statusChange` (kinds, Undo, toast
   text), `workflow` (next step, cancel, no-show, lateness), `slots` (open-slot finder),
-  `patientBooking` (which times a patient sees),
+  `patientBooking` (which times a patient sees), `billing` (line items, insurance
+  estimate, balance, day totals),
   `overlap`, `lanes`, `permissions`, `assist` (AI answer checks), `time`
 - `src/api/schedule.ts`: the mock server (shared between tabs through `localStorage`);
   `src/api/patientPortal.ts`: its patient side (sign-up, sign-in, password reset and change, sessions, and calls that

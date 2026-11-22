@@ -14,9 +14,10 @@ export const roleLabel: Record<Role, string> = {
 // One line per role for the sign-in page: what signing in as them shows.
 // Kept in step with src/lib/permissions.ts.
 export const roleSummary: Record<Role, string> = {
-  'front-desk': 'Checks patients in, books and cancels visits',
+  'front-desk': 'Checks patients in, books and cancels visits, takes payments',
   provider: 'Seats patients; the checklist is read-only',
-  'office-manager': 'Everything, plus switching practices and reopening visits',
+  'office-manager':
+    "Everything, plus switching practices, reopening visits and the day's billing",
 }
 
 // "Dr. Amara Okafor" -> "AO". Honorifics aren't initials.

@@ -24,3 +24,10 @@
   the same time. Notes and status still save last-write-wins. Next: a `version` on each
   appointment, so a save sent with an old version gets a 409 Conflict and the UI offers
   to reload instead of silently overwriting another person's change.
+- **The rest of billing.** Checkout billing is a small slice: line items fixed by
+  visit type, an estimate, and pretend payments. Not built: editing line items and
+  tooth/surface detail, deductibles and frequency limits in the estimate, real
+  eligibility checks, sending claims and posting ERA/EOB responses (which would turn
+  the estimate into the real insurance amount), a payment processor (card terminals,
+  refunds and voids instead of the demo's Undo), patient statements, payment plans, and
+  a running patient ledger with balances carried across visits.
