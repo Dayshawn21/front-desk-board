@@ -7,7 +7,17 @@ Everything here is fake data. Live demo: https://front-desk-board.vercel.app/ ([
    open the check-in drawer, then **Check in**. Undo is in the toast. **Priya Shah**
    (8:00) never arrived: open her and **Mark no-show**. Or fix the double-booking
    instead: open Lena, press **Move to…**, pick **11:30 AM, Chair 2**, and **Move
-   visit**. The banner clears, and Undo in the toast puts her back.
+   visit**. The banner clears, and Undo in the toast puts her back. Signed in as Lena
+   (`lena.ortiz@example.com`, `demo1234`) in a second tab, her visit shows the new time.
+
+   <p>
+     <img src="images/move-drawer.png" width="76%" alt="Lena Ortiz's check-in drawer with Move to… open: she overlaps Jon Kim in Chair 2, and five open times later today are offered, with 11:30 AM to 12:15 PM in Chair 2 picked, and Move visit and Keep time buttons. Behind it, the schedule's red double-booking banner">
+     <img src="images/patient-moved-phone.png" width="21%" alt="Lena's Your visits page on a phone after the move: her checkup is now 11:30 AM to 12:15 PM, still confirmed, with a Check in button">
+   </p>
+
+   _Left: Move to… with 11:30 AM in Chair 2 picked. Right: Lena's own page after the
+   move._
+
 3. Billing at checkout: open **Ana Diaz** (8:00, checked out). The drawer's
    **Billing** section lists her cleaning's line items, the insurance estimate (her
    plan has only $60.00 left this year) and her $190.00 share. Enter 50, choose
