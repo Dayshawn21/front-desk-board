@@ -78,6 +78,13 @@ _Left: the AI assist fills in the form, and the slot finder offers times. Right:
 
 _Left: checkout billing in the drawer, with the office manager's day totals behind it. Right: the patient sees the same bill, read only. Fees, plans and payments are made up._
 
+<p>
+  <img src="docs/images/move-drawer.png" width="76%" alt="Lena Ortiz's check-in drawer with Move to… open: she overlaps Jon Kim in Chair 2, and five open times later today are offered, with 11:30 AM to 12:15 PM in Chair 2 picked, and Move visit and Keep time buttons. Behind it, the schedule's red double-booking banner">
+  <img src="docs/images/patient-moved-phone.png" width="21%" alt="Lena's Your visits page on a phone after the move: her checkup is now 11:30 AM to 12:15 PM, still confirmed, with a Check in button">
+</p>
+
+_Left: Move to… offers the next open times for a visit that hasn't checked in, here to clear the double-booking. Right: the patient's page shows the new time without a reload._
+
 | Patient flow                                                                                                 | Dark mode                                                |
 | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
 | ![The patient flow board: Expected, Arrived, In chair and Checked out columns](docs/images/patient-flow.png) | ![The schedule in dark mode](docs/images/board-dark.png) |
