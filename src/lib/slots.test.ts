@@ -102,6 +102,22 @@ describe('findOpenSlots', () => {
     expect(result).toEqual([slot('c1', '08:00', '08:30')])
   })
 
+  it('can leave one visit out, so a visit being moved never blocks itself', () => {
+    const today = day([appt('a', 'c1', '09:00', '10:00')])
+    const request = {
+      durationMinutes: 60,
+      chairId: 'c1',
+      earliest: '09:30',
+      limit: 1,
+    }
+    expect(findOpenSlots(today, request)).toEqual([
+      slot('c1', '10:00', '11:00'),
+    ])
+    expect(findOpenSlots(today, { ...request, ignoreId: 'a' })).toEqual([
+      slot('c1', '09:30', '10:30'),
+    ])
+  })
+
   it('only looks at the requested chair', () => {
     const result = findOpenSlots(day(), { durationMinutes: 60, chairId: 'c2' })
     expect(result.map((s) => s.chairId)).toEqual(['c2', 'c2', 'c2'])
