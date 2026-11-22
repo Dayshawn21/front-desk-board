@@ -4,22 +4,15 @@ import { formatTimeRange } from '../../lib/time'
 import { PatientShell } from './PatientShell'
 
 const SUBTITLE = 'Online booking'
+// The demo has two offices. If that changes, only the space held while
+// they load is off; the list itself still shows them all.
+const OFFICE_COUNT = 2
 
 // /book: the patient picks their dental office first, then books there.
 // Each office is a plain link to its booking page, so it can be opened in
 // a new tab or shared like any other link.
 export function ChoosePracticePage() {
   const practices = usePractices()
-
-  if (practices.isPending) {
-    return (
-      <PatientShell subtitle={SUBTITLE}>
-        <p role="status" className="text-slate-600">
-          Loading dental offices…
-        </p>
-      </PatientShell>
-    )
-  }
 
   if (practices.isError) {
     return (
@@ -49,40 +42,66 @@ export function ChoosePracticePage() {
           Pick the office you visit, then choose a time today.
         </p>
       </div>
-      <ul className="flex flex-col gap-3">
-        {practices.data.map((practice) => (
-          <li key={practice.id}>
-            <a
-              href={bookingPath(practice.id)}
-              className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 transition-colors hover:border-teal-600 hover:bg-teal-50"
-            >
-              <span className="flex flex-1 flex-col gap-0.5">
-                <span className="text-lg font-semibold text-slate-900">
-                  {practice.name}
-                </span>{' '}
-                <span className="text-slate-700">
-                  Open today{' '}
-                  {formatTimeRange(practice.openTime, practice.closeTime)}
-                </span>
-              </span>
-              <svg
-                aria-hidden="true"
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="shrink-0 text-slate-500"
+      {practices.isPending ? (
+        <>
+          <p role="status" className="sr-only">
+            Loading dental offices…
+          </p>
+          {/* One card per office, sized like the real ones, so nothing
+              below the list moves when the offices arrive (Lighthouse
+              counted that jump against the page). */}
+          <div
+            aria-hidden="true"
+            data-testid="office-placeholders"
+            className="flex flex-col gap-3"
+          >
+            {Array.from({ length: OFFICE_COUNT }, (_, i) => (
+              <div
+                key={i}
+                className="flex flex-col gap-0.5 rounded-2xl border border-slate-200 bg-white p-5"
               >
-                <path d="m9 6 6 6-6 6" />
-              </svg>
-            </a>
-          </li>
-        ))}
-      </ul>
+                <span className="text-lg">&nbsp;</span>
+                <span>&nbsp;</span>
+              </div>
+            ))}
+          </div>
+        </>
+      ) : (
+        <ul className="flex flex-col gap-3">
+          {practices.data.map((practice) => (
+            <li key={practice.id}>
+              <a
+                href={bookingPath(practice.id)}
+                className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-5 transition-colors hover:border-teal-600 hover:bg-teal-50"
+              >
+                <span className="flex flex-1 flex-col gap-0.5">
+                  <span className="text-lg font-semibold text-slate-900">
+                    {practice.name}
+                  </span>{' '}
+                  <span className="text-slate-700">
+                    Open today{' '}
+                    {formatTimeRange(practice.openTime, practice.closeTime)}
+                  </span>
+                </span>
+                <svg
+                  aria-hidden="true"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="shrink-0 text-slate-500"
+                >
+                  <path d="m9 6 6 6-6 6" />
+                </svg>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
       <p className="text-slate-700">
         Already booked?{' '}
         <a
