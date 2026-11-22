@@ -2,7 +2,12 @@ import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it } from 'vitest'
 import App from './App'
-import { MOCK_DB_KEY, resetDemoData, updateAppointment } from './api/schedule'
+import {
+  MOCK_DB_KEY,
+  recordPayment,
+  resetDemoData,
+  updateAppointment,
+} from './api/schedule'
 import { renderWithQuery } from './test/render'
 import { signInWithForm } from './test/patient'
 
@@ -128,6 +133,50 @@ describe('your visits', () => {
     expect(visits).toHaveTextContent('Done')
     expect(
       within(visits).queryByRole('link', { name: /^Check in/ }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('shows the bill for a checked-out visit, read only', async () => {
+    const { user } = openAt('/patient')
+    await signInWithForm(user, 'ana.diaz@example.com')
+
+    const visits = await screen.findByRole('list', {
+      name: 'Your visits today',
+    })
+    const bill = within(visits).getByRole('region', { name: 'Your bill' })
+    expect(
+      within(bill).getByText('Routine cleaning').nextSibling,
+    ).toHaveTextContent('$110.00')
+    expect(
+      within(bill).getByText(/insurance estimate/i).nextSibling,
+    ).toHaveTextContent('$60.00')
+    expect(within(bill).getByText('Your share').nextSibling).toHaveTextContent(
+      '$190.00',
+    )
+    expect(
+      within(bill).getByText(/balance due: \$190\.00/i),
+    ).toBeInTheDocument()
+    expect(within(bill).getByText(/pay at the front desk/i)).toBeInTheDocument()
+    // Read only: nothing to pay with online.
+    expect(within(bill).queryByRole('button')).not.toBeInTheDocument()
+    expect(within(bill).queryByRole('textbox')).not.toBeInTheDocument()
+  })
+
+  it('shows a paid bill as paid', async () => {
+    await recordPayment('maple', 'a-01', { cents: 19_000, method: 'card' })
+    const { user } = openAt('/patient')
+    await signInWithForm(user, 'ana.diaz@example.com')
+
+    const bill = await screen.findByRole('region', { name: 'Your bill' })
+    expect(within(bill).getByText('Paid in full')).toBeInTheDocument()
+  })
+
+  it('shows no bill before checkout', async () => {
+    const { user } = openAt('/patient')
+    await signInWithForm(user, 'owen.hart@example.com')
+    await screen.findByRole('list', { name: 'Your visits today' })
+    expect(
+      screen.queryByRole('region', { name: 'Your bill' }),
     ).not.toBeInTheDocument()
   })
 

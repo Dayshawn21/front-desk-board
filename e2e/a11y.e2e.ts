@@ -416,6 +416,16 @@ test.describe('patient pages', () => {
       await expectNoViolations(page)
     })
 
+    test('your visits, with a bill', async ({ page }) => {
+      await page.goto('/patient')
+      await signInAsPatient(page, 'ana.diaz@example.com')
+      await expect(
+        page.getByRole('region', { name: 'Your bill' }),
+      ).toBeVisible()
+      await expectNoSideways(page)
+      await expectNoViolations(page)
+    })
+
     test('a practice that does not exist', async ({ page }) => {
       await page.goto('/book/nowhere')
       await expect(

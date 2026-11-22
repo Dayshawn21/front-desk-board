@@ -9,7 +9,13 @@ import {
   patientSignIn,
   patientSignOut,
 } from './patientPortal'
-import { ApiError, fetchSchedule, resetDemoData } from './schedule'
+import {
+  ApiError,
+  fetchSchedule,
+  recordPayment,
+  resetDemoData,
+  voidPayment,
+} from './schedule'
 
 // The patient side of the mock server. A patient signs in with an email and
 // password and gets a session token; every patient call takes the token and
@@ -105,6 +111,53 @@ describe("a patient's own account", () => {
     // Nothing about anyone else: no patient list, no other visits.
     expect(JSON.stringify(account)).not.toContain('Ana')
     expect(account).not.toHaveProperty('patients')
+  })
+})
+
+describe("a patient's bill (read only)", () => {
+  // Ana Diaz (a-01) is checked out: a $250.00 cleaning, $60.00 from her plan.
+  async function anasVisit() {
+    const token = await signInAs('ana.diaz@example.com')
+    const account = await fetchMyAccount(token, DEMO_DATE)
+    return account.visits.find((v) => v.id === 'a-01')!
+  }
+
+  it('shows a checked-out visit: line items, estimate, share and balance', async () => {
+    expect((await anasVisit()).bill).toEqual({
+      items: [
+        { name: 'Routine cleaning', cents: 11_000 },
+        { name: 'Periodic exam', cents: 6_500 },
+        { name: 'Bitewing X-rays', cents: 7_500 },
+      ],
+      totalCents: 25_000,
+      insuranceCents: 6_000,
+      patientCents: 19_000,
+      paidCents: 0,
+      balanceCents: 19_000,
+    })
+  })
+
+  it('counts what the desk has collected, not voided payments', async () => {
+    const kept = await recordPayment('maple', 'a-01', {
+      cents: 5_000,
+      method: 'card',
+    })
+    const undone = await recordPayment('maple', 'a-01', {
+      cents: 2_000,
+      method: 'cash',
+    })
+    await voidPayment('maple', undone.id)
+
+    const { bill } = await anasVisit()
+    expect(bill).toMatchObject({ paidCents: kept.cents, balanceCents: 14_000 })
+    // How they paid stays with the desk.
+    expect(JSON.stringify(bill)).not.toMatch(/card|cash|pay-/)
+  })
+
+  it('has no bill before checkout', async () => {
+    const token = await signInAs('owen.hart@example.com')
+    const account = await fetchMyAccount(token, DEMO_DATE)
+    expect(account.visits[0].bill).toBeNull()
   })
 })
 
