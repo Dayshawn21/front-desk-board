@@ -17,6 +17,8 @@ const matrix: [Role, Permission, boolean][] = [
   ['front-desk', 'book', true],
   ['front-desk', 'cancel', true],
   ['front-desk', 'no-show', true],
+  ['front-desk', 'record-payment', true],
+  ['front-desk', 'view-day-totals', false],
 
   ['provider', 'confirm', false],
   ['provider', 'check-in', false],
@@ -28,6 +30,8 @@ const matrix: [Role, Permission, boolean][] = [
   ['provider', 'book', false],
   ['provider', 'cancel', false],
   ['provider', 'no-show', false],
+  ['provider', 'record-payment', false],
+  ['provider', 'view-day-totals', false],
 
   ['office-manager', 'confirm', true],
   ['office-manager', 'check-in', true],
@@ -39,6 +43,8 @@ const matrix: [Role, Permission, boolean][] = [
   ['office-manager', 'book', true],
   ['office-manager', 'cancel', true],
   ['office-manager', 'no-show', true],
+  ['office-manager', 'record-payment', true],
+  ['office-manager', 'view-day-totals', true],
 ]
 
 describe('can', () => {
