@@ -1,12 +1,10 @@
 import { usePractices } from '../../hooks/useSchedule'
 import { bookingPath, PATIENT_HOME_PATH } from '../../lib/route'
 import { formatTimeRange } from '../../lib/time'
+import { OFFICE_COUNT } from './offices'
 import { PatientShell } from './PatientShell'
 
 const SUBTITLE = 'Online booking'
-// The demo has two offices. If that changes, only the space held while
-// they load is off; the list itself still shows them all.
-const OFFICE_COUNT = 2
 
 // /book: the patient picks their dental office first, then books there.
 // Each office is a plain link to its booking page, so it can be opened in

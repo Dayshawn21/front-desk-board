@@ -7,6 +7,7 @@ import { usePractices } from '../../hooks/useSchedule'
 import { PATIENT_HOME_PATH } from '../../lib/route'
 import { formatTimeRange } from '../../lib/time'
 import { rememberPatientToken } from '../../session/patientStorage'
+import { OFFICE_COUNT } from './offices'
 import { PatientHomePage } from './PatientHomePage'
 import { PatientShell } from './PatientShell'
 
@@ -131,9 +132,28 @@ function SignUp({ onSignedUp }: { onSignedUp: () => void }) {
             Your dental office
           </p>
           {practices.isPending && (
-            <p role="status" className="text-slate-600">
-              Loading dental offices…
-            </p>
+            <>
+              <p role="status" className="sr-only">
+                Loading dental offices…
+              </p>
+              {/* One card per office, sized like the real ones, so the
+                  fields below don't jump down when the offices arrive. */}
+              <div
+                aria-hidden="true"
+                data-testid="office-placeholders"
+                className="flex flex-col gap-2"
+              >
+                {Array.from({ length: OFFICE_COUNT }, (_, i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col gap-0.5 rounded-xl border border-slate-200 p-4"
+                  >
+                    <span className="font-medium">&nbsp;</span>
+                    <span className="text-sm">&nbsp;</span>
+                  </div>
+                ))}
+              </div>
+            </>
           )}
           {practices.isError && (
             <p role="alert" className="text-red-800">
