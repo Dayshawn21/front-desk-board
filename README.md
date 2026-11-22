@@ -71,6 +71,13 @@ from a phone, and the error states, and lists every [demo patient login](docs/TO
 
 _Left: the AI assist fills in the form, and the slot finder offers times. Right: a patient checks in from their phone._
 
+<p>
+  <img src="docs/images/billing-drawer.png" width="76%" alt="The check-in drawer's Billing section for Ana Diaz: three line items, a $250.00 total, a $60.00 insurance estimate capped by her plan's annual maximum, a $190.00 patient share, $50.00 paid and $140.00 due, with a Record payment form. Behind it, the office manager's Today's billing totals, and a toast with Undo">
+  <img src="docs/images/patient-bill-phone.png" width="21%" alt="The patient's Your visits page on a phone: Ana's cleaning with her bill, $190.00 share, $50.00 paid, balance due $140.00, pay at the front desk">
+</p>
+
+_Left: checkout billing in the drawer, with the office manager's day totals behind it. Right: the patient sees the same bill, read only. Fees, plans and payments are made up._
+
 | Patient flow                                                                                                 | Dark mode                                                |
 | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
 | ![The patient flow board: Expected, Arrived, In chair and Checked out columns](docs/images/patient-flow.png) | ![The schedule in dark mode](docs/images/board-dark.png) |
