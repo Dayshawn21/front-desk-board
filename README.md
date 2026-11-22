@@ -72,18 +72,18 @@ from a phone, and the error states, and lists every [demo patient login](docs/TO
 _Left: the AI assist fills in the form, and the slot finder offers times. Right: a patient checks in from their phone._
 
 <p>
-  <img src="docs/images/billing-drawer.png" width="76%" alt="The check-in drawer's Billing section for Ana Diaz: three line items, a $250.00 total, a $60.00 insurance estimate capped by her plan's annual maximum, a $190.00 patient share, $50.00 paid and $140.00 due, with a Record payment form. Behind it, the office manager's Today's billing totals, and a toast with Undo">
+  <img src="docs/images/billing-drawer.png" width="76%" alt="The check-in drawer for Ana Diaz after a $50.00 cash payment: a $250.00 total, a $60.00 insurance estimate capped by her plan's annual maximum, a $190.00 patient share, $50.00 paid, Balance due $140.00, the Record payment form, and in the checklist below, Copay collected ticked with $140.00 still due beside it. Behind it, the office manager's Today's billing totals and the payment toast">
   <img src="docs/images/patient-bill-phone.png" width="21%" alt="The patient's Your visits page on a phone: Ana's cleaning with her bill, $190.00 share, $50.00 paid, balance due $140.00, pay at the front desk">
 </p>
 
-_Left: checkout billing in the drawer, with the office manager's day totals behind it. Right: the patient sees the same bill, read only. Fees, plans and payments are made up._
+_Left: checkout billing in the drawer, with what's still due beside Copay collected and the office manager's day totals behind it. Right: the patient sees the same bill, read only. Fees, plans and payments are made up._
 
 <p>
-  <img src="docs/images/move-drawer.png" width="76%" alt="Lena Ortiz's check-in drawer with Move to… open: she overlaps Jon Kim in Chair 2, and five open times later today are offered, with 11:30 AM to 12:15 PM in Chair 2 picked, and Move visit and Keep time buttons. Behind it, the schedule's red double-booking banner">
+  <img src="docs/images/move-drawer.png" width="76%" alt="Lena Ortiz's check-in drawer with Move to… open right under the alert that she overlaps Jon Kim in Chair 2: three times with her own provider in Chair 2 come first, with 11:30 AM to 12:15 PM picked, then 11:45 AM in Chair 3 with Dr. Lindqvist and 12:00 PM in Chair 1 with Dr. Okafor, and Move visit and Keep time buttons. Behind it, the schedule's red double-booking banner">
   <img src="docs/images/patient-moved-phone.png" width="21%" alt="Lena's Your visits page on a phone after the move: her checkup is now 11:30 AM to 12:15 PM, still confirmed, with a Check in button">
 </p>
 
-_Left: Move to… offers the next open times for a visit that hasn't checked in, here to clear the double-booking. Right: the patient's page shows the new time without a reload._
+_Left: Move to… sits under the double-booking it fixes and offers the patient's own provider first, naming any other. Right: the patient's page shows the new time without a reload._
 
 | Patient flow                                                                                                 | Dark mode                                                |
 | ------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |

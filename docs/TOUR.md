@@ -7,11 +7,11 @@ Everything here is fake data. Live demo: https://front-desk-board.vercel.app/ ([
    open the check-in drawer, then **Check in**. Undo is in the toast. **Priya Shah**
    (8:00) never arrived: open her and **Mark no-show**. Or fix the double-booking
    instead: open Lena, press **Move to…**, pick **11:30 AM, Chair 2**, and **Move
-   visit**. The banner clears, and Undo in the toast puts her back. Signed in as Lena
+   visit**. The banner clears, and Undo (in the drawer while it's open, then in the toast) puts her back. Signed in as Lena
    (`lena.ortiz@example.com`, `demo1234`) in a second tab, her visit shows the new time.
 
    <p>
-     <img src="images/move-drawer.png" width="76%" alt="Lena Ortiz's check-in drawer with Move to… open: she overlaps Jon Kim in Chair 2, and five open times later today are offered, with 11:30 AM to 12:15 PM in Chair 2 picked, and Move visit and Keep time buttons. Behind it, the schedule's red double-booking banner">
+     <img src="images/move-drawer.png" width="76%" alt="Lena Ortiz's check-in drawer with Move to… open right under the alert that she overlaps Jon Kim in Chair 2: three times with her own provider in Chair 2 come first, with 11:30 AM to 12:15 PM picked, then 11:45 AM in Chair 3 with Dr. Lindqvist and 12:00 PM in Chair 1 with Dr. Okafor, and Move visit and Keep time buttons. Behind it, the schedule's red double-booking banner">
      <img src="images/patient-moved-phone.png" width="21%" alt="Lena's Your visits page on a phone after the move: her checkup is now 11:30 AM to 12:15 PM, still confirmed, with a Check in button">
    </p>
 
@@ -22,14 +22,15 @@ Everything here is fake data. Live demo: https://front-desk-board.vercel.app/ ([
    **Billing** section lists her cleaning's line items, the insurance estimate (her
    plan has only $60.00 left this year) and her $190.00 share. Enter 50, choose
    **Cash**, and **Record payment**: the balance drops to $140.00, Copay collected
-   ticks itself, and the toast offers Undo. It's pretend: nothing is charged.
+   ticks itself and says "$140.00 still due", and the drawer offers Undo. It's
+   pretend: nothing is charged.
    **Tomás Reyes** (checked out) owes nothing; his plan pays the consult in full.
    In a second tab, sign in at [/patient](https://front-desk-board.vercel.app/patient)
    as `ana.diaz@example.com` (`demo1234`): her visit shows **Your bill**, read only,
    and the balance updates when the desk records a payment.
 
    <p>
-     <img src="images/billing-drawer.png" width="76%" alt="The check-in drawer's Billing section for Ana Diaz: three line items, a $250.00 total, a $60.00 insurance estimate capped by her plan's annual maximum, a $190.00 patient share, $50.00 paid and $140.00 due, with a Record payment form. Behind it, the office manager's Today's billing totals, and a toast with Undo">
+     <img src="images/billing-drawer.png" width="76%" alt="The check-in drawer for Ana Diaz after a $50.00 cash payment: a $250.00 total, a $60.00 insurance estimate capped by her plan's annual maximum, a $190.00 patient share, $50.00 paid, Balance due $140.00, the Record payment form, and in the checklist below, Copay collected ticked with $140.00 still due beside it. Behind it, the office manager's Today's billing totals and the payment toast">
      <img src="images/patient-bill-phone.png" width="21%" alt="The patient's Your visits page on a phone: Ana's cleaning with her bill, $190.00 share, $50.00 paid, balance due $140.00, pay at the front desk">
    </p>
 
