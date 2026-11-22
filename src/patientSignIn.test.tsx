@@ -118,6 +118,10 @@ describe('your visits', () => {
     )
     const header = screen.getByRole('banner')
     expect(within(header).getByText('Owen Hart')).toBeInTheDocument()
+    // Already on Your visits: no header link to the same page.
+    expect(
+      within(header).queryByRole('link', { name: 'Your visits' }),
+    ).not.toBeInTheDocument()
     expect(
       within(header).getByRole('button', { name: 'Sign out' }),
     ).toBeInTheDocument()

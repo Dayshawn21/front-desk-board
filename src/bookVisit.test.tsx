@@ -86,6 +86,24 @@ describe('book a visit (patient page)', () => {
     ).toBeInTheDocument()
   })
 
+  it('links to Your visits from the header, where the bill is', async () => {
+    await openBookingPage()
+    const header = screen.getByRole('banner')
+    expect(
+      within(header).getByRole('link', { name: 'Your visits' }),
+    ).toHaveAttribute('href', '/patient')
+  })
+
+  it('has no Your visits link before signing in', async () => {
+    openSignedOut()
+    await screen.findByRole('heading', { name: 'Sign in to book' })
+    expect(
+      within(screen.getByRole('banner')).queryByRole('link', {
+        name: 'Your visits',
+      }),
+    ).not.toBeInTheDocument()
+  })
+
   it('signing out goes back to the sign-in step', async () => {
     const user = await openBookingPage()
     await user.click(screen.getByRole('button', { name: 'Sign out' }))
