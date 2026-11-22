@@ -5,12 +5,14 @@ import {
   createAppointment,
   fetchPractices,
   fetchSchedule,
+  moveAppointment,
   recordPayment,
   resetDemoData,
   subscribeToMockDb,
   updateAppointment,
   voidPayment,
   type AppointmentPatch,
+  type MoveTo,
   type NewAppointment,
   type NewPayment,
 } from '../api/schedule'
@@ -47,6 +49,20 @@ export function useUpdateAppointment(practiceId: string, date: string) {
     // After a save, mark this practice's schedule stale so the grid,
     // the drawer and (later) the flow view all refetch the new data.
     onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.schedule(practiceId, date),
+      }),
+  })
+}
+
+// Moving a visit. Refetch on success AND on error: a 409 means someone took
+// the time, so the offered times need fresh data either way.
+export function useMoveAppointment(practiceId: string, date: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, to }: { id: string; to: MoveTo }) =>
+      moveAppointment(practiceId, id, to),
+    onSettled: () =>
       queryClient.invalidateQueries({
         queryKey: queryKeys.schedule(practiceId, date),
       }),

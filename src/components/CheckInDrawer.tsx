@@ -8,7 +8,9 @@ import {
   statusStyle,
   typeLabel,
 } from '../lib/display'
+import { canMoveVisit, moveOptions } from '../lib/move'
 import { findConflicts } from '../lib/overlap'
+import type { OpenSlot } from '../lib/slots'
 import { formatTimeRange } from '../lib/time'
 import {
   cancelAction,
@@ -20,6 +22,7 @@ import {
 import { useSession } from '../session/SessionContext'
 import { BillingSection } from './BillingSection'
 import { CheckInLink } from './CheckInLink'
+import { MoveVisit } from './MoveVisit'
 import type {
   Appointment,
   AppointmentStatus,
@@ -49,6 +52,10 @@ type CheckInDrawerProps = {
   onRecordPayment: (input: NewPayment) => Promise<void>
   isRecordingPayment: boolean
   paymentError: string | null
+  // Moving a visit that hasn't checked in. Resolves when moved; rejects if not.
+  onMove: (to: OpenSlot) => Promise<void>
+  isMoving: boolean
+  moveError: string | null
   onClose: () => void
 }
 
@@ -65,6 +72,9 @@ export function CheckInDrawer({
   onRecordPayment,
   isRecordingPayment,
   paymentError,
+  onMove,
+  isMoving,
+  moveError,
   onClose,
 }: CheckInDrawerProps) {
   // Notes: a local copy, so typing stays instant. The parent remounts this
@@ -319,6 +329,16 @@ export function CheckInDrawer({
               visitId={appointment.id}
             />
           )}
+
+        {canMoveVisit(appointment.status) && can('move') && (
+          <MoveVisit
+            options={moveOptions(day, appointment, now)}
+            chairs={day.chairs}
+            isSaving={isMoving}
+            onMove={onMove}
+            saveError={moveError}
+          />
+        )}
 
         <div className="flex flex-col gap-4">
           {!canEdit && (

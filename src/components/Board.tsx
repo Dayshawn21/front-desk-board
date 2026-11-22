@@ -3,6 +3,7 @@ import { DEMO_DATE, DEMO_NOW } from '../config'
 import { useBooking } from '../hooks/useBooking'
 import {
   useCreateAppointment,
+  useMoveAppointment,
   usePractices,
   useRecordPayment,
   useResetDemoData,
@@ -10,6 +11,7 @@ import {
   useUpdateAppointment,
   useVoidPayment,
 } from '../hooks/useSchedule'
+import { useMoves } from '../hooks/useMoves'
 import { usePayments } from '../hooks/usePayments'
 import { useStatusChanges } from '../hooks/useStatusChanges'
 import { nextToastKey } from '../lib/statusChange'
@@ -55,6 +57,7 @@ export function Board({ theme, onThemeChange }: BoardProps) {
   const create = useCreateAppointment(practiceId, DEMO_DATE)
   const recordPayment = useRecordPayment(practiceId, DEMO_DATE)
   const voidPayment = useVoidPayment(practiceId, DEMO_DATE)
+  const move = useMoveAppointment(practiceId, DEMO_DATE)
   const resetDemoData = useResetDemoData()
 
   const statusChanges = useStatusChanges({
@@ -64,6 +67,7 @@ export function Board({ theme, onThemeChange }: BoardProps) {
     onChanged: () => {
       setNotice(null)
       payments.clear()
+      moves.clear()
     },
   })
   // Payments share the one toast: whichever changed last shows, with its Undo.
@@ -75,6 +79,18 @@ export function Board({ theme, onThemeChange }: BoardProps) {
     onChanged: () => {
       setNotice(null)
       statusChanges.clear()
+      moves.clear()
+    },
+  })
+  // Moves share the toast too.
+  const moves = useMoves({
+    day: schedule.data,
+    move,
+    can,
+    onChanged: () => {
+      setNotice(null)
+      statusChanges.clear()
+      payments.clear()
     },
   })
   const booking = useBooking({
@@ -84,6 +100,7 @@ export function Board({ theme, onThemeChange }: BoardProps) {
     onBooked: (text) => {
       statusChanges.clear()
       payments.clear()
+      moves.clear()
       setNotice({ key: nextToastKey(), text })
     },
   })
@@ -98,6 +115,7 @@ export function Board({ theme, onThemeChange }: BoardProps) {
   const openDrawer = (id: string) => {
     update.reset() // clear any error left over from an earlier save
     recordPayment.reset()
+    move.reset()
     setSelectedId(id)
   }
 
@@ -105,8 +123,10 @@ export function Board({ theme, onThemeChange }: BoardProps) {
     setSelectedId(null) // never keep one practice's drawer open on another
     statusChanges.clear()
     payments.clear()
+    moves.clear()
     setNotice(null)
     update.reset()
+    move.reset()
     setPracticeId(id)
   }
 
@@ -115,7 +135,9 @@ export function Board({ theme, onThemeChange }: BoardProps) {
     setSelectedId(null)
     statusChanges.clear()
     payments.clear()
+    moves.clear()
     update.reset()
+    move.reset()
     resetDemoData()
     setNotice({ key: nextToastKey(), text: 'Demo data reset' })
   }
@@ -206,6 +228,15 @@ export function Board({ theme, onThemeChange }: BoardProps) {
                   {voidPayment.error.message}
                 </p>
               )}
+              {/* Undoing a move from the toast failed (the drawer may be closed). */}
+              {move.isError && !selected && (
+                <p
+                  role="alert"
+                  className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+                >
+                  {move.error.message}
+                </p>
+              )}
               {view === 'schedule' ? (
                 <ScheduleGrid
                   day={schedule.data}
@@ -252,6 +283,9 @@ export function Board({ theme, onThemeChange }: BoardProps) {
           paymentError={
             recordPayment.error?.message ?? voidPayment.error?.message ?? null
           }
+          onMove={(to) => moves.moveVisit(selected.id, to)}
+          isMoving={move.isPending}
+          moveError={move.error?.message ?? null}
           onClose={() => setSelectedId(null)}
         />
       )}
@@ -270,17 +304,20 @@ export function Board({ theme, onThemeChange }: BoardProps) {
       )}
 
       <UndoToast
-        toast={statusChanges.toast ?? payments.toast ?? notice}
+        toast={statusChanges.toast ?? payments.toast ?? moves.toast ?? notice}
         undo={
           statusChanges.toast
             ? statusChanges.undo
             : payments.toast
               ? payments.undo
-              : undefined
+              : moves.toast
+                ? moves.undo
+                : undefined
         }
         onDismiss={() => {
           statusChanges.clear()
           payments.clear()
+          moves.clear()
           setNotice(null)
         }}
       />
