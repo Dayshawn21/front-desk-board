@@ -66,6 +66,20 @@ test.describe('signed in', () => {
     await expectNoViolations(page)
   })
 
+  test('check-in drawer with billing (checked-out visit)', async ({ page }) => {
+    await page.getByRole('button', { name: /^Ana Diaz,/ }).click()
+    const billing = page
+      .getByRole('dialog', { name: 'Ana Diaz' })
+      .getByRole('region', { name: 'Billing' })
+    await billing.getByLabel('Amount').fill('abc')
+    await billing.getByRole('button', { name: 'Record payment' }).click()
+    await expect(billing.getByLabel('Amount')).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    )
+    await expectNoViolations(page)
+  })
+
   test('new appointment panel', async ({ page }) => {
     await page.getByRole('button', { name: 'New appointment' }).click()
     const booking = page.getByRole('dialog', { name: 'New appointment' })
@@ -410,4 +424,13 @@ test.describe('patient pages', () => {
       await expectNoViolations(page)
     })
   })
+})
+
+test("office manager's board with today's billing totals", async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: /theo grant/i }).click()
+  await expect(
+    page.getByRole('region', { name: "Today's billing" }),
+  ).toBeVisible()
+  await expectNoViolations(page)
 })
