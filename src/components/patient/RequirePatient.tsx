@@ -24,6 +24,7 @@ export type PatientSession = {
 type RequirePatientProps = {
   subtitle: string
   practiceName?: string // shown on the sign-in step, when the page knows it
+  practiceLoading?: boolean // the page is still finding out which practice
   heading: string // the sign-in step's heading, e.g. "Sign in to check in"
   intro: string
   children: (session: PatientSession) => ReactNode
@@ -40,6 +41,7 @@ type RequirePatientProps = {
 export function RequirePatient({
   subtitle,
   practiceName,
+  practiceLoading = false,
   heading,
   intro,
   children,
@@ -58,7 +60,11 @@ export function RequirePatient({
 
   if (token === null) {
     return (
-      <PatientShell practiceName={practiceName} subtitle={subtitle}>
+      <PatientShell
+        practiceName={practiceName}
+        nameLoading={practiceLoading}
+        subtitle={subtitle}
+      >
         <PatientSignInForm
           heading={heading}
           intro={intro}
@@ -99,7 +105,12 @@ export function RequirePatient({
 
   if (account.isPending) {
     return (
-      <PatientShell practiceName={practiceName} subtitle={subtitle}>
+      // The account says which practice: until it arrives, no name.
+      <PatientShell
+        practiceName={practiceName}
+        nameLoading={practiceLoading || !practiceName}
+        subtitle={subtitle}
+      >
         <p role="status" className="text-slate-600">
           Loading…
         </p>

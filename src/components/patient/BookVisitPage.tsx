@@ -29,7 +29,7 @@ export function BookVisitPage({ practiceId }: { practiceId: string }) {
 
   if (practices.isPending) {
     return (
-      <PatientShell subtitle={SUBTITLE}>
+      <PatientShell subtitle={SUBTITLE} nameLoading>
         <p role="status" className="text-slate-600">
           Loading…
         </p>

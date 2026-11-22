@@ -3,7 +3,10 @@ import { PATIENT_HOME_PATH } from '../../lib/route'
 import { BrandMark } from '../BrandMark'
 
 type PatientShellProps = {
-  practiceName?: string // unknown while loading, or for a bad link
+  practiceName?: string // none for a page with no practice, or a bad link
+  // The practice is still loading: show no name yet, rather than this
+  // product's own name and then the practice's a moment later.
+  nameLoading?: boolean
   subtitle: string // what this page is, e.g. "Online booking"
   // The signed-in patient, shown in the header with a way to sign out.
   signedIn?: {
@@ -19,6 +22,7 @@ type PatientShellProps = {
 // Calmer than the staff board: no header tools, no dense grid.
 export function PatientShell({
   practiceName,
+  nameLoading = false,
   subtitle,
   signedIn,
   onYourVisits = false,
@@ -31,7 +35,12 @@ export function PatientShell({
           <BrandMark size={36} />
           <div className="min-w-0 flex-1">
             <p className="leading-tight font-semibold tracking-tight">
-              {practiceName ?? 'Front Desk Board'}
+              {nameLoading ? (
+                // Holds the line's height so nothing jumps when it arrives.
+                <span aria-hidden="true">&nbsp;</span>
+              ) : (
+                (practiceName ?? 'Front Desk Board')
+              )}
             </p>
             <p className="text-sm text-slate-600">{subtitle}</p>
           </div>

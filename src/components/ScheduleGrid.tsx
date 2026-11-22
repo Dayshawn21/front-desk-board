@@ -1,3 +1,4 @@
+import { labelCoveredByNow } from '../lib/nowLine'
 import { cancelReasonLabel, statusStyle, typeLabel } from '../lib/display'
 import { assignLanes } from '../lib/lanes'
 import { findConflicts } from '../lib/overlap'
@@ -215,7 +216,12 @@ export function ScheduleGrid({
                   style={{ gridColumn: '1 / -1', gridRow: i + 2 }}
                 />
                 <div
-                  className="pt-0.5 pr-2 text-right text-xs text-slate-600 tabular-nums"
+                  // Hidden under the now marker, which says the time itself.
+                  className={`pt-0.5 pr-2 text-right text-xs text-slate-600 tabular-nums ${
+                    showNow && labelCoveredByNow(minutes, nowMinutes)
+                      ? 'invisible'
+                      : ''
+                  }`}
                   style={{ gridColumn: 1, gridRow: i + 2 }}
                 >
                   {minutes % 30 === 0 ? formatTime(minutes) : ''}

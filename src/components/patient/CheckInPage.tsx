@@ -29,6 +29,7 @@ export function CheckInPage({ practiceId, visitId }: CheckInPageProps) {
     <RequirePatient
       subtitle={SUBTITLE}
       practiceName={practiceName}
+      practiceLoading={practices.isPending}
       heading="Sign in to check in"
       intro="Then tick your forms and tell us you're here."
     >
