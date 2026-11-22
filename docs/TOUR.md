@@ -15,6 +15,15 @@ Everything here is fake data. Live demo: https://front-desk-board.vercel.app/ ([
    In a second tab, sign in at [/patient](https://front-desk-board.vercel.app/patient)
    as `ana.diaz@example.com` (`demo1234`): her visit shows **Your bill**, read only,
    and the balance updates when the desk records a payment.
+
+   <p>
+     <img src="images/billing-drawer.png" width="76%" alt="The check-in drawer's Billing section for Ana Diaz: three line items, a $250.00 total, a $60.00 insurance estimate capped by her plan's annual maximum, a $190.00 patient share, $50.00 paid and $140.00 due, with a Record payment form. Behind it, the office manager's Today's billing totals, and a toast with Undo">
+     <img src="images/patient-bill-phone.png" width="21%" alt="The patient's Your visits page on a phone: Ana's cleaning with her bill, $190.00 share, $50.00 paid, balance due $140.00, pay at the front desk">
+   </p>
+
+   _Left: the drawer after recording $50.00 in cash (shown as Theo Grant, so the day's
+   totals are visible behind it). Right: Ana's own bill on her phone._
+
 4. Click an empty spot on the schedule, or **New appointment**, to book. In the panel,
    type "60 min cleaning for Ana Diaz this afternoon with Hygienist Patel" and press
    **Fill in with AI**, then pick a time.
