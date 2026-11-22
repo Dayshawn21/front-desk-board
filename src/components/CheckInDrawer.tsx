@@ -56,6 +56,13 @@ type CheckInDrawerProps = {
   onMove: (to: OpenSlot) => Promise<void>
   isMoving: boolean
   moveError: string | null
+  // This visit's latest change, with its Undo when allowed. Shown here
+  // because the drawer traps Tab and the toast sits outside it.
+  lastChange?: {
+    key: number
+    text: string
+    undo?: { label: string; onUndo: () => void }
+  } | null
   onClose: () => void
 }
 
@@ -75,6 +82,7 @@ export function CheckInDrawer({
   onMove,
   isMoving,
   moveError,
+  lastChange = null,
   onClose,
 }: CheckInDrawerProps) {
   // Notes: a local copy, so typing stays instant. The parent remounts this
@@ -134,6 +142,7 @@ export function CheckInDrawer({
 
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const statusHeadingRef = useRef<HTMLHeadingElement>(null)
+  const lastChangeRef = useRef<HTMLParagraphElement>(null)
 
   // Cancelling takes two steps: "Cancel visit…" opens a reason, then confirm.
   const [confirmingCancel, setConfirmingCancel] = useState(false)
@@ -314,6 +323,32 @@ export function CheckInDrawer({
                   className="h-11 rounded-lg border border-slate-300 px-4 text-sm font-semibold text-slate-800 hover:bg-slate-50 aria-disabled:opacity-60"
                 >
                   {undo.label}
+                </button>
+              )}
+            </div>
+          )}
+          {lastChange && (
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-slate-100 py-1 pr-1 pl-3 text-sm text-slate-800">
+              {/* Not a live region: the toast already announced it. */}
+              <p
+                ref={lastChangeRef}
+                tabIndex={-1}
+                className="mr-auto py-2 outline-none"
+              >
+                Last change: {lastChange.text}
+              </p>
+              {lastChange.undo && (
+                <button
+                  type="button"
+                  aria-label={lastChange.undo.label}
+                  onClick={() => {
+                    // The button goes away once undone: keep focus here.
+                    lastChangeRef.current?.focus()
+                    lastChange.undo?.onUndo()
+                  }}
+                  className="h-11 rounded-md px-3 font-semibold text-teal-800 underline underline-offset-2 hover:bg-slate-200"
+                >
+                  Undo
                 </button>
               )}
             </div>

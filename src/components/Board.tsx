@@ -109,6 +109,22 @@ export function Board({ theme, onThemeChange }: BoardProps) {
   // so the drawer shows fresh data after every save.
   const selected = schedule.data?.appointments.find((a) => a.id === selectedId)
 
+  // One toast for every kind of change: whichever happened last.
+  const toast = statusChanges.toast ?? payments.toast ?? moves.toast ?? notice
+  const undo = statusChanges.toast
+    ? statusChanges.undo
+    : payments.toast
+      ? payments.undo
+      : moves.toast
+        ? moves.undo
+        : undefined
+  // The latest change to the visit whose drawer is open, for the drawer to
+  // show with its Undo (the drawer traps Tab, so the toast is out of reach).
+  const drawerChange =
+    selected && toast?.appointmentId === selected.id
+      ? { key: toast.key, text: changeDetail(toast), undo }
+      : null
+
   // Which card is saving right now (for the flow board's buttons).
   const savingId = update.isPending ? (update.variables?.id ?? null) : null
 
@@ -286,6 +302,7 @@ export function Board({ theme, onThemeChange }: BoardProps) {
           onMove={(to) => moves.moveVisit(selected.id, to)}
           isMoving={move.isPending}
           moveError={move.error?.message ?? null}
+          lastChange={drawerChange}
           onClose={() => setSelectedId(null)}
         />
       )}
@@ -304,16 +321,11 @@ export function Board({ theme, onThemeChange }: BoardProps) {
       )}
 
       <UndoToast
-        toast={statusChanges.toast ?? payments.toast ?? moves.toast ?? notice}
-        undo={
-          statusChanges.toast
-            ? statusChanges.undo
-            : payments.toast
-              ? payments.undo
-              : moves.toast
-                ? moves.undo
-                : undefined
-        }
+        toast={toast}
+        // While the drawer offers this Undo itself, the toast steps aside
+        // and holds (it would otherwise time out behind the drawer).
+        undo={drawerChange ? undefined : undo}
+        hold={drawerChange !== null}
         onDismiss={() => {
           statusChanges.clear()
           payments.clear()
@@ -323,4 +335,13 @@ export function Board({ theme, onThemeChange }: BoardProps) {
       />
     </div>
   )
+}
+
+// "Lena Ortiz: moved to 11:30 AM" -> "moved to 11:30 AM": inside her own
+// drawer the name goes without saying.
+function changeDetail(toast: ToastMessage): string {
+  const prefix = `${toast.name}: `
+  return toast.name && toast.text.startsWith(prefix)
+    ? toast.text.slice(prefix.length)
+    : toast.text
 }

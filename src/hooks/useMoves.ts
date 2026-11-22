@@ -91,7 +91,14 @@ export function useMoves({ day, move, can, onChanged }: Options) {
 
   return {
     moveVisit,
-    toast: last ? { key: last.key, text: last.text } : null,
+    toast: last
+      ? {
+          key: last.key,
+          text: last.text,
+          appointmentId: last.appointmentId,
+          name: last.name,
+        }
+      : null,
     undo,
     clear: () => setLast(null),
   }

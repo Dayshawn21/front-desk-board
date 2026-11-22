@@ -2,15 +2,28 @@ import { useEffect, useEffectEvent, useState } from 'react'
 
 export const TOAST_MS = 8000
 
-export type ToastMessage = { key: number; text: string }
+export type ToastMessage = {
+  key: number
+  text: string // "Lena Ortiz: moved to 11:30 AM, Chair 2"
+  // Set when the check-in drawer should offer this change's Undo itself
+  // (the drawer traps Tab, so a keyboard user can't reach the toast).
+  appointmentId?: string
+  name?: string // the patient's name the text starts with
+}
 
 type UndoToastProps = {
   toast: ToastMessage | null
   undo?: { label: string; onUndo: () => void } // omitted when undo isn't allowed
   onDismiss: () => void
+  hold?: boolean // a drawer shows this change: don't time out meanwhile
 }
 
-export function UndoToast({ toast, undo, onDismiss }: UndoToastProps) {
+export function UndoToast({
+  toast,
+  undo,
+  onDismiss,
+  hold = false,
+}: UndoToastProps) {
   // Pause the timer while the pointer or keyboard focus is on the toast,
   // so nobody loses the Undo button while reaching for it (WCAG 2.2.1).
   // Stored per toast (by key), so a new toast never inherits a pause from an
@@ -25,10 +38,10 @@ export function UndoToast({ toast, undo, onDismiss }: UndoToastProps) {
   const dismiss = useEffectEvent(() => onDismiss())
 
   useEffect(() => {
-    if (!toast || paused) return
+    if (!toast || paused || hold) return
     const timer = setTimeout(dismiss, TOAST_MS)
     return () => clearTimeout(timer)
-  }, [toast, paused])
+  }, [toast, paused, hold])
 
   return (
     // The live region is always in the DOM so screen readers reliably

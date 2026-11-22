@@ -68,9 +68,28 @@ export function useStatusChanges({ day, update, can, onChanged }: Options) {
   return {
     changeStatus,
     toast: lastChange
-      ? { key: lastChange.key, text: toastTextFor(lastChange) }
+      ? {
+          key: lastChange.key,
+          text: toastTextFor(lastChange),
+          // The drawer already has its own step back for a forward step or
+          // an undo of one; a cancel or no-show (and putting either back)
+          // has nowhere else to be undone from inside the drawer.
+          ...(inDrawer(lastChange) && {
+            appointmentId: lastChange.appointmentId,
+            name: lastChange.name,
+          }),
+        }
       : null,
     undo,
     clear: () => setLastChange(null),
   }
+}
+
+function inDrawer(change: StatusChange): boolean {
+  return (
+    change.kind === 'cancel' ||
+    change.kind === 'no-show' ||
+    change.kind === 'restore' ||
+    (change.kind === 'undo' && change.from === 'no-show')
+  )
 }

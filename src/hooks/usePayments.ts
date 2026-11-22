@@ -17,6 +17,7 @@ type Options = {
 type LastPayment = {
   key: number
   paymentId: string
+  appointmentId: string
   name: string
   text: string
   cents: number
@@ -45,6 +46,7 @@ export function usePayments({ day, record, voidIt, can, onChanged }: Options) {
     setLast({
       key: nextToastKey(),
       paymentId: payment.id,
+      appointmentId,
       name,
       cents: payment.cents,
       text: paymentToastText({
@@ -80,7 +82,14 @@ export function usePayments({ day, record, voidIt, can, onChanged }: Options) {
 
   return {
     recordPayment,
-    toast: last ? { key: last.key, text: last.text } : null,
+    toast: last
+      ? {
+          key: last.key,
+          text: last.text,
+          appointmentId: last.appointmentId,
+          name: last.name,
+        }
+      : null,
     undo,
     clear: () => setLast(null),
   }
