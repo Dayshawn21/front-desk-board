@@ -13,6 +13,8 @@ export const PERMISSIONS = [
   'book',
   'cancel',
   'no-show',
+  'record-payment',
+  'view-day-totals',
 ] as const
 
 export type Permission = (typeof PERMISSIONS)[number]
@@ -33,6 +35,8 @@ const rules: Record<Permission, Role[]> = {
   book: ['front-desk', 'office-manager'],
   cancel: ['front-desk', 'office-manager'],
   'no-show': ['front-desk', 'office-manager'],
+  'record-payment': ['front-desk', 'office-manager'],
+  'view-day-totals': ['office-manager'], // billed, collected, outstanding
 }
 
 export function can(role: Role, permission: Permission): boolean {
