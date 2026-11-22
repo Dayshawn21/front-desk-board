@@ -13,6 +13,8 @@ function makeDay(appointments: Partial<Appointment>[] = []): ScheduleDay {
       { id: 'c2', practiceId: 'maple', name: 'Chair 2', provider: 'Dr. B' },
     ],
     patients: [],
+    fees: [],
+    payments: [],
     appointments: appointments.map((a, i) => ({
       id: `x-${i}`,
       practiceId: 'maple',

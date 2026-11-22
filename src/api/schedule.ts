@@ -5,7 +5,9 @@ import type {
   Appointment,
   Chair,
   CheckInChecklist,
+  Fee,
   Patient,
+  Payment,
   Practice,
   ScheduleDay,
 } from '../types'
@@ -36,6 +38,9 @@ export type Db = {
   chairs: Chair[]
   patients: Patient[]
   appointments: Appointment[]
+  fees: Fee[] // each practice's fee list
+  payments: Payment[] // recorded at checkout; Undo marks one voided
+  nextPaymentId: number
   nextBookingId: number // in the db, so two tabs never hand out the same id
   // Signed-in patients: session token -> patient id. Reset demo data
   // empties it, which signs every patient out.
@@ -76,8 +81,9 @@ export type PatientAccount = {
 }
 
 // Versioned, so a change to the data's shape starts fresh (v2 added
-// patient sessions, v3 patient sign-ups, v4 password resets, v5 rate limits).
-export const MOCK_DB_KEY = 'front-desk-board.mock-db.v5'
+// patient sessions, v3 patient sign-ups, v4 password resets, v5 rate limits,
+// v6 fees, insurance plans and payments).
+export const MOCK_DB_KEY = 'front-desk-board.mock-db.v6'
 
 function createDb(): Db {
   return structuredClone({
@@ -85,6 +91,9 @@ function createDb(): Db {
     chairs: seed.chairs,
     patients: seed.patients,
     appointments: seed.appointments,
+    fees: seed.fees,
+    payments: [],
+    nextPaymentId: 1,
     nextBookingId: 1,
     patientSessions: {},
     patientAccounts: [],
@@ -107,6 +116,9 @@ function isDb(value: unknown): value is Db {
     Array.isArray(db.chairs) &&
     Array.isArray(db.patients) &&
     Array.isArray(db.appointments) &&
+    Array.isArray(db.fees) &&
+    Array.isArray(db.payments) &&
+    typeof db.nextPaymentId === 'number' &&
     typeof db.nextBookingId === 'number' &&
     typeof db.patientSessions === 'object' &&
     db.patientSessions !== null &&
@@ -221,13 +233,19 @@ export async function fetchSchedule(
     throw new ApiError(`Unknown practice: ${practiceId}`, 404)
   }
 
+  const appointments = forPractice(db.appointments, practiceId).filter((a) =>
+    a.start.startsWith(date),
+  )
+  const visitIds = new Set(appointments.map((a) => a.id))
   return structuredClone({
     practice,
     date,
     chairs: forPractice(db.chairs, practiceId),
     patients: forPractice(db.patients, practiceId),
-    appointments: forPractice(db.appointments, practiceId).filter((a) =>
-      a.start.startsWith(date),
+    appointments,
+    fees: forPractice(db.fees, practiceId),
+    payments: forPractice(db.payments, practiceId).filter((p) =>
+      visitIds.has(p.appointmentId),
     ),
   })
 }

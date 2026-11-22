@@ -2,6 +2,9 @@ import type {
   Appointment,
   Chair,
   CheckInChecklist,
+  Fee,
+  FeeCategory,
+  InsuranceCoverage,
   Patient,
   Practice,
 } from '../types'
@@ -59,6 +62,57 @@ export const chairs: Chair[] = [
   },
 ]
 
+// Each practice's fee list. Made-up names and prices; no real procedure
+// codes (CDT codes are copyrighted by the ADA). Prices are integer cents.
+const feeList: [string, string, FeeCategory, number, number][] = [
+  // procedure, name, category, Maple price, Riverbend price
+  ['routine-cleaning', 'Routine cleaning', 'preventive', 11_000, 9_500],
+  ['periodic-exam', 'Periodic exam', 'preventive', 6_500, 6_000],
+  ['bitewing-xrays', 'Bitewing X-rays', 'preventive', 7_500, 7_000],
+  ['comprehensive-exam', 'New patient exam', 'preventive', 12_000, 11_000],
+  ['full-mouth-xrays', 'Full set of X-rays', 'preventive', 15_000, 14_000],
+  ['treatment-consult', 'Treatment consult', 'preventive', 8_000, 7_500],
+  ['limited-exam', 'Problem-focused exam', 'preventive', 7_500, 7_000],
+  ['single-xray', 'Single X-ray', 'preventive', 3_500, 3_000],
+  ['tooth-colored-filling', 'Tooth-colored filling', 'basic', 19_500, 18_000],
+  ['pain-relief-visit', 'Pain relief treatment', 'basic', 15_000, 14_000],
+  ['porcelain-crown', 'Porcelain crown', 'major', 120_000, 110_000],
+  ['core-buildup', 'Core build-up', 'major', 30_000, 28_000],
+]
+
+export const fees: Fee[] = feeList.flatMap(
+  ([procedure, name, category, maple, riverbend]) => [
+    {
+      id: `maple-${procedure}`,
+      practiceId: 'maple',
+      procedure,
+      name,
+      category,
+      cents: maple,
+    },
+    {
+      id: `riverbend-${procedure}`,
+      practiceId: 'riverbend',
+      procedure,
+      name,
+      category,
+      cents: riverbend,
+    },
+  ],
+)
+
+// Two fake plans. Each patient on a plan has their own remaining benefit.
+const plans: Record<string, Omit<InsuranceCoverage, 'remainingCents'>> = {
+  'Acme Dental PPO': {
+    percent: { preventive: 100, basic: 80, major: 50 },
+    annualMaxCents: 150_000,
+  },
+  'Bluebird Dental': {
+    percent: { preventive: 100, basic: 70, major: 50 },
+    annualMaxCents: 100_000,
+  },
+}
+
 let phoneSeq = 0
 function patient(
   id: string,
@@ -66,16 +120,31 @@ function patient(
   firstName: string,
   lastName: string,
   insuranceProvider: string | null,
+  remainingCents?: number, // default: the plan's whole annual maximum
 ): Patient {
   phoneSeq += 1
   const phone = `555-01${String(phoneSeq).padStart(2, '0')}`
-  return { id, practiceId, firstName, lastName, phone, insuranceProvider }
+  const plan = insuranceProvider ? plans[insuranceProvider] : undefined
+  const insurance = plan
+    ? { ...plan, remainingCents: remainingCents ?? plan.annualMaxCents }
+    : null
+  return {
+    id,
+    practiceId,
+    firstName,
+    lastName,
+    phone,
+    insuranceProvider,
+    insurance,
+  }
 }
 
 export const patients: Patient[] = [
   // Maple Street
-  patient('p-ana', 'maple', 'Ana', 'Diaz', 'Bluebird Dental'),
-  patient('p-marcus', 'maple', 'Marcus', 'Bell', 'Acme Dental PPO'),
+  // Ana has only $60 of this year's benefit left, so she owes most of
+  // today's cleaning (the annual maximum at work).
+  patient('p-ana', 'maple', 'Ana', 'Diaz', 'Bluebird Dental', 6_000),
+  patient('p-marcus', 'maple', 'Marcus', 'Bell', 'Acme Dental PPO', 30_000),
   patient('p-grace', 'maple', 'Grace', 'Liu', 'Acme Dental PPO'),
   patient('p-owen', 'maple', 'Owen', 'Hart', null),
   patient('p-priya', 'maple', 'Priya', 'Shah', 'Bluebird Dental'),
@@ -87,7 +156,7 @@ export const patients: Patient[] = [
   patient('p-ravi', 'maple', 'Ravi', 'Menon', 'Bluebird Dental'),
   patient('p-jade', 'maple', 'Jade', 'Ellis', 'Acme Dental PPO'),
   patient('p-elena', 'maple', 'Elena', 'Park', 'Bluebird Dental'),
-  patient('p-dev', 'maple', 'Dev', 'Coleman', 'Acme Dental PPO'),
+  patient('p-dev', 'maple', 'Dev', 'Coleman', 'Acme Dental PPO', 0), // maximum reached
   patient('p-marta', 'maple', 'Marta', 'Silva', null),
   // Riverbend
   patient('p-hana', 'riverbend', 'Hana', 'Sato', 'Bluebird Dental'),
@@ -153,7 +222,12 @@ export const appointments: Appointment[] = [
     to: '8:45',
     type: 'cleaning',
     status: 'completed',
-    checklist: ALL_DONE,
+    // Checked out but not paid yet: her payment is the billing demo.
+    checklist: checklist({
+      insuranceVerified: true,
+      formsComplete: true,
+      medicalHistoryReviewed: true,
+    }),
   }),
   appt({
     id: 'a-02',

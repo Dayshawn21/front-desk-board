@@ -260,6 +260,7 @@ export async function patientSignUp(
     lastName,
     phone,
     insuranceProvider: null, // the desk adds it at the first visit
+    insurance: null,
   })
   fresh.patientAccounts.push({ email, patientId, salt, passwordHash })
   const token = startSession(fresh, patientId)
@@ -319,6 +320,8 @@ function serverDay(db: Db, practice: Practice, date: string): ScheduleDay {
     chairs: mine(db.chairs),
     patients: mine(db.patients),
     appointments: mine(db.appointments).filter((a) => a.start.startsWith(date)),
+    fees: mine(db.fees),
+    payments: [], // open times don't need them
   }
 }
 
