@@ -24,6 +24,20 @@ describe('UndoToast timing', () => {
     expect(onDismiss).toHaveBeenCalledTimes(1)
   })
 
+  it('holds while a drawer shows the same change, then counts down again', () => {
+    const onDismiss = vi.fn()
+    const toast = { key: 1, text: 'Saved' }
+    const { rerender } = render(
+      <UndoToast toast={toast} hold onDismiss={onDismiss} />,
+    )
+    act(() => vi.advanceTimersByTime(TOAST_MS * 3))
+    expect(onDismiss).not.toHaveBeenCalled()
+
+    rerender(<UndoToast toast={toast} onDismiss={onDismiss} />)
+    act(() => vi.advanceTimersByTime(TOAST_MS))
+    expect(onDismiss).toHaveBeenCalledTimes(1)
+  })
+
   it('waits while keyboard focus is on the toast', () => {
     const onDismiss = vi.fn()
     render(
