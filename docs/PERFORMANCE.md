@@ -28,11 +28,11 @@ slowdown Lighthouse uses for phones, as medians of 12 interleaved runs.
 
 On the live site, phone and desktop. Accessibility, Best Practices and SEO are 100 on
 every page tested: the staff sign-in page, the board, and the ten patient pages below.
-Performance is 83–100, most pages 96 or higher:
+Performance is 93–100, most pages 96 or higher:
 
 | Page                       | Phone | Desktop |
 | -------------------------- | ----- | ------- |
-| Choose an office (`/book`) | 83    | 89      |
+| Choose an office (`/book`) | 98    | 100     |
 | Book, signed out           | 100   | 99      |
 | Patient sign-in            | 97    | 97      |
 | Sign up                    | 93    | 99      |
@@ -46,14 +46,14 @@ Performance is 83–100, most pages 96 or higher:
 The signed-in pages ran as the demo patient with the cache warm, so their Performance
 reads a little high.
 
-**`/book` was the weakest, and part of that is fixed.** The page showed a single
-"Loading…" line until the office list came back (after the mock API's 400 ms), then
-grew, pushing the footer down: a layout shift of 0.082, the only one on any patient
+**`/book` was the weakest (83 phone, 89 desktop) until a fix.** The page showed a
+single "Loading…" line until the office list came back (after the mock API's 400 ms),
+then grew, pushing the footer down: a layout shift of 0.082, the only one on any patient
 page. It now shows the heading, the sign-in link and two placeholder cards the size of
-the real ones from the start. On a local production build the shift went from 0.082 to
-0.004. The rest of its score is Total Blocking Time, which swung from 10 to 430 ms
-between runs of the same build on my machine (scores 88–99), so the table's 83 and 89
-are from before the fix and partly noise. I haven't re-run Lighthouse on the live site.
+the real ones from the start. On the live site the shift is now 0.004 on a phone (0.013
+on desktop), and the table shows the middle of three runs. Total Blocking Time still
+varies from run to run: one of the three phone runs scored 76, with 1.1 s of blocking
+time, on the same build as the 98 and 99.
 
 Not covered: the reset-password page (it needs a live token), dark mode, and the open
 drawers and dialogs (axe checks those; Lighthouse only scores page loads).
