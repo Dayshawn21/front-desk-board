@@ -1,4 +1,5 @@
 import { DEMO_NOW } from '../config'
+import { balanceDue, estimateVisit, lineItemsFor } from '../lib/billing'
 import { PATIENT_VISITS, patientTimes } from '../lib/patientBooking'
 import { patientEmail, patientLogins } from '../mocks/patientLogins'
 import type {
@@ -39,6 +40,19 @@ export type MyVisit = {
   // Only the boxes the patient ticks themselves; insurance and the copay
   // stay with the front desk.
   checklist: { formsComplete: boolean; medicalHistoryReviewed: boolean }
+  bill: MyBill | null // once checked out; read only
+}
+
+// What a patient sees of their own bill: what was done, the insurance
+// estimate, their share and what's left. Not how anyone paid, and no way to
+// pay online (that would need a payment processor; see docs/NEXT.md).
+export type MyBill = {
+  items: { name: string; cents: number }[]
+  totalCents: number
+  insuranceCents: number // an estimate: no claim is sent in this demo
+  patientCents: number
+  paidCents: number
+  balanceCents: number
 }
 
 export type MyAccount = {
@@ -73,6 +87,24 @@ function patientFor(db: Db, token: string) {
   return patient
 }
 
+function billFor(db: Db, a: Appointment): MyBill | null {
+  if (a.status !== 'completed') return null
+  const fees = db.fees.filter((f) => f.practiceId === a.practiceId)
+  const items = lineItemsFor(a.type, fees)
+  const patient = db.patients.find((p) => p.id === a.patientId)
+  const estimate = estimateVisit(items, patient?.insurance ?? null)
+  const payments = db.payments.filter((p) => p.appointmentId === a.id)
+  const balanceCents = balanceDue(estimate.patientCents, payments)
+  return {
+    items: items.map((f) => ({ name: f.name, cents: f.cents })),
+    totalCents: estimate.totalCents,
+    insuranceCents: estimate.insuranceCents,
+    patientCents: estimate.patientCents,
+    paidCents: estimate.patientCents - balanceCents,
+    balanceCents,
+  }
+}
+
 function toMyVisit(db: Db, a: Appointment): MyVisit {
   return {
     id: a.id,
@@ -85,6 +117,7 @@ function toMyVisit(db: Db, a: Appointment): MyVisit {
       formsComplete: a.checklist.formsComplete,
       medicalHistoryReviewed: a.checklist.medicalHistoryReviewed,
     },
+    bill: billFor(db, a),
   }
 }
 

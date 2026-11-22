@@ -1,4 +1,6 @@
 import { useEffect, useId, useRef } from 'react'
+import type { MyBill } from '../../api/patientPortal'
+import { formatCents } from '../../lib/billing'
 import {
   canPatientCheckIn,
   patientStatusLabel,
@@ -91,6 +93,7 @@ function YourVisits({ session }: { session: PatientSession }) {
                       <p className="text-slate-700">With {visit.provider}</p>
                     )}
                   </div>
+                  {visit.bill && <YourBill bill={visit.bill} />}
                   {canPatientCheckIn(visit.status) && (
                     <a
                       href={checkInPath(practice.id, visit.id)}
@@ -133,5 +136,64 @@ function YourVisits({ session }: { session: PatientSession }) {
         </a>
       </section>
     </PatientShell>
+  )
+}
+
+// A checked-out visit's bill, read only. Paying happens at the front desk.
+function YourBill({ bill }: { bill: MyBill }) {
+  const ids = useId()
+  const status =
+    bill.patientCents === 0
+      ? 'Nothing to pay: your plan covers this visit'
+      : bill.balanceCents === 0
+        ? 'Paid in full'
+        : `Balance due: ${formatCents(bill.balanceCents)}`
+
+  return (
+    <section
+      aria-labelledby={`${ids}-bill`}
+      className="flex flex-col gap-2 border-t border-slate-200 pt-3"
+    >
+      <h3 id={`${ids}-bill`} className="font-semibold">
+        Your bill
+      </h3>
+      <dl className="grid grid-cols-[1fr_auto] gap-x-4 gap-y-1 text-slate-800">
+        {bill.items.map((item) => (
+          <div key={item.name} className="contents">
+            <dt>{item.name}</dt>
+            <dd className="text-right tabular-nums">
+              {formatCents(item.cents)}
+            </dd>
+          </div>
+        ))}
+        <dt className="border-t border-slate-200 pt-1">Total</dt>
+        <dd className="border-t border-slate-200 pt-1 text-right tabular-nums">
+          {formatCents(bill.totalCents)}
+        </dd>
+        <dt>Insurance estimate</dt>
+        <dd className="text-right tabular-nums">
+          −{formatCents(bill.insuranceCents)}
+        </dd>
+        <dt className="font-semibold">Your share</dt>
+        <dd className="text-right font-semibold tabular-nums">
+          {formatCents(bill.patientCents)}
+        </dd>
+        {bill.paidCents > 0 && (
+          <>
+            <dt>Paid</dt>
+            <dd className="text-right tabular-nums">
+              {formatCents(bill.paidCents)}
+            </dd>
+          </>
+        )}
+      </dl>
+      <p className="font-semibold text-slate-900">{status}</p>
+      {bill.balanceCents > 0 && (
+        <p className="text-sm text-slate-700">
+          Pay at the front desk. The insurance part is an estimate until your
+          plan replies.
+        </p>
+      )}
+    </section>
   )
 }
