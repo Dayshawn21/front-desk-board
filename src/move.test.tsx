@@ -57,12 +57,13 @@ describe('moving a visit', () => {
     await user.click(moveButton(drawer)!)
     const times = timesIn(drawer)
     const options = within(times).getAllByRole('radio')
+    // Her own provider's times first; another provider is named.
     expect(options.map((o) => o.closest('label')?.textContent)).toEqual([
       '11:30 AM – 12:15 PM, Chair 2',
       '11:45 AM – 12:30 PM, Chair 2',
-      '11:45 AM – 12:30 PM, Chair 3',
-      '12:00 PM – 12:45 PM, Chair 1',
       '12:00 PM – 12:45 PM, Chair 2',
+      '11:45 AM – 12:30 PM, Chair 3, with Dr. Lindqvist',
+      '12:00 PM – 12:45 PM, Chair 1, with Dr. Okafor',
     ])
     expect(options[0]).toHaveFocus()
 
@@ -148,13 +149,13 @@ describe('moving a visit', () => {
     expect(await within(drawer).findByRole('alert')).toHaveTextContent(
       'That time was just booked in Chair 2. Pick another time.',
     )
-    // The times refresh without it.
+    // The times refresh without it: her provider's next time is 12:00.
     await waitFor(() =>
       expect(
         within(timesIn(drawer))
           .getAllByRole('radio')
           .map((o) => o.closest('label')?.textContent)[0],
-      ).toBe('11:45 AM – 12:30 PM, Chair 3'),
+      ).toBe('12:00 PM – 12:45 PM, Chair 2'),
     )
   })
 

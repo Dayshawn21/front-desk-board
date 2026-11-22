@@ -48,8 +48,10 @@ function day(appointments: Appointment[]): ScheduleDay {
     },
     date: D,
     chairs: [
+      // One provider for both chairs, so only time and chair order rank
+      // here; the provider test below gives each chair its own.
       { id: 'c1', practiceId: 'maple', name: 'Chair 1', provider: 'Dr. A' },
-      { id: 'c2', practiceId: 'maple', name: 'Chair 2', provider: 'Dr. B' },
+      { id: 'c2', practiceId: 'maple', name: 'Chair 2', provider: 'Dr. A' },
     ],
     patients: [],
     fees: [],
@@ -109,6 +111,24 @@ describe('moveOptions', () => {
     expect(moveOptions(day([visit, ...others]), visit, at('09:30'), 3)).toEqual(
       [slot('c1', '11:00', '12:00')],
     )
+  })
+
+  it("lists up to three of the same provider's times first, then the earliest others", () => {
+    const visit = appt('v', 'c1', '09:00', '09:30')
+    const today = {
+      ...day([visit]),
+      chairs: [
+        { id: 'c1', practiceId: 'maple', name: 'Chair 1', provider: 'Dr. A' },
+        { id: 'c2', practiceId: 'maple', name: 'Chair 2', provider: 'Dr. B' },
+      ],
+    }
+    expect(moveOptions(today, visit, at('09:40'))).toEqual([
+      slot('c1', '09:45', '10:15'),
+      slot('c1', '10:00', '10:30'),
+      slot('c1', '10:15', '10:45'),
+      slot('c2', '09:45', '10:15'),
+      slot('c2', '10:00', '10:30'),
+    ])
   })
 
   it('gives five options by default', () => {

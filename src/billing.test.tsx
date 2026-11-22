@@ -103,6 +103,27 @@ describe('billing at checkout', () => {
     expect(billing.getByLabelText('Amount')).toHaveValue('140.00')
   })
 
+  it('says how much is still due beside a ticked Copay collected', async () => {
+    const user = userEvent.setup()
+    await renderAs()
+    const drawer = await openDrawer(user, 'Ana Diaz')
+    const copay = () =>
+      within(drawer).getByRole('checkbox', { name: 'Copay collected' })
+    expect(copay()).not.toHaveAccessibleDescription(/still due/)
+
+    // Part paid: the box is ticked, and it says the rest is still due.
+    await recordPayment(user, drawer, '50')
+    await screen.findByText('Ana Diaz: $50.00 paid by card')
+    expect(copay()).toBeChecked()
+    expect(copay()).toHaveAccessibleDescription('$140.00 still due')
+    expect(within(drawer).getByText('$140.00 still due')).toBeVisible()
+
+    // Paid in full: nothing left to say.
+    await recordPayment(user, drawer, '140')
+    await screen.findByText('Ana Diaz: $140.00 paid by card')
+    expect(copay()).not.toHaveAccessibleDescription(/still due/)
+  })
+
   it('undoes a payment from the toast', async () => {
     const user = userEvent.setup()
     await renderAs()
