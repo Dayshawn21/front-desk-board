@@ -41,7 +41,8 @@ What the demo does, feature by feature. ([Back to the README](../README.md))
   (fixed by visit type), an insurance estimate, the patient's share and any
   balance. Front desk and office manager **Record payment** (card, cash or other;
   partial payments leave a balance, more than the balance is refused by the mock
-  server), which also ticks Copay collected; the toast offers Undo, which voids the
+  server), which also ticks Copay collected; while part of the share is unpaid, the
+  box says how much ("$140.00 still due"). The toast offers Undo, which voids the
   payment. Providers see it read-only
 - Insurance estimate (`src/lib/billing.ts`, built test-first): each fee's category
   (preventive, basic, major) gets the plan's percentage; each line's insurance share
@@ -78,9 +79,10 @@ What the demo does, feature by feature. ([Back to the README](../README.md))
   reason) and its time can be booked again; the toast's Undo restores it unless that
   time was booked in the meantime
 - Move to…: front desk and office manager can move a scheduled or confirmed visit to
-  another time or chair today, from the drawer. It offers the next five open times
-  from now, the same length as the visit, from the same slot finder as booking, and
-  never where it already is. Buttons and radios, so nothing needs dragging. The mock
+  another time or chair today, from the drawer. It offers five open times from now,
+  the same length as the visit, from the same slot finder as booking, and never
+  where it already is: up to three with the visit's own provider first, then the
+  earliest others, which name their provider ("Chair 3, with Dr. Lindqvist"). Buttons and radios, so nothing needs dragging. The mock
   server keeps the length, re-checks the chair is free (a 409 with fresh times if
   someone just took it), and refuses a visit the patient has arrived for. Moving
   Lena Ortiz clears the demo's double-booking. The toast's Undo puts the visit back,
