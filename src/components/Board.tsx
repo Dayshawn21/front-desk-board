@@ -4,10 +4,13 @@ import { useBooking } from '../hooks/useBooking'
 import {
   useCreateAppointment,
   usePractices,
+  useRecordPayment,
   useResetDemoData,
   useSchedule,
   useUpdateAppointment,
+  useVoidPayment,
 } from '../hooks/useSchedule'
+import { usePayments } from '../hooks/usePayments'
 import { useStatusChanges } from '../hooks/useStatusChanges'
 import { nextToastKey } from '../lib/statusChange'
 import type { ThemeChoice } from '../lib/theme'
@@ -15,6 +18,7 @@ import { useSession } from '../session/SessionContext'
 import { BoardHeader } from './BoardHeader'
 import { BookingDrawer } from './BookingDrawer'
 import { CheckInDrawer } from './CheckInDrawer'
+import { DayTotals } from './DayTotals'
 import { PatientFlow } from './PatientFlow'
 import { ScheduleGrid } from './ScheduleGrid'
 import { type ToastMessage, UndoToast } from './UndoToast'
@@ -49,13 +53,29 @@ export function Board({ theme, onThemeChange }: BoardProps) {
   const schedule = useSchedule(practiceId, DEMO_DATE)
   const update = useUpdateAppointment(practiceId, DEMO_DATE)
   const create = useCreateAppointment(practiceId, DEMO_DATE)
+  const recordPayment = useRecordPayment(practiceId, DEMO_DATE)
+  const voidPayment = useVoidPayment(practiceId, DEMO_DATE)
   const resetDemoData = useResetDemoData()
 
   const statusChanges = useStatusChanges({
     day: schedule.data,
     update,
     can,
-    onChanged: () => setNotice(null),
+    onChanged: () => {
+      setNotice(null)
+      payments.clear()
+    },
+  })
+  // Payments share the one toast: whichever changed last shows, with its Undo.
+  const payments = usePayments({
+    day: schedule.data,
+    record: recordPayment,
+    voidIt: voidPayment,
+    can,
+    onChanged: () => {
+      setNotice(null)
+      statusChanges.clear()
+    },
   })
   const booking = useBooking({
     day: schedule.data,
@@ -63,6 +83,7 @@ export function Board({ theme, onThemeChange }: BoardProps) {
     buttonRef: newAppointmentRef,
     onBooked: (text) => {
       statusChanges.clear()
+      payments.clear()
       setNotice({ key: nextToastKey(), text })
     },
   })
@@ -76,12 +97,14 @@ export function Board({ theme, onThemeChange }: BoardProps) {
 
   const openDrawer = (id: string) => {
     update.reset() // clear any error left over from an earlier save
+    recordPayment.reset()
     setSelectedId(id)
   }
 
   const switchPractice = (id: string) => {
     setSelectedId(null) // never keep one practice's drawer open on another
     statusChanges.clear()
+    payments.clear()
     setNotice(null)
     update.reset()
     setPracticeId(id)
@@ -91,6 +114,7 @@ export function Board({ theme, onThemeChange }: BoardProps) {
     // Nothing on screen may point at a visit from before the reset.
     setSelectedId(null)
     statusChanges.clear()
+    payments.clear()
     update.reset()
     resetDemoData()
     setNotice({ key: nextToastKey(), text: 'Demo data reset' })
@@ -123,6 +147,9 @@ export function Board({ theme, onThemeChange }: BoardProps) {
         inert={modalOpen}
         className="flex flex-col gap-4 p-4 max-sm:pb-24 sm:p-6"
       >
+        {can('view-day-totals') && schedule.data && (
+          <DayTotals day={schedule.data} />
+        )}
         <ViewTabs
           value={view}
           onChange={setView}
@@ -170,6 +197,15 @@ export function Board({ theme, onThemeChange }: BoardProps) {
                   {update.error.message}
                 </p>
               )}
+              {/* Undoing a payment from the toast failed (the drawer may be closed). */}
+              {voidPayment.isError && !selected && (
+                <p
+                  role="alert"
+                  className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+                >
+                  {voidPayment.error.message}
+                </p>
+              )}
               {view === 'schedule' ? (
                 <ScheduleGrid
                   day={schedule.data}
@@ -209,6 +245,13 @@ export function Board({ theme, onThemeChange }: BoardProps) {
           onChangeStatus={(status, reason) =>
             statusChanges.changeStatus(selected.id, status, reason)
           }
+          onRecordPayment={(input) =>
+            payments.recordPayment(selected.id, input)
+          }
+          isRecordingPayment={recordPayment.isPending || voidPayment.isPending}
+          paymentError={
+            recordPayment.error?.message ?? voidPayment.error?.message ?? null
+          }
           onClose={() => setSelectedId(null)}
         />
       )}
@@ -227,10 +270,17 @@ export function Board({ theme, onThemeChange }: BoardProps) {
       )}
 
       <UndoToast
-        toast={statusChanges.toast ?? notice}
-        undo={statusChanges.undo}
+        toast={statusChanges.toast ?? payments.toast ?? notice}
+        undo={
+          statusChanges.toast
+            ? statusChanges.undo
+            : payments.toast
+              ? payments.undo
+              : undefined
+        }
         onDismiss={() => {
           statusChanges.clear()
+          payments.clear()
           setNotice(null)
         }}
       />

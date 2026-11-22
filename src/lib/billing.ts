@@ -177,3 +177,18 @@ export function paymentToastText({
 }): string {
   return `${name}: ${formatCents(cents)} paid ${paidHow[method]}`
 }
+
+export function paymentUndoneText({
+  name,
+  cents,
+}: {
+  name: string
+  cents: number
+}): string {
+  return `${name}: payment of ${formatCents(cents)} undone`
+}
+
+// Cents as the amount field shows it: 14000 -> "140.00" (no $ or commas).
+export function centsToInput(cents: number): string {
+  return (cents / 100).toFixed(2)
+}

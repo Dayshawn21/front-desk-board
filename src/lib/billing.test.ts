@@ -15,6 +15,8 @@ import {
   lineItemsFor,
   parseDollars,
   paymentToastText,
+  paymentUndoneText,
+  centsToInput,
   visitBilling,
 } from './billing'
 
@@ -346,5 +348,24 @@ describe('paymentToastText', () => {
     expect(paymentToastText({ name: 'Ana Diaz', cents: 3_900, method })).toBe(
       text,
     )
+  })
+})
+
+describe('paymentUndoneText', () => {
+  it('names the amount that was undone', () => {
+    expect(paymentUndoneText({ name: 'Ana Diaz', cents: 5_000 })).toBe(
+      'Ana Diaz: payment of $50.00 undone',
+    )
+  })
+})
+
+describe('centsToInput', () => {
+  it.each([
+    [19_000, '190.00'],
+    [5, '0.05'],
+    [123_456, '1234.56'], // no commas, so parseDollars reads it back
+  ])('%d cents shows as %s', (cents, text) => {
+    expect(centsToInput(cents)).toBe(text)
+    expect(parseDollars(text)).toBe(cents)
   })
 })

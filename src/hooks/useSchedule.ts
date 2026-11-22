@@ -5,11 +5,14 @@ import {
   createAppointment,
   fetchPractices,
   fetchSchedule,
+  recordPayment,
   resetDemoData,
   subscribeToMockDb,
   updateAppointment,
+  voidPayment,
   type AppointmentPatch,
   type NewAppointment,
+  type NewPayment,
 } from '../api/schedule'
 
 // Query keys in one place so mutations (Day 2) can invalidate the right cache.
@@ -43,6 +46,31 @@ export function useUpdateAppointment(practiceId: string, date: string) {
       updateAppointment(practiceId, id, patch),
     // After a save, mark this practice's schedule stale so the grid,
     // the drawer and (later) the flow view all refetch the new data.
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.schedule(practiceId, date),
+      }),
+  })
+}
+
+// Payments at checkout (pretend only). After a save the schedule refetches,
+// which brings the new payment and the ticked Copay collected box with it.
+export function useRecordPayment(practiceId: string, date: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: NewPayment }) =>
+      recordPayment(practiceId, id, input),
+    onSuccess: () =>
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.schedule(practiceId, date),
+      }),
+  })
+}
+
+export function useVoidPayment(practiceId: string, date: string) {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (paymentId: string) => voidPayment(practiceId, paymentId),
     onSuccess: () =>
       queryClient.invalidateQueries({
         queryKey: queryKeys.schedule(practiceId, date),

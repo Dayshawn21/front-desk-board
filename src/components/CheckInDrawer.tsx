@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import type { AppointmentPatch } from '../api/schedule'
+import type { AppointmentPatch, NewPayment } from '../api/schedule'
 import { useModalDialog } from '../hooks/useModalDialog'
+import { visitBilling } from '../lib/billing'
 import {
   cancelReasonLabel,
   roleLabel,
@@ -17,6 +18,7 @@ import {
   previousAction,
 } from '../lib/workflow'
 import { useSession } from '../session/SessionContext'
+import { BillingSection } from './BillingSection'
 import { CheckInLink } from './CheckInLink'
 import type {
   Appointment,
@@ -43,6 +45,10 @@ type CheckInDrawerProps = {
   // arrives through saveError).
   onSave: (patch: AppointmentPatch) => Promise<void>
   onChangeStatus: (status: AppointmentStatus, reason?: CancelReason) => void
+  // Billing, for a checked-out visit. Resolves when saved; rejects if not.
+  onRecordPayment: (input: NewPayment) => Promise<void>
+  isRecordingPayment: boolean
+  paymentError: string | null
   onClose: () => void
 }
 
@@ -56,6 +62,9 @@ export function CheckInDrawer({
   saveError,
   onSave,
   onChangeStatus,
+  onRecordPayment,
+  isRecordingPayment,
+  paymentError,
   onClose,
 }: CheckInDrawerProps) {
   // Notes: a local copy, so typing stays instant. The parent remounts this
@@ -371,6 +380,17 @@ export function CheckInDrawer({
             </p>
           )}
         </div>
+
+        {appointment.status === 'completed' && (
+          <BillingSection
+            billing={visitBilling(day, appointment)}
+            planName={patient?.insurance ? patient.insuranceProvider : null}
+            canRecord={can('record-payment')}
+            isSaving={isRecordingPayment}
+            onRecord={onRecordPayment}
+            saveError={paymentError}
+          />
+        )}
 
         {saveError && (
           <p
