@@ -9,27 +9,40 @@ export function canMoveVisit(status: AppointmentStatus): boolean {
 }
 
 const DEFAULT_OPTIONS = 5
+const SAME_PROVIDER_FIRST = 3
 
 // The times offered in "Move to…": open slots from now on today, the same
-// length as the visit, in any chair, never where it already is. The visit
-// itself doesn't block a new time (it can shift 15 minutes into its own).
-// The same slot finder as booking, so the same rules decide what's free.
+// length as the visit, never where it already is. The visit itself doesn't
+// block a new time (it can shift 15 minutes into its own). The same slot
+// finder as booking, so the same rules decide what's free.
+//
+// Ranking: up to three times with the visit's own provider (patients book
+// a hygienist or a dentist, not a chair), then the earliest others.
 export function moveOptions(
   day: ScheduleDay,
   visit: Appointment,
   now: string,
   limit = DEFAULT_OPTIONS,
 ): OpenSlot[] {
-  return findOpenSlots(day, {
+  const providerOf = (chairId: string) =>
+    day.chairs.find((c) => c.id === chairId)?.provider
+  const provider = providerOf(visit.chairId)
+
+  const open = findOpenSlots(day, {
     durationMinutes: toMinutes(visit.end) - toMinutes(visit.start),
     earliest: now.slice(11, 16),
     ignoreId: visit.id,
-    limit: limit + 1, // one spare, in case its own place is among them
-  })
-    .filter(
-      (slot) => !(slot.chairId === visit.chairId && slot.start === visit.start),
-    )
-    .slice(0, limit)
+    // Enough to find this provider's times among every chair's.
+    limit: limit * day.chairs.length + 1,
+  }).filter(
+    (slot) => !(slot.chairId === visit.chairId && slot.start === visit.start),
+  )
+
+  const same = open
+    .filter((slot) => providerOf(slot.chairId) === provider)
+    .slice(0, SAME_PROVIDER_FIRST)
+  const rest = open.filter((slot) => !same.includes(slot))
+  return [...same, ...rest].slice(0, limit)
 }
 
 type MovedTo = { name: string; start: string; chairName: string }

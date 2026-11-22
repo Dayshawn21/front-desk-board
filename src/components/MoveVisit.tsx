@@ -6,6 +6,7 @@ import type { Chair } from '../types'
 type MoveVisitProps = {
   options: OpenSlot[] // from moveOptions: open times later today
   chairs: Chair[]
+  provider: string | undefined // the visit's own, so another one is named
   isSaving: boolean
   // Resolves when moved; rejects if not (the error arrives as saveError).
   onMove: (to: OpenSlot) => Promise<void>
@@ -20,6 +21,7 @@ const slotKey = (slot: OpenSlot) => `${slot.chairId}|${slot.start}`
 export function MoveVisit({
   options,
   chairs,
+  provider,
   isSaving,
   onMove,
   saveError,
@@ -48,6 +50,11 @@ export function MoveVisit({
   // If the times refresh and the picked one is gone, nothing is picked.
   const picked = options.find((slot) => slotKey(slot) === pickedKey) ?? null
   const chairName = (id: string) => chairs.find((c) => c.id === id)?.name ?? id
+  // Moving to another provider's chair changes who sees the patient: say so.
+  const otherProvider = (id: string) => {
+    const theirs = chairs.find((c) => c.id === id)?.provider
+    return theirs && theirs !== provider ? theirs : null
+  }
 
   const close = () => {
     backToTrigger.current = true
@@ -110,6 +117,8 @@ export function MoveVisit({
                       {formatTimeRange(slot.start, slot.end)}
                     </span>
                     , {chairName(slot.chairId)}
+                    {otherProvider(slot.chairId) &&
+                      `, with ${otherProvider(slot.chairId)}`}
                   </span>
                 </label>
               ))

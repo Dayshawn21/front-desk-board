@@ -141,7 +141,7 @@ export function BillingSection({
         ref={statusRef}
         role="status"
         tabIndex={-1}
-        className={`text-sm font-semibold ${balanceCents > 0 ? 'text-amber-800' : 'text-green-800'}`}
+        className={`text-base font-semibold ${balanceCents > 0 ? 'text-amber-800' : 'text-green-800'}`}
       >
         {status}
       </p>

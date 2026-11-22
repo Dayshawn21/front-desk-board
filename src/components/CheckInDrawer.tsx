@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import type { AppointmentPatch, NewPayment } from '../api/schedule'
 import { useModalDialog } from '../hooks/useModalDialog'
-import { visitBilling } from '../lib/billing'
+import { formatCents, visitBilling } from '../lib/billing'
 import {
   cancelReasonLabel,
   roleLabel,
@@ -226,14 +226,24 @@ export function CheckInDrawer({
     <MoveVisit
       options={moveOptions(day, appointment, now)}
       chairs={day.chairs}
+      provider={chair?.provider}
       isSaving={isMoving}
       onMove={onMove}
       saveError={moveError}
     />
   )
-  const billingSection = appointment.status === 'completed' && (
+  const billing =
+    appointment.status === 'completed' ? visitBilling(day, appointment) : null
+  // A part payment ticks Copay collected; say what's still owed beside it,
+  // so the checklist and the balance don't seem to disagree.
+  const copayStillDue =
+    billing && checklist.copayCollected && billing.balanceCents > 0
+      ? `${formatCents(billing.balanceCents)} still due`
+      : null
+  const copayHintId = `${reasonIds}-copay-due`
+  const billingSection = billing && (
     <BillingSection
-      billing={visitBilling(day, appointment)}
+      billing={billing}
       planName={patient?.insurance ? patient.insuranceProvider : null}
       canRecord={can('record-payment')}
       isSaving={isRecordingPayment}
@@ -450,9 +460,24 @@ export function CheckInDrawer({
                   type="checkbox"
                   checked={checklist[item.key]}
                   onChange={(e) => tick(item.key, e.target.checked)}
+                  aria-describedby={
+                    item.key === 'copayCollected' && copayStillDue
+                      ? copayHintId
+                      : undefined
+                  }
                   className="size-4 accent-teal-700"
                 />
                 {item.label}
+                {item.key === 'copayCollected' && copayStillDue && (
+                  // Read as the box's description, not part of its name.
+                  <span
+                    id={copayHintId}
+                    aria-hidden="true"
+                    className="ml-auto text-xs font-medium text-amber-800"
+                  >
+                    {copayStillDue}
+                  </span>
+                )}
               </label>
             ))}
           </fieldset>
