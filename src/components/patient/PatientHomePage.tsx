@@ -167,10 +167,14 @@ function YourBill({ bill }: { bill: MyBill }) {
             </dd>
           </div>
         ))}
-        <dt className="border-t border-slate-200 pt-1">Total</dt>
-        <dd className="border-t border-slate-200 pt-1 text-right tabular-nums">
-          {formatCents(bill.totalCents)}
-        </dd>
+        {/* One row spanning both columns, so the line above Total runs
+            unbroken across the gap between them. */}
+        <div className="col-span-2 grid grid-cols-subgrid border-t border-slate-200 pt-1">
+          <dt>Total</dt>
+          <dd className="text-right tabular-nums">
+            {formatCents(bill.totalCents)}
+          </dd>
+        </div>
         <dt>Insurance estimate</dt>
         <dd className="text-right tabular-nums">
           −{formatCents(bill.insuranceCents)}
