@@ -50,6 +50,7 @@ function YourVisits({ session }: { session: PatientSession }) {
       practiceName={practice.name}
       subtitle={SUBTITLE}
       signedIn={{ patient, onSignOut: signOut }}
+      onYourVisits
     >
       <div className="flex flex-col gap-1.5">
         <p className="text-slate-700">Hi {patient.firstName},</p>

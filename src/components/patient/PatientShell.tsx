@@ -10,6 +10,7 @@ type PatientShellProps = {
     patient: { firstName: string; lastName: string }
     onSignOut: () => void
   }
+  onYourVisits?: boolean // this page is Your visits: no link to itself
   children: ReactNode
 }
 
@@ -20,6 +21,7 @@ export function PatientShell({
   practiceName,
   subtitle,
   signedIn,
+  onYourVisits = false,
   children,
 }: PatientShellProps) {
   return (
@@ -38,6 +40,17 @@ export function PatientShell({
               <p className="hidden text-sm text-slate-700 sm:block">
                 {signedIn.patient.firstName} {signedIn.patient.lastName}
               </p>
+              {/* From any other page (booking, check-in), the way back to
+                  today's visits and the bill. */}
+              {!onYourVisits && (
+                <a
+                  href={PATIENT_HOME_PATH}
+                  // h-10: a full-size target on a phone, like Sign out.
+                  className="flex h-10 items-center px-1 text-sm font-medium text-teal-800 underline underline-offset-2"
+                >
+                  Your visits
+                </a>
+              )}
               <button
                 type="button"
                 onClick={signedIn.onSignOut}
