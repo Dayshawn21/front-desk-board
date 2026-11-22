@@ -286,7 +286,9 @@ describe('choosing a practice at /book', () => {
     expect(
       await screen.findByRole('heading', { name: 'Choose your dental office' }),
     ).toBeInTheDocument()
-    const maple = screen.getByRole('link', { name: /Maple Street Dental/ })
+    const maple = await screen.findByRole('link', {
+      name: /Maple Street Dental/,
+    })
     const riverbend = screen.getByRole('link', {
       name: /Riverbend Family Dental/,
     })
@@ -301,6 +303,32 @@ describe('choosing a practice at /book', () => {
     ).not.toBeInTheDocument()
     expect(
       screen.queryByRole('heading', { name: 'Sign in' }),
+    ).not.toBeInTheDocument()
+  })
+
+  // The list arrives after the API's latency. Everything around it shows
+  // at once and the offices get their space up front, so nothing below
+  // them (the sign-in link, the footer) jumps down when they load.
+  it('shows the page around the list while the offices load', () => {
+    window.history.pushState(null, '', '/book')
+    renderWithQuery(<App />, { signedOut: true })
+
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Loading dental offices…',
+    )
+    expect(
+      screen.getByRole('heading', { name: 'Choose your dental office' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: /sign in to see your visits/i }),
+    ).toBeInTheDocument()
+    // The placeholders hold the space but aren't links or list items to
+    // a screen reader, and there's one per office.
+    const placeholders = screen.getByTestId('office-placeholders')
+    expect(placeholders).toHaveAttribute('aria-hidden', 'true')
+    expect(placeholders.children).toHaveLength(2)
+    expect(
+      screen.queryByRole('link', { name: /Maple Street Dental/ }),
     ).not.toBeInTheDocument()
   })
 

@@ -123,14 +123,15 @@ The details, and what a real system would do instead, are in
 
 ## Quality
 
-- **630 unit and component tests** (Vitest and React Testing Library). The logic was
+- **631 unit and component tests** (Vitest and React Testing Library). The logic was
   built test-first, each feature as a failing-tests commit followed by the code.
 - **End-to-end tests** (Playwright): booking, check-in, the double-booking banner, the
   AI assist with its route faked (so CI never calls Claude), live updates between tabs,
   moving a visit out of a double-booking, recording a payment at checkout, and the
   patient pages.
 - **Accessibility:** axe (WCAG 2.2 AA rules) on every screen, at desktop and phone width.
-  Lighthouse gives Accessibility, Best Practices and SEO 100 on every screen.
+  Lighthouse gives Accessibility, Best Practices and SEO 100 on every screen tested, on
+  phone and desktop; Performance is 83–100 (scores in [Performance](docs/PERFORMANCE.md#lighthouse)).
 - **CI** runs typecheck, lint, format check, unit tests, build and e2e on every push.
 
 ## What I'd do next
