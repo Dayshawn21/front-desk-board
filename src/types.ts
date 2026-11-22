@@ -32,6 +32,47 @@ export type Patient = {
   lastName: string
   phone: string // fake 555 numbers only
   insuranceProvider: string | null // null = self-pay / not on file
+  insurance: InsuranceCoverage | null // the plan's made-up terms; null = self-pay
+}
+
+// ── Billing (all made up: no real fee schedules, plans or procedure codes) ──
+
+// Plans pay a different share for each kind of work.
+export type FeeCategory = 'preventive' | 'basic' | 'major'
+
+// One line of a practice's fee list. Money is always integer cents.
+export type Fee = {
+  id: string
+  practiceId: string
+  procedure: string // a made-up key shared across practices, e.g. "routine-cleaning"
+  name: string // made-up plain-language name, never a CDT code
+  category: FeeCategory
+  cents: number
+}
+
+// A patient's fake dental plan: what share it pays per category, and how
+// much of this year's maximum is left.
+export type InsuranceCoverage = {
+  percent: Record<FeeCategory, number> // 0-100, e.g. { preventive: 100, … }
+  annualMaxCents: number
+  remainingCents: number
+}
+
+export type PaymentMethod = 'card' | 'cash' | 'other'
+
+// A payment recorded at checkout. Pretend only: no card is charged.
+// Undo marks it voided rather than deleting it, so the record stays.
+export type Payment = {
+  id: string
+  practiceId: string
+  appointmentId: string
+  cents: number
+  method: PaymentMethod
+  recordedAt: string // ISO time
+  voided: boolean
+  // True if this payment is what ticked "Copay collected", so voiding it
+  // unticks the box only then.
+  tickedCopay: boolean
 }
 
 export type AppointmentType =
@@ -78,4 +119,6 @@ export type ScheduleDay = {
   chairs: Chair[]
   patients: Patient[]
   appointments: Appointment[]
+  fees: Fee[] // this practice's fee list
+  payments: Payment[] // payments for this day's visits, voided ones included
 }
