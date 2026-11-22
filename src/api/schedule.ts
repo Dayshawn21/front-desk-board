@@ -1,3 +1,9 @@
+import {
+  balanceDue,
+  estimateVisit,
+  formatCents,
+  lineItemsFor,
+} from '../lib/billing'
 import { rangesOverlap } from '../lib/overlap'
 import { toMinutes } from '../lib/time'
 import * as seed from '../mocks/seed'
@@ -8,6 +14,7 @@ import type {
   Fee,
   Patient,
   Payment,
+  PaymentMethod,
   Practice,
   ScheduleDay,
 } from '../types'
@@ -311,6 +318,119 @@ export async function updateAppointment(
   if (checklist) appt.checklist = { ...appt.checklist, ...checklist }
   saveDb(db)
   return structuredClone(appt)
+}
+
+// ── Payments at checkout (pretend only: no card is charged) ──
+
+export type NewPayment = { cents: number; method: PaymentMethod }
+
+const PAYMENT_METHODS: PaymentMethod[] = ['card', 'cash', 'other']
+
+// Records a payment for a checked-out visit and ticks "Copay collected" in
+// the same write. The server works out the balance itself from its own fee
+// list and plan, never from what the browser says is owed.
+export async function recordPayment(
+  practiceId: string,
+  appointmentId: string,
+  input: NewPayment,
+): Promise<Payment> {
+  await sleep(LATENCY_MS)
+
+  if (shouldFail('failSave')) {
+    throw new ApiError('Could not save the payment (simulated failure).', 503)
+  }
+
+  const db = loadDb()
+  // Tenant check: a visit in another practice is treated as not found.
+  const appt = db.appointments.find(
+    (a) => a.id === appointmentId && a.practiceId === practiceId,
+  )
+  if (!appt) {
+    throw new ApiError(`Appointment not found: ${appointmentId}`, 404)
+  }
+  if (appt.status !== 'completed') {
+    throw new ApiError('Check the patient out before taking payment.', 409)
+  }
+  if (!PAYMENT_METHODS.includes(input.method)) {
+    throw new ApiError('Choose card, cash or other.', 400)
+  }
+  if (!Number.isInteger(input.cents) || input.cents <= 0) {
+    throw new ApiError('Enter an amount more than $0.00.', 400)
+  }
+
+  const patient = db.patients.find(
+    (p) => p.id === appt.patientId && p.practiceId === practiceId,
+  )
+  const items = lineItemsFor(appt.type, forPractice(db.fees, practiceId))
+  const share = estimateVisit(items, patient?.insurance ?? null).patientCents
+  const balance = balanceDue(
+    share,
+    db.payments.filter((p) => p.appointmentId === appt.id),
+  )
+  if (balance === 0) {
+    throw new ApiError('Nothing to collect for this visit.', 400)
+  }
+  if (input.cents > balance) {
+    throw new ApiError(
+      `That's more than the ${formatCents(balance)} balance.`,
+      400,
+    )
+  }
+
+  const payment: Payment = {
+    id: `pay-${db.nextPaymentId++}`,
+    practiceId,
+    appointmentId: appt.id,
+    cents: input.cents,
+    method: input.method,
+    recordedAt: new Date().toISOString(),
+    voided: false,
+    tickedCopay: !appt.checklist.copayCollected,
+  }
+  db.payments.push(payment)
+  appt.checklist = { ...appt.checklist, copayCollected: true }
+  saveDb(db)
+  return structuredClone(payment)
+}
+
+// Undo for a payment: marks it voided (the record stays, for history) and
+// unticks "Copay collected" only if this payment is what ticked it and no
+// other payment for the visit still stands. A real
+// system would refund or void the charge with the payment processor.
+export async function voidPayment(
+  practiceId: string,
+  paymentId: string,
+): Promise<Payment> {
+  await sleep(LATENCY_MS)
+
+  if (shouldFail('failSave')) {
+    throw new ApiError('Could not undo the payment (simulated failure).', 503)
+  }
+
+  const db = loadDb()
+  const payment = db.payments.find(
+    (p) => p.id === paymentId && p.practiceId === practiceId,
+  )
+  if (!payment) {
+    throw new ApiError(`Payment not found: ${paymentId}`, 404)
+  }
+  if (payment.voided) {
+    throw new ApiError('That payment was already undone.', 409)
+  }
+
+  payment.voided = true
+  const appt = db.appointments.find(
+    (a) => a.id === payment.appointmentId && a.practiceId === practiceId,
+  )
+  // Another payment still stands for this visit: the copay is still collected.
+  const otherPaid = db.payments.some(
+    (p) => p.appointmentId === payment.appointmentId && !p.voided,
+  )
+  if (appt && payment.tickedCopay && !otherPaid) {
+    appt.checklist = { ...appt.checklist, copayCollected: false }
+  }
+  saveDb(db)
+  return structuredClone(payment)
 }
 
 // What the booking form sends. The server fills in id, status and checklist.

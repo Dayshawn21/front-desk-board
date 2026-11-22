@@ -158,6 +158,16 @@ describe('voidPayment (Undo)', () => {
     expect((await anaBilling()).visit.checklist.copayCollected).toBe(true)
   })
 
+  it('leaves the copay ticked while another payment for the visit stands', async () => {
+    const first = await recordPayment('maple', ANA_VISIT, {
+      cents: 5_000,
+      method: 'card',
+    })
+    await recordPayment('maple', ANA_VISIT, { cents: 2_000, method: 'cash' })
+    await voidPayment('maple', first.id)
+    expect((await anaBilling()).visit.checklist.copayCollected).toBe(true)
+  })
+
   it('refuses to void a payment twice', async () => {
     const payment = await recordPayment('maple', ANA_VISIT, {
       cents: 5_000,
