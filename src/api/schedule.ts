@@ -33,6 +33,30 @@ export class ApiError extends Error {
   }
 }
 
+// A save based on an older copy of the visit than the one stored: someone
+// else changed it in between. Nothing was saved. Like a real 409 response,
+// it carries the visit as it is now, so the screen can show the other change
+// (and the notes box can tell whether the notes were what changed).
+export class VisitChangedError extends ApiError {
+  current: Appointment
+  constructor(current: Appointment) {
+    super(
+      'Someone else changed this visit just now, so your change was not saved. It now shows their change: check it, then try again.',
+      409,
+    )
+    this.name = 'VisitChangedError'
+    this.current = structuredClone(current)
+  }
+}
+
+// Saves that overwrite a field send the version they were based on. One
+// that's out of date is refused (checked before anything else changes).
+function checkVersion(appt: Appointment, version: number | undefined) {
+  if (version !== undefined && version !== appt.version) {
+    throw new VisitChangedError(appt)
+  }
+}
+
 // The mock "database": a copy of the seed, so saves never change the seed.
 //
 // It lives in localStorage, so every tab of this site shares one db (a
@@ -89,8 +113,8 @@ export type PatientAccount = {
 
 // Versioned, so a change to the data's shape starts fresh (v2 added
 // patient sessions, v3 patient sign-ups, v4 password resets, v5 rate limits,
-// v6 fees, insurance plans and payments).
-export const MOCK_DB_KEY = 'front-desk-board.mock-db.v6'
+// v6 fees, insurance plans and payments, v7 a version on each visit).
+export const MOCK_DB_KEY = 'front-desk-board.mock-db.v7'
 
 function createDb(): Db {
   return structuredClone({
@@ -260,9 +284,13 @@ export async function fetchSchedule(
 // A checklist patch names only the boxes it changes; the server merges them
 // into the stored checklist. So two people ticking different boxes at once
 // (the desk in the drawer, the patient on their phone) never undo each other.
+//
+// A patch that changes status, notes or the cancel reason overwrites them,
+// so it sends the version it was based on; one sent with an old version is
+// refused (VisitChangedError). A tick needs none: it can't overwrite anyone.
 export type AppointmentPatch = Partial<
   Pick<Appointment, 'status' | 'notes' | 'cancelReason'>
-> & { checklist?: Partial<CheckInChecklist> }
+> & { checklist?: Partial<CheckInChecklist>; version?: number }
 
 export async function updateAppointment(
   practiceId: string,
@@ -283,6 +311,8 @@ export async function updateAppointment(
   if (!appt) {
     throw new ApiError(`Appointment not found: ${appointmentId}`, 404)
   }
+
+  checkVersion(appt, patch.version)
 
   // A cancel must say why (for follow-up and reporting).
   if (patch.status === 'cancelled' && !patch.cancelReason) {
@@ -313,9 +343,10 @@ export async function updateAppointment(
     }
   }
 
-  const { checklist, ...rest } = structuredClone(patch)
+  const { checklist, version: _, ...rest } = structuredClone(patch)
   Object.assign(appt, rest)
   if (checklist) appt.checklist = { ...appt.checklist, ...checklist }
+  if (Object.keys(rest).length > 0) appt.version += 1
   saveDb(db)
   return structuredClone(appt)
 }
@@ -326,9 +357,11 @@ export type MoveTo = {
   chairId: string
   start: string // ISO local time; the visit keeps its length
   // Undo of a move: put the visit back where it was, even if that place
-  // overlaps another visit now (the double-booking banner flags it). A real
-  // server would compare a version number instead; see docs/NEXT.md.
+  // overlaps another visit now (the double-booking banner flags it). It
+  // sends the version the move left, so it's refused if anyone changed the
+  // visit since.
   restore?: boolean
+  version?: number // the version this move was based on (see checkVersion)
 }
 
 export async function moveAppointment(
@@ -350,6 +383,7 @@ export async function moveAppointment(
   if (!appt) {
     throw new ApiError(`Appointment not found: ${appointmentId}`, 404)
   }
+  checkVersion(appt, to.version)
   const chair = db.chairs.find(
     (c) => c.id === to.chairId && c.practiceId === practiceId,
   )
@@ -398,6 +432,7 @@ export async function moveAppointment(
   appt.chairId = to.chairId
   appt.start = moved.start
   appt.end = moved.end
+  appt.version += 1
   saveDb(db)
   return structuredClone(appt)
 }
@@ -596,6 +631,7 @@ export function insertAppointment(
       copayCollected: false,
     },
     notes: '',
+    version: 1,
   }
   db.appointments.push(appointment)
   return appointment

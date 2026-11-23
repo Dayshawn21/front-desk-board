@@ -20,6 +20,7 @@ type LastMove = {
   appointmentId: string
   name: string
   from: Place // where it was, for Undo
+  version: number // the visit's version after the move, for Undo
   text: string
   undoable: boolean // false once it has been undone
 }
@@ -41,9 +42,9 @@ export function useMoves({ day, move, can, onChanged }: Options) {
     const name = patient ? `${patient.firstName} ${patient.lastName}` : 'Visit'
     const from = { chairId: appt.chairId, start: appt.start }
 
-    await move.mutateAsync({
+    const saved = await move.mutateAsync({
       id: appointmentId,
-      to: { chairId: to.chairId, start: to.start },
+      to: { chairId: to.chairId, start: to.start, version: appt.version },
     })
     onChanged?.()
     setLast({
@@ -51,6 +52,7 @@ export function useMoves({ day, move, can, onChanged }: Options) {
       appointmentId,
       name,
       from,
+      version: saved.version,
       text: moveToastText({
         name,
         start: to.start,
@@ -62,7 +64,10 @@ export function useMoves({ day, move, can, onChanged }: Options) {
 
   const undoMove = (moved: LastMove) => {
     move.mutate(
-      { id: moved.appointmentId, to: { ...moved.from, restore: true } },
+      {
+        id: moved.appointmentId,
+        to: { ...moved.from, restore: true, version: moved.version },
+      },
       {
         onSuccess: () => {
           onChanged?.()

@@ -110,6 +110,11 @@ export type Appointment = {
   checklist: CheckInChecklist
   notes: string
   cancelReason?: CancelReason | null // set when cancelled, cleared on restore
+  // Goes up by one with each change to a field a save overwrites (status,
+  // notes, cancel reason, chair, time), so a save based on an older copy can
+  // be refused instead of overwriting someone else's change. Checklist ticks
+  // merge box by box, so they don't change it.
+  version: number
 }
 
 // What the mock API returns for one practice on one day.

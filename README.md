@@ -23,8 +23,9 @@ https://github.com/user-attachments/assets/c285bfa1-15a6-41fa-a3ff-a8b539812881
 
 - **Server state done properly.** TanStack Query with per-practice cache keys,
   mutations that invalidate and refetch, and Undo on every status change and move. A 409 is
-  returned when someone else just took a time slot. Other open tabs update without a
-  reload.
+  returned when someone else just took a time slot, or changed the visit since you
+  loaded it (each visit has a version), so nobody silently overwrites anyone. Other
+  open tabs update without a reload.
 - **Rules as pure, tested functions.** The status workflow, role permissions, overlap
   detection and the open-slot finder live in `src/lib` with no React in them. They were
   built test-first, and the UI just renders their results.
@@ -123,7 +124,7 @@ The details, and what a real system would do instead, are in
 
 ## Quality
 
-- **632 unit and component tests** (Vitest and React Testing Library). The logic was
+- **647 unit and component tests** (Vitest and React Testing Library). The logic was
   built test-first, each feature as a failing-tests commit followed by the code.
 - **End-to-end tests** (Playwright): booking, check-in, the double-booking banner, the
   AI assist with its route faked (so CI never calls Claude), live updates between tabs,
@@ -141,8 +142,6 @@ The details, and what a real system would do instead, are in
 - Protect the AI endpoint per signed-in user, not just per IP.
 - Grow the AI eval from 15 hand-written cases to 50+ from real phrasing, and run it in CI.
 - Push changes from a real server over WebSocket or SSE, instead of syncing between tabs.
-- Add a `version` to each appointment, so conflicting edits get a 409 instead of
-  last-write-wins.
 - Billing past checkout: claims and ERA/EOB posting, a payment processor, statements,
   payment plans and a running patient ledger.
 

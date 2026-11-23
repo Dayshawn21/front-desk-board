@@ -254,6 +254,7 @@ function testDay(payments: Payment[] = []): ScheduleDay {
       copayCollected: false,
     },
     notes: '',
+    version: 1,
   })
   return {
     practice: {
