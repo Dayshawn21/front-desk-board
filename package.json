@@ -15,7 +15,8 @@
     "test:watch": "vitest",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
     "eval": "node --env-file-if-exists=.env.local --import ./evals/parse-booking/resolve-ts.mjs evals/parse-booking/run-eval.mjs --flow .claude/hillclimb/parse-booking --model claude-haiku-5-5",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "lighthouse": "node scripts/lighthouse/audit.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.10.0",
@@ -38,14 +39,17 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "chrome-launcher": "1.2.0",
     "eslint": "^10.14.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^17.13.0",
     "jsdom": "^31.0.1",
+    "lighthouse": "12.8.2",
     "prettier": "^3.10.1",
     "prettier-plugin-tailwindcss": "^0.8.1",
+    "puppeteer-core": "24.10.0",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.1",
     "vite": "^8.3.6",

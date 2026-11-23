@@ -98,5 +98,18 @@ snapshots along the way also score 100 for Accessibility and Best Practices: "Ch
 your email", the Demo inbox with the email in it, and the reset page's error when the
 two passwords don't match. SEO is again lowered only by the local `robots.txt`.
 
-Not covered by Lighthouse: the board's Patient flow tab and the error screen (axe
-checks both).
+**Checked on every pull request.** CI runs Lighthouse (`npm run lighthouse`,
+[scripts/lighthouse/audit.mjs](../scripts/lighthouse/audit.mjs)) on a production build
+and fails unless Accessibility, Best Practices and SEO are all 100. It covers 25 pages
+and states, in light and dark, on phone and desktop: 100 audits in four parallel jobs,
+each with its HTML reports and screenshots kept for a week. That's the eight
+signed-out pages and the four signed-in ones as they load, and the board's states as
+snapshots: the Patient flow tab, the drawers, dialogs and menu above, and the error
+screen (`?crash`). The password-reset flow is covered too. The build is served the
+way Vercel serves it ([scripts/lighthouse/serve.mjs](../scripts/lighthouse/serve.mjs)):
+`/robots.txt` is a 404 and the sign-in route answers, so the local `robots.txt` and
+`/api` failures above don't come up. Pointed at `vite preview` instead, it fails on
+`robots.txt`, as it should. A snapshot doesn't collect console messages, so the error
+the error screen logs on purpose isn't counted. Performance isn't checked in CI: on a
+shared machine it measures the machine as much as the app, so it's measured on the
+live site, as in the table above.

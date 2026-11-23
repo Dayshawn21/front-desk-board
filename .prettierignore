@@ -12,3 +12,6 @@ evals/**/run-eval.mjs
 test-results/
 playwright-report/
 blob-report/
+
+# Lighthouse reports
+lighthouse-report
