@@ -46,7 +46,9 @@ including from a plain-language request ("60 min cleaning for Ana Diaz this afte
 - **AI fills a form; a person books.** The model returns JSON in a schema that only
   allows that practice's patient and chair ids; the server and browser re-check it, and
   the slot finder (not the model) picks times. A 15-case eval chose Haiku over Opus:
-  28/30 vs 30/30 fields right, nothing invented by either, about 40× cheaper. The key
+  28/30 vs 30/30 fields right, nothing invented by either, about 40× cheaper. Grown to
+  51 cases from how front desks type, Haiku gets 98% fully right and invents nothing, and
+  CI re-runs it on any prompt change. The key
   stays on the server, with a per-IP rate limit and a spend cap.
 - **Measure before optimizing.** Profiling showed the board renders in ~60 ms on a
   slowed phone CPU; memoizing or lazy-loading the drawers (~7 KB) wouldn't pay for
@@ -72,7 +74,7 @@ devices; drag to book and move visits, with a keyboard alternative.
 
 ## Numbers
 
-647 unit tests and 96 Playwright tests (user flows, the AI assist with its route faked, and
+648 unit tests and 96 Playwright tests (user flows, the AI assist with its route faked, and
 axe in light and dark) run in CI on every push, with Lighthouse on 25 pages and board states
 (light and dark, phone and desktop), which must score 100 for Accessibility, Best Practices
 and SEO.

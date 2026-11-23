@@ -31,7 +31,8 @@ https://github.com/user-attachments/assets/c285bfa1-15a6-41fa-a3ff-a8b539812881
   built test-first, and the UI just renders their results.
 - **AI with guardrails.** Claude turns a typed request into form fields, through a
   server route that keeps the API key off the browser. Code picks the open times, and a
-  person books. An eval measures how accurate it is.
+  person books. A 51-case eval measures how accurate it is, and CI re-runs it whenever
+  the prompt changes.
 - **Checkout billing.** A checked-out visit shows its line items, an insurance
   estimate and the patient's share, with a pretend **Record payment** and Undo. The
   estimate is a pure function in integer cents with a tested rounding rule. The
@@ -124,7 +125,7 @@ The details, and what a real system would do instead, are in
 
 ## Quality
 
-- **647 unit and component tests** (Vitest and React Testing Library). The logic was
+- **648 unit and component tests** (Vitest and React Testing Library). The logic was
   built test-first, each feature as a failing-tests commit followed by the code.
 - **End-to-end tests** (Playwright): booking, check-in, the double-booking banner, the
   AI assist with its route faked (so CI never calls Claude), live updates between tabs,
@@ -135,12 +136,11 @@ The details, and what a real system would do instead, are in
   phone and desktop; Performance is 96–100 (scores in [Performance](docs/PERFORMANCE.md#lighthouse)).
   CI holds the first three at 100 on 25 pages and board states, light and dark.
 - **CI** runs typecheck, lint, format check, unit tests, build, e2e and Lighthouse on
-  every push.
+  every push, and the 51-case AI eval on pull requests that change the prompt.
 
 ## What I'd do next
 
 - Protect the AI endpoint per signed-in user, not just per IP.
-- Grow the AI eval from 15 hand-written cases to 50+ from real phrasing, and run it in CI.
 - Push changes from a real server over WebSocket or SSE, instead of syncing between tabs.
 - Billing past checkout: claims and ERA/EOB posting, a payment processor, statements,
   payment plans and a running patient ledger.

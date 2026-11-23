@@ -1,7 +1,13 @@
 // @vitest-environment node
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import type { BookingDraft } from '../../src/lib/assist'
+import {
+  type BookingDraft,
+  LENGTHS,
+  TIMES_OF_DAY,
+  VISIT_TYPES,
+} from '../../src/lib/assist'
+import { chairs, patients, practices } from '../../src/mocks/seed'
 import { type EvalCase, FIELDS, gradeOutcome } from './grade'
 
 // Checks the grader before any paid run (eval-audit: oracle and null).
@@ -30,11 +36,41 @@ const empty: BookingDraft = {
 }
 
 describe('eval grader', () => {
-  it('has 15 cases with unique ids and every field listed', () => {
-    expect(cases).toHaveLength(15)
-    expect(new Set(cases.map((c) => c.id)).size).toBe(15)
+  it('has 50+ cases with unique ids and every field listed', () => {
+    expect(cases.length).toBeGreaterThanOrEqual(50)
+    expect(new Set(cases.map((c) => c.id)).size).toBe(cases.length)
     for (const c of cases)
       expect(Object.keys(c.expected).sort()).toEqual([...FIELDS].sort())
+  })
+
+  // A typo in a case would grade the model against an answer it can't give.
+  it("expects only values the form can hold, from the case's own practice", () => {
+    const all = (v: unknown) => (Array.isArray(v) ? v : [v])
+    for (const c of cases) {
+      const practice = practices.find((p) => p.id === c.practiceId)
+      expect(practice, c.id).toBeDefined()
+      const ok = {
+        patientId: patients
+          .filter((p) => p.practiceId === c.practiceId)
+          .map((p) => p.id),
+        chairId: chairs
+          .filter((ch) => ch.practiceId === c.practiceId)
+          .map((ch) => ch.id),
+        visitType: [...VISIT_TYPES],
+        durationMinutes: [...LENGTHS],
+        timeOfDay: [...TIMES_OF_DAY],
+      } as Record<string, unknown[]>
+      for (const [field, allowed] of Object.entries(ok))
+        for (const v of all(c.expected[field as keyof typeof c.expected]))
+          if (v !== null) expect(allowed, `${c.id} ${field}`).toContain(v)
+      for (const v of all(c.expected.earliest))
+        if (v !== null) {
+          expect(v, c.id).toMatch(/^\d\d:\d\d$/)
+          expect(v >= practice!.openTime && v < practice!.closeTime, c.id).toBe(
+            true,
+          )
+        }
+    }
   })
 
   it('scores the oracle answer 100% on every case', () => {
@@ -52,8 +88,12 @@ describe('eval grader', () => {
     const scores = cases.map(
       (c) => gradeOutcome(c, { draft: empty, warnings: [] }).grade.all_fields,
     )
-    // Only the prompt-injection case expects every field to stay empty.
-    expect(scores.filter(Boolean)).toHaveLength(1)
+    // Only these expect every field to stay empty.
+    expect(cases.filter((_, i) => scores[i]).map((c) => c.id)).toEqual([
+      'prompt-injection',
+      'says-nothing',
+      'not-a-booking',
+    ])
   })
 
   it('flags a made-up patient or chair', () => {

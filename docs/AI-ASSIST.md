@@ -42,7 +42,36 @@ misses ("at 10:15" is a start time; "Ms. Silva" matches by last name). With 15 c
 eval can't tell 28/30 from 30/30 with confidence; it's a regression check, not a benchmark.
 The whole eval cost about $0.53.
 
-Re-run it (needs a key in `.env.local`; the runner asks you to approve changed eval files
+**51 cases, checked in CI.** 36 more cases came later, written the way front desks type:
+typos ("clening for Grace Lui"), first or last names only, titles ("Mr. Bell crown prep"),
+lengths and times in words ("an hour and a half", "at noon", "between 2 and 4"), times
+outside opening hours, a provider or patient from the other practice, a chair that
+doesn't exist, shorthand ("pt Jon Kim f/u exam 30m pm"), all caps, a request in Spanish,
+prompt injection dressed up as a system message, and requests that aren't bookings.
+Ambiguous ones accept more than one answer, and a unit test checks every expected value
+is one the form can hold in that case's practice. Haiku with the tuned prompt, over three
+runs of all 51:
+
+| Run | All fields right | Nothing made up |
+| --- | ---------------- | --------------- |
+| 1   | 49/51            | 51/51           |
+| 2   | 51/51            | 51/51           |
+| 3   | 50/51            | 51/51           |
+
+150/153 (98%), and nothing made up in 153 answers. All three misses left the patient
+empty rather than guessing: "Priya" twice (with "tomorrow" in the same request) and
+"Park" for Elena Park once. The three runs cost about 3 cents together.
+
+`npm run eval:ci` ([ci.mjs](../evals/parse-booking/ci.mjs)) is the pass/fail version:
+every case once, through the real route. It fails if anything is made up, or if fewer
+than 90% of cases (46/51) get every field right, a little under the measured 98% so one
+unlucky answer doesn't fail a pull request but a real drop does. The
+[AI eval workflow](../.github/workflows/ai-eval.yml) runs it on pull requests that change
+the prompt, the route, the draft checks, the demo data or the eval itself, using the
+`ANTHROPIC_API_KEY` repository secret; without the secret (as on forks) it skips with a
+notice. The runner below stays the tool for comparing prompts and models.
+
+Re-run the comparison (needs a key in `.env.local`; the runner asks you to approve changed eval files
 once with `--approve-harness`):
 
     npm run eval -- --reps 2 --variant v4                            # Haiku (the default)

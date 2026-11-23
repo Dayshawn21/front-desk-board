@@ -5,8 +5,9 @@
 - **Protect the AI endpoint further.** It's rate limited per IP, but public with no
   sign-in, so many IPs together could still spend the key's budget up to its spend
   limit. With real auth, limit per signed-in user and practice instead of per IP.
-- **A bigger eval from real phrasing.** 15 hand-written cases is a regression check. Grow
-  it to 50+ from how staff actually type requests, and run it in CI on prompt changes.
+- **An eval from real requests.** The 51 cases are written to sound like a front desk,
+  but they're still mine. With real use, sample (anonymized) requests that staff edited
+  after the AI filled the form, and add those as cases: they're the misses that matter.
 - **Act on cancel reasons and no-shows.** They're recorded now; next would be a
   late-cancel fee or a text to the patient (at which point Undo can't reverse
   everything, so the confirm step would say what will be sent), and a no-show report.
