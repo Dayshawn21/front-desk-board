@@ -198,4 +198,5 @@ works by hand.
   `server/` and `api/`: the AI route and the patient sign-in route
   (`api/patient-sign-in.ts`, `server/signInGate.ts`; the browser side is
   `src/api/signInGate.ts`)
-- `e2e/`: Playwright flows and axe checks; `evals/`: the AI eval
+- `e2e/`: Playwright flows and axe checks; `scripts/lighthouse/`: the Lighthouse
+  check CI runs; `evals/`: the AI eval

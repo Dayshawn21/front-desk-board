@@ -40,3 +40,6 @@ blob-report/
 
 # Design critique snapshots (impeccable skill), kept locally
 .impeccable/
+
+# Lighthouse reports (npm run lighthouse)
+lighthouse-report/

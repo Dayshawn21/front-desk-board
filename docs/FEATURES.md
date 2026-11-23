@@ -207,7 +207,8 @@ What the demo does, feature by feature. ([Back to the README](../README.md))
 - Lighthouse on the live site, including the signed-in board (a scripted user
   flow that signs in, then opens the check-in drawer). Accessibility, Best
   Practices, and SEO are 100 on every screen tested, phone and desktop (scores
-  and gaps in [Performance](PERFORMANCE.md#lighthouse)); the sign-in page scores 100 for
+  and gaps in [Performance](PERFORMANCE.md#lighthouse)). CI holds those three at 100
+  on every pull request, on 25 pages and board states in light and dark; the sign-in page scores 100 for
   Performance on phone and desktop. On Lighthouse's slowed-down phone the click from
   sign-in to the board took 420 ms to respond (70 ms on desktop); see Performance
   below for what profiling showed

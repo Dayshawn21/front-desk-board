@@ -53,3 +53,35 @@ jobs:
             playwright-report/
             test-results/
           retention-days: 7
+
+  # Lighthouse on the production build: Accessibility, Best Practices and SEO
+  # must be 100 on every page and board state (scripts/lighthouse/audit.mjs).
+  # One job per theme and device, side by side.
+  lighthouse:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        theme: [light, dark]
+        device: [mobile, desktop]
+    name: lighthouse (${{ matrix.theme }}, ${{ matrix.device }})
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+      - run: npm run build
+      # Uses the runner's installed Chrome.
+      - run: npm run lighthouse -- --theme ${{ matrix.theme }} --device ${{ matrix.device }}
+
+      # The HTML reports and screenshots, to see what failed (or passed).
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lighthouse-${{ matrix.theme }}-${{ matrix.device }}
+          path: lighthouse-report/
+          retention-days: 7

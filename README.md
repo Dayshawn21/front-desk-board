@@ -132,7 +132,9 @@ The details, and what a real system would do instead, are in
 - **Accessibility:** axe (WCAG 2.2 AA rules) on every screen, at desktop and phone width.
   Lighthouse gives Accessibility, Best Practices and SEO 100 on every screen tested, on
   phone and desktop; Performance is 96–100 (scores in [Performance](docs/PERFORMANCE.md#lighthouse)).
-- **CI** runs typecheck, lint, format check, unit tests, build and e2e on every push.
+  CI holds the first three at 100 on 25 pages and board states, light and dark.
+- **CI** runs typecheck, lint, format check, unit tests, build, e2e and Lighthouse on
+  every push.
 
 ## What I'd do next
 
@@ -156,6 +158,7 @@ Requires Node 24 (see `.nvmrc`).
     npm run check   # typecheck, lint, format check, unit tests
     npm run build
     npm run e2e     # Playwright: user flows and axe accessibility checks
+    npm run lighthouse  # after build: Lighthouse must give 100 (needs Chrome)
 
 The first e2e run needs a browser: `npx playwright install chromium`. The AI assist
 needs `ANTHROPIC_API_KEY` in `.env.local` (see `.env.example`). Without it, the panel
