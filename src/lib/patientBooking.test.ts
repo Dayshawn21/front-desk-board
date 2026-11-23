@@ -31,6 +31,7 @@ function makeDay(appointments: Partial<Appointment>[] = []): ScheduleDay {
         copayCollected: false,
       },
       notes: '',
+      version: 1,
       ...a,
     })),
   }

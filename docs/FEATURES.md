@@ -34,6 +34,15 @@ What the demo does, feature by feature. ([Back to the README](../README.md))
   it would cover
 - Checklist and notes save on their own (a tick right away, notes when you leave
   the box or close the drawer), so closing never loses work
+- Two people at once can't overwrite each other. Each visit has a version, raised by
+  every change to its status, notes, cancel reason, chair or time, and a save based on
+  an older version gets a 409. A status change or move refused this way says someone
+  else changed the visit, and the drawer reloads it to show their change. Notes keep
+  what you typed: if the other person changed the notes, the drawer shows theirs and
+  asks (Save mine or Use theirs); if they changed something else, yours just save.
+  Undo sends the version its change left, so it won't undo over a later change.
+  Checklist ticks merge box by box, so they need no version and don't raise it: the
+  desk and the patient's phone can tick at the same time
 - Phones: the schedule shows one chair at a time with a chair switcher (the time
   column stays in view, nothing scrolls sideways), patient flow shows one column at a
   time starting with Arrived, and New appointment floats in thumb reach
@@ -87,7 +96,8 @@ What the demo does, feature by feature. ([Back to the README](../README.md))
   server keeps the length, re-checks the chair is free (a 409 with fresh times if
   someone just took it), and refuses a visit the patient has arrived for. Moving
   Lena Ortiz clears the demo's double-booking. The toast's Undo puts the visit back,
-  even into its old overlap, which the banner then flags again. The patient's Your
+  even into its old overlap, which the banner then flags again, unless someone has
+  changed the visit since. The patient's Your
   visits page shows the new time without a reload
 - No-show: once an expected visit's start time has passed, front desk and office
   manager can mark it a no-show (Priya Shah, 8:00, in the demo). It stays on the

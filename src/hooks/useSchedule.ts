@@ -46,9 +46,10 @@ export function useUpdateAppointment(practiceId: string, date: string) {
   return useMutation({
     mutationFn: ({ id, patch }: { id: string; patch: AppointmentPatch }) =>
       updateAppointment(practiceId, id, patch),
-    // After a save, mark this practice's schedule stale so the grid,
-    // the drawer and (later) the flow view all refetch the new data.
-    onSuccess: () =>
+    // After a save, mark this practice's schedule stale so the grid, the
+    // drawer and the flow view all refetch the new data. After a failure
+    // too: a 409 means someone else changed the visit, so show their change.
+    onSettled: () =>
       queryClient.invalidateQueries({
         queryKey: queryKeys.schedule(practiceId, date),
       }),

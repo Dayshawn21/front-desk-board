@@ -184,7 +184,10 @@ const ALL_DONE = checklist({
 })
 
 // Seed rows use "HH:MM" for readability; appt() converts them to ISO strings.
-type SeedRow = Omit<Appointment, 'start' | 'end' | 'checklist' | 'notes'> & {
+type SeedRow = Omit<
+  Appointment,
+  'start' | 'end' | 'checklist' | 'notes' | 'version'
+> & {
   from: string
   to: string
   checklist?: CheckInChecklist
@@ -208,6 +211,7 @@ function appt({
     end: at(to),
     checklist: cl ?? checklist(),
     notes: notes ?? '',
+    version: 1,
   }
 }
 

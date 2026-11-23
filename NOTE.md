@@ -33,7 +33,8 @@ including from a plain-language request ("60 min cleaning for Ana Diaz this afte
   change with the viewer's timezone.
 - **A real data layer over a fake server.** Components call TanStack Query hooks; the
   "server" is an async mock with latency, failures (`?fail`, `?failBook`), and a 409
-  when a slot was just taken. Swapping in a real API changes one file, not the UI.
+  when a slot was just taken or the visit changed since you loaded it (each visit has a
+  version, so two people can't silently overwrite each other). Swapping in a real API changes one file, not the UI.
 - **Accessibility as a requirement, checked in CI.** Drawers trap and return focus, tabs
   follow the ARIA pattern, and every status change is announced. axe runs on each screen
   in Playwright. It caught a card label whose words didn't match the visible text (WCAG
@@ -66,13 +67,12 @@ expiring check-in link, and enforces practice scoping and roles on the server.
 
 ## Next
 
-Per-user limits on the AI endpoint once there's real auth; a version on each visit so
-concurrent edits get a 409 instead of overwriting; server-pushed updates between devices; drag to
-book and move visits, with a keyboard alternative.
+Per-user limits on the AI endpoint once there's real auth; server-pushed updates between
+devices; drag to book and move visits, with a keyboard alternative.
 
 ## Numbers
 
-632 unit tests and 96 Playwright tests (user flows, the AI assist with its route faked, and
+647 unit tests and 96 Playwright tests (user flows, the AI assist with its route faked, and
 axe in light and dark) run in CI on every push, with Lighthouse on 25 pages and board states
 (light and dark, phone and desktop), which must score 100 for Accessibility, Best Practices
 and SEO.

@@ -24,10 +24,14 @@ type Options = {
 export function useStatusChanges({ day, update, can, onChanged }: Options) {
   const [lastChange, setLastChange] = useState<StatusChange | null>(null)
 
+  // `version`: the version the change is based on. By default the one on
+  // screen; Undo passes the one its change left, so it's refused if anyone
+  // changed the visit since.
   const changeStatus = (
     id: string,
     to: AppointmentStatus,
     reason?: CancelReason,
+    version?: number,
   ) => {
     const appt = day?.appointments.find((a) => a.id === id)
     if (!appt) return
@@ -36,9 +40,9 @@ export function useStatusChanges({ day, update, can, onChanged }: Options) {
     const from = appt.status
 
     update.mutate(
-      { id, patch: statusPatch(from, to, reason) },
+      { id, patch: statusPatch(from, to, version ?? appt.version, reason) },
       {
-        onSuccess: () => {
+        onSuccess: (saved) => {
           onChanged?.()
           setLastChange({
             key: nextToastKey(),
@@ -48,6 +52,7 @@ export function useStatusChanges({ day, update, can, onChanged }: Options) {
             to,
             kind: changeKind(from, to),
             reason,
+            version: saved.version,
           })
         },
       },
@@ -61,7 +66,13 @@ export function useStatusChanges({ day, update, can, onChanged }: Options) {
     lastChange && step && can(step.permission)
       ? {
           label: `${step.label} for ${lastChange.name}`,
-          onUndo: () => changeStatus(lastChange.appointmentId, lastChange.from),
+          onUndo: () =>
+            changeStatus(
+              lastChange.appointmentId,
+              lastChange.from,
+              undefined,
+              lastChange.version,
+            ),
         }
       : undefined
 

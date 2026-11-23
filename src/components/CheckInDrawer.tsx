@@ -1,5 +1,9 @@
 import { useEffect, useId, useRef, useState } from 'react'
-import type { AppointmentPatch, NewPayment } from '../api/schedule'
+import {
+  type AppointmentPatch,
+  type NewPayment,
+  VisitChangedError,
+} from '../api/schedule'
 import { useModalDialog } from '../hooks/useModalDialog'
 import { formatCents, visitBilling } from '../lib/billing'
 import {
@@ -44,9 +48,10 @@ type CheckInDrawerProps = {
   now: string // the demo clock, for "is this visit late?"
   isSaving: boolean
   saveError: string | null
-  // Resolves when the save is done (rejects if it fails; the error itself
-  // arrives through saveError).
-  onSave: (patch: AppointmentPatch) => Promise<void>
+  // Resolves with the saved visit once the schedule has refetched (rejects
+  // if it fails; the error itself arrives through saveError).
+  onSave: (patch: AppointmentPatch) => Promise<Appointment>
+  onDismissSaveError: () => void
   onChangeStatus: (status: AppointmentStatus, reason?: CancelReason) => void
   // Billing, for a checked-out visit. Resolves when saved; rejects if not.
   onRecordPayment: (input: NewPayment) => Promise<void>
@@ -68,6 +73,9 @@ type CheckInDrawerProps = {
 
 const cancelReasons = Object.keys(cancelReasonLabel) as CancelReason[]
 
+// Notes being typed, with what they were based on.
+type NotesDraft = { text: string; baseNotes: string; baseVersion: number }
+
 export function CheckInDrawer({
   day,
   appointment,
@@ -75,6 +83,7 @@ export function CheckInDrawer({
   isSaving,
   saveError,
   onSave,
+  onDismissSaveError,
   onChangeStatus,
   onRecordPayment,
   isRecordingPayment,
@@ -85,12 +94,20 @@ export function CheckInDrawer({
   lastChange = null,
   onClose,
 }: CheckInDrawerProps) {
-  // Notes: a local copy, so typing stays instant. The parent remounts this
-  // component (key={id}) when a different appointment opens, so it always
-  // starts from that appointment. There is no Save button: a tick saves
-  // right away, notes save when you leave the box or close the drawer, so
-  // closing can never throw work away.
-  const [notes, setNotes] = useState(appointment.notes)
+  // Notes: the box shows the visit's notes (which refetch when someone else
+  // changes them) until you type. Then it holds your draft, with the notes
+  // and version you started from, so saving can't overwrite someone else's
+  // change made meanwhile. The parent remounts this component (key={id})
+  // when a different appointment opens. There is no Save button: a tick
+  // saves right away, notes save when you leave the box or close the drawer.
+  const [draft, setDraft] = useState<NotesDraft | null>(null)
+  // Someone else changed the notes while you typed: their notes, and the
+  // version that has them, for Save mine.
+  const [theirNotes, setTheirNotes] = useState<{
+    notes: string
+    version: number
+  } | null>(null)
+  const notes = draft?.text ?? appointment.notes
 
   // Checklist: no copy. It shows the server's checklist (which refetches
   // when the patient ticks on their phone in another tab), with only the
@@ -126,12 +143,55 @@ export function CheckInDrawer({
       () => setSaveState('idle'), // the error shows as saveError below
     )
   }
-  // Leaving the box and then closing would otherwise save the same notes twice.
-  const savedNotes = useRef(appointment.notes)
+  const saveNotes = (text: string, baseNotes: string, version: number) => {
+    setSaveState('saving')
+    onSave({ notes: text, version }).then(
+      (saved) => {
+        setSaveState('saved')
+        // Back to showing the visit's notes, unless you typed on meanwhile.
+        setDraft((d) =>
+          d && d.text !== text
+            ? { ...d, baseNotes: text, baseVersion: saved.version }
+            : null,
+        )
+      },
+      (error: unknown) => {
+        setSaveState('idle')
+        if (!(error instanceof VisitChangedError)) return // shows as saveError
+        const current = error.current
+        if (current.notes === baseNotes) {
+          // They changed something else (a status, say), not the notes:
+          // nothing of theirs to lose, so save yours on top of their change.
+          saveNotes(text, baseNotes, current.version)
+        } else {
+          setTheirNotes({ notes: current.notes, version: current.version })
+        }
+      },
+    )
+  }
+  // Leaving the box and then closing would otherwise save the same notes
+  // twice, so a draft is saved once per change.
+  const sentNotes = useRef<string | null>(null)
   const saveNotesIfChanged = () => {
-    if (notes === savedNotes.current) return
-    savedNotes.current = notes
-    save({ notes })
+    if (!draft || theirNotes) return // a conflict waits for your choice
+    if (draft.text === draft.baseNotes || draft.text === sentNotes.current) {
+      return
+    }
+    sentNotes.current = draft.text
+    saveNotes(draft.text, draft.baseNotes, draft.baseVersion)
+  }
+  const keepMine = () => {
+    if (!draft || !theirNotes) return
+    setTheirNotes(null)
+    setDraft({ ...draft, baseNotes: theirNotes.notes })
+    sentNotes.current = draft.text
+    saveNotes(draft.text, theirNotes.notes, theirNotes.version)
+  }
+  const useTheirs = () => {
+    setTheirNotes(null)
+    setDraft(null)
+    sentNotes.current = null
+    onDismissSaveError()
   }
   const close = () => {
     saveNotesIfChanged()
@@ -143,6 +203,9 @@ export function CheckInDrawer({
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const statusHeadingRef = useRef<HTMLHeadingElement>(null)
   const lastChangeRef = useRef<HTMLParagraphElement>(null)
+  // An Undo of a move that failed (say, someone changed the visit since)
+  // says so here: the Move to… panel, which shows other move errors, is shut.
+  const [undoingMove, setUndoingMove] = useState(false)
 
   // Cancelling takes two steps: "Cancel visit…" opens a reason, then confirm.
   const [confirmingCancel, setConfirmingCancel] = useState(false)
@@ -228,8 +291,11 @@ export function CheckInDrawer({
       chairs={day.chairs}
       provider={chair?.provider}
       isSaving={isMoving}
-      onMove={onMove}
-      saveError={moveError}
+      onMove={(to) => {
+        setUndoingMove(false)
+        return onMove(to)
+      }}
+      saveError={undoingMove ? null : moveError}
     />
   )
   const billing =
@@ -403,6 +469,7 @@ export function CheckInDrawer({
                   onClick={() => {
                     // The button goes away once undone: keep focus here.
                     lastChangeRef.current?.focus()
+                    setUndoingMove(true)
                     lastChange.undo?.onUndo()
                   }}
                   className="h-11 rounded-md px-3 font-semibold text-teal-800 underline underline-offset-2 hover:bg-slate-200"
@@ -411,6 +478,14 @@ export function CheckInDrawer({
                 </button>
               )}
             </div>
+          )}
+          {undoingMove && moveError && (
+            <p
+              role="alert"
+              className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"
+            >
+              {moveError}
+            </p>
           )}
         </section>
 
@@ -491,10 +566,52 @@ export function CheckInDrawer({
               rows={3}
               value={notes}
               readOnly={!canEdit}
-              onChange={(e) => setNotes(e.target.value)}
+              aria-describedby={
+                theirNotes ? 'checkin-notes-conflict' : undefined
+              }
+              onChange={(e) => {
+                const text = e.target.value
+                setDraft((d) => ({
+                  text,
+                  baseNotes: d?.baseNotes ?? appointment.notes,
+                  baseVersion: d?.baseVersion ?? appointment.version,
+                }))
+              }}
               onBlur={saveNotesIfChanged}
               className="rounded-lg border border-slate-300 p-2.5 text-sm read-only:bg-slate-50"
             />
+            {theirNotes && (
+              <div
+                role="alert"
+                id="checkin-notes-conflict"
+                className="flex flex-col gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950"
+              >
+                <p>
+                  Someone else changed these notes while you were typing. Yours
+                  are still in the box, not saved.
+                </p>
+                <p>
+                  <span className="font-semibold">Their notes:</span>{' '}
+                  {theirNotes.notes || '(empty)'}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={keepMine}
+                    className="h-11 rounded-lg bg-teal-700 px-4 font-medium text-white"
+                  >
+                    Save mine
+                  </button>
+                  <button
+                    type="button"
+                    onClick={useTheirs}
+                    className="h-11 rounded-lg border border-slate-300 bg-white px-4 font-medium text-slate-800"
+                  >
+                    Use theirs
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           {canEdit && (
@@ -504,7 +621,8 @@ export function CheckInDrawer({
           )}
         </div>
 
-        {saveError && (
+        {/* A notes conflict says so by the notes box instead. */}
+        {saveError && !theirNotes && (
           <p
             role="alert"
             className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800"

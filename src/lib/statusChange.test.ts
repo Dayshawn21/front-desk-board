@@ -14,6 +14,7 @@ const change = (overrides: Partial<StatusChange>): StatusChange => ({
   from: 'confirmed',
   to: 'arrived',
   kind: 'forward',
+  version: 2,
   ...overrides,
 })
 
@@ -32,15 +33,20 @@ describe('changeKind', () => {
 
 describe('statusPatch', () => {
   it('saves why a visit was cancelled, and clears it on restore', () => {
-    expect(statusPatch('confirmed', 'cancelled', 'late-cancel')).toEqual({
+    expect(statusPatch('confirmed', 'cancelled', 4, 'late-cancel')).toEqual({
       status: 'cancelled',
       cancelReason: 'late-cancel',
+      version: 4,
     })
-    expect(statusPatch('cancelled', 'confirmed')).toEqual({
+    expect(statusPatch('cancelled', 'confirmed', 5)).toEqual({
       status: 'confirmed',
       cancelReason: null,
+      version: 5,
     })
-    expect(statusPatch('confirmed', 'arrived')).toEqual({ status: 'arrived' })
+    expect(statusPatch('confirmed', 'arrived', 1)).toEqual({
+      status: 'arrived',
+      version: 1,
+    })
   })
 })
 

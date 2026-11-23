@@ -21,6 +21,7 @@ export type StatusChange = {
   to: AppointmentStatus
   kind: ChangeKind
   reason?: CancelReason // for a cancel
+  version: number // the visit's version after this change, for Undo
 }
 
 export function changeKind(
@@ -35,14 +36,17 @@ export function changeKind(
 }
 
 // What to save. A cancel records why; restoring a cancelled visit clears it.
+// `version` is the version of the visit the change was based on, so the
+// server refuses it if someone else changed the visit since.
 export function statusPatch(
   from: AppointmentStatus,
   to: AppointmentStatus,
+  version: number,
   reason?: CancelReason,
 ): AppointmentPatch {
-  if (to === 'cancelled') return { status: to, cancelReason: reason }
-  if (from === 'cancelled') return { status: to, cancelReason: null }
-  return { status: to }
+  if (to === 'cancelled') return { status: to, cancelReason: reason, version }
+  if (from === 'cancelled') return { status: to, cancelReason: null, version }
+  return { status: to, version }
 }
 
 export type UndoStep = {

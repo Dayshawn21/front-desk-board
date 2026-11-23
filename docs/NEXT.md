@@ -37,13 +37,12 @@
 - **Multi-user updates from a server.** Tabs in one browser already update each other
   (see What is mocked). With a real backend, the server would push change events
   (WebSocket or SSE) naming the practice, and only that practice's query would refetch.
-- **Safe concurrent edits.** Checklist ticks already can't clash: a tick sends only its
-  own box and the server merges it, so the desk and the patient's phone can tick at
-  the same time. Notes and status still save last-write-wins. Next: a `version` on each
-  appointment, so a save sent with an old version gets a 409 Conflict and the UI offers
-  to reload instead of silently overwriting another person's change.
-  Undo of a move would send it too: today Undo puts the visit back even if its old
-  place has been booked since (the double-booking banner flags it).
+- **Concurrent edits, on a real server.** Each visit now has a version and a stale save
+  gets a 409 (see Features), but the check runs in the browser's mock. A real server
+  would compare versions in the database write itself (`UPDATE … WHERE version = ?`),
+  send the version as an ETag with `If-Match`, and push the change to other devices.
+  Undo of a move still puts the visit back even if its old place was booked since
+  (the double-booking banner flags it); it could offer other times instead.
 - **The rest of billing.** Checkout billing is a small slice: line items fixed by
   visit type, an estimate, and pretend payments. Not built: editing line items and
   tooth/surface detail, deductibles and frequency limits in the estimate, real

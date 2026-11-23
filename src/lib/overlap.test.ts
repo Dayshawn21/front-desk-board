@@ -32,6 +32,7 @@ function appt(
       copayCollected: false,
     },
     notes: '',
+    version: 1,
     ...overrides,
   }
 }

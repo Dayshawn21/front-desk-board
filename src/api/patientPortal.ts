@@ -454,6 +454,7 @@ export async function checkInMyVisit(
       throw new ApiError("This visit can't be checked in.", 409)
     }
     appt.status = 'arrived'
+    appt.version += 1 // a status change (see Appointment.version)
   }
   // Only the patient's own boxes, merged into the stored checklist, so the
   // desk's ticks are never overwritten.

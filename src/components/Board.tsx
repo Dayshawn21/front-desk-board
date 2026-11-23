@@ -286,9 +286,8 @@ export function Board({ theme, onThemeChange }: BoardProps) {
           now={DEMO_NOW}
           isSaving={update.isPending}
           saveError={update.error?.message ?? null}
-          onSave={(patch) =>
-            update.mutateAsync({ id: selected.id, patch }).then(() => {})
-          }
+          onSave={(patch) => update.mutateAsync({ id: selected.id, patch })}
+          onDismissSaveError={() => update.reset()}
           onChangeStatus={(status, reason) =>
             statusChanges.changeStatus(selected.id, status, reason)
           }
