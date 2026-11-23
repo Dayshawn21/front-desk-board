@@ -131,7 +131,7 @@ The details, and what a real system would do instead, are in
   patient pages.
 - **Accessibility:** axe (WCAG 2.2 AA rules) on every screen, at desktop and phone width.
   Lighthouse gives Accessibility, Best Practices and SEO 100 on every screen tested, on
-  phone and desktop; Performance is 93–100 (scores in [Performance](docs/PERFORMANCE.md#lighthouse)).
+  phone and desktop; Performance is 96–100 (scores in [Performance](docs/PERFORMANCE.md#lighthouse)).
 - **CI** runs typecheck, lint, format check, unit tests, build and e2e on every push.
 
 ## What I'd do next
