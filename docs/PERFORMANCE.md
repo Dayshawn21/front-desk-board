@@ -89,4 +89,14 @@ All 7 states score 100 for Accessibility and Best Practices in light and dark, o
 and desktop: 28 snapshots, each checked against its screenshot. SEO there is 80 only
 because of the local `robots.txt` noted above.
 
-Not covered: the reset-password page (it needs a live token).
+**Password reset: 100 throughout.** The reset page needs a live token, so a script
+asks for a reset as the demo patient, opens the Demo inbox and follows the link, on a
+local production build. The reset page as it loads scores 100 for Performance,
+Accessibility and Best Practices on phone and desktop, in light and dark, with a layout
+shift of 0.01 at most (local, so not directly comparable with the live table). Three
+snapshots along the way also score 100 for Accessibility and Best Practices: "Check
+your email", the Demo inbox with the email in it, and the reset page's error when the
+two passwords don't match. SEO is again lowered only by the local `robots.txt`.
+
+Not covered by Lighthouse: the board's Patient flow tab and the error screen (axe
+checks both).
