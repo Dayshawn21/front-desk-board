@@ -28,14 +28,14 @@ slowdown Lighthouse uses for phones, as medians of 12 interleaved runs.
 
 On the live site, phone and desktop. Accessibility, Best Practices and SEO are 100 on
 every page tested: the staff sign-in page, the board, and the ten patient pages below.
-Performance is 93–100, most pages 96 or higher:
+Performance is 96–100:
 
 | Page                       | Phone | Desktop |
 | -------------------------- | ----- | ------- |
 | Choose an office (`/book`) | 98    | 100     |
 | Book, signed out           | 100   | 99      |
 | Patient sign-in            | 97    | 97      |
-| Sign up                    | 93    | 99      |
+| Sign up                    | 99    | 100     |
 | Forgot password            | 99    | 96      |
 | Demo inbox                 | 96    | 98      |
 | Check-in link              | 97    | 97      |
@@ -60,9 +60,14 @@ though: the office picker showed one "Loading…" line, then the two offices arr
 pushed the name, phone and email fields down. It now holds their space with placeholder
 cards, as `/book` does, and both pages take the office count from one place. On a local
 production build, over four runs of each build interleaved, the shift went from 0.073
-to 0.002. The score didn't move measurably: blocking time swung from 0 to 700 ms on
-both builds, and a shift that size costs only a point or two. The table shows the score
-from before this fix.
+to 0.002. Live, after the fix, it scores 99 on a phone (the middle of five runs,
+alternated with `/book` as a control, which also scored 99) and 100 on desktop, with a
+shift of 0.002 and 0.011. One of the five phone runs scored 79, in the round where
+another program pushed the CPU to 58%.
+
+Lighthouse slows the CPU down 4× for its phone runs, so anything else busy on the
+machine inflates Total Blocking Time. Runs with the CPU at 40–85% from other work scored
+Sign up anywhere from 78 to 96, and `/book` as low as 89.
 
 Not covered: the reset-password page (it needs a live token), dark mode, and the open
 drawers and dialogs (axe checks those; Lighthouse only scores page loads).
