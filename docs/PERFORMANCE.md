@@ -79,5 +79,14 @@ the local server, not the app: `vite preview` serves the app's HTML for `/robots
 (the live site returns a plain 404), and it doesn't run the `/api/patient-sign-in`
 server function, so Your visits logged a 404.
 
-Not covered: the reset-password page (it needs a live token) and the open drawers and
-dialogs (axe checks those; Lighthouse only scores page loads).
+**Drawers, dialogs and menus: 100 for Accessibility and Best Practices.** Lighthouse can
+audit a page in the state it's in (a snapshot), not just as it loads. A script signs in
+to the board on a local production build and opens each overlay in turn: the check-in
+drawer, the drawer's billing section (as it opens, and after an invalid amount shows its
+error), the cancel-reason step, Move to…, the New appointment panel and the account
+menu. On a phone it picks the right chair first, since the board shows one at a time.
+All 7 states score 100 for Accessibility and Best Practices in light and dark, on phone
+and desktop: 28 snapshots, each checked against its screenshot. SEO there is 80 only
+because of the local `robots.txt` noted above.
+
+Not covered: the reset-password page (it needs a live token).
