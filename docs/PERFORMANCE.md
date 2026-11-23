@@ -69,5 +69,15 @@ Lighthouse slows the CPU down 4× for its phone runs, so anything else busy on t
 machine inflates Total Blocking Time. Runs with the CPU at 40–85% from other work scored
 Sign up anywhere from 78 to 96, and `/book` as low as 89.
 
-Not covered: the reset-password page (it needs a live token), dark mode, and the open
-drawers and dialogs (axe checks those; Lighthouse only scores page loads).
+**Dark mode: 100 for Accessibility on every page.** With Chrome forced into dark mode
+(`--force-dark-mode`, checked against Lighthouse's own screenshots), all 12 pages score
+100 for Accessibility on phone and desktop, colour contrast included. The eight
+signed-out pages ran on the live site and score 100 for Best Practices and SEO too. The
+board and the three signed-in patient pages ran on a local production build, signed in
+as the demo front desk user and the demo patient. There, two audits failed because of
+the local server, not the app: `vite preview` serves the app's HTML for `/robots.txt`
+(the live site returns a plain 404), and it doesn't run the `/api/patient-sign-in`
+server function, so Your visits logged a 404.
+
+Not covered: the reset-password page (it needs a live token) and the open drawers and
+dialogs (axe checks those; Lighthouse only scores page loads).
