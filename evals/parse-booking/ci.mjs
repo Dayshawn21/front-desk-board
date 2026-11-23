@@ -25,7 +25,7 @@ const { values: args } = parseArgs({
     // Share of cases that must get every field right (0 to 1). Set a little
     // under the measured rate, so one unlucky answer doesn't fail a PR but a
     // real drop does. See docs/AI-ASSIST.md.
-    'min-all-fields': { type: 'string', default: '0.85' },
+    'min-all-fields': { type: 'string', default: '0.9' },
     concurrency: { type: 'string', default: '4' },
   },
 })
