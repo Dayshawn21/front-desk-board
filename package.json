@@ -16,7 +16,8 @@
     "check": "npm run typecheck && npm run lint && npm run format:check && npm test",
     "eval": "node --env-file-if-exists=.env.local --import ./evals/parse-booking/resolve-ts.mjs evals/parse-booking/run-eval.mjs --flow .claude/hillclimb/parse-booking --model claude-haiku-5-5",
     "e2e": "playwright test",
-    "lighthouse": "node scripts/lighthouse/audit.mjs"
+    "lighthouse": "node scripts/lighthouse/audit.mjs",
+    "eval:ci": "node --env-file-if-exists=.env.local --import ./evals/parse-booking/resolve-ts.mjs evals/parse-booking/ci.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.10.0",

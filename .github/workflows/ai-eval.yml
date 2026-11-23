@@ -1,0 +1,56 @@
+name: AI eval
+
+# The AI booking assist eval (evals/parse-booking/ci.mjs) calls Claude, so it
+# costs a little (about a cent a run on Haiku) and runs only when something
+# it measures changes: the prompt and route, the draft checks, the demo data
+# it reads, or the eval itself. It can also be started by hand.
+on:
+  pull_request:
+    paths:
+      - server/parseBooking.ts
+      - server/handler.ts
+      - src/lib/assist.ts
+      - src/mocks/seed.ts
+      - evals/parse-booking/**
+      - .github/workflows/ai-eval.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ai-eval-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+    steps:
+      # Pull requests from forks don't get the repository's secrets: say so
+      # and stop, rather than fail.
+      - name: Check for the API key
+        id: key
+        run: |
+          if [ -z "$ANTHROPIC_API_KEY" ]; then
+            echo "::notice::No ANTHROPIC_API_KEY secret here, so the AI eval was skipped."
+            echo "present=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "present=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@v5
+        if: steps.key.outputs.present == 'true'
+
+      - uses: actions/setup-node@v5
+        if: steps.key.outputs.present == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+        if: steps.key.outputs.present == 'true'
+      - run: npm run eval:ci
+        if: steps.key.outputs.present == 'true'
