@@ -72,5 +72,7 @@ book and move visits, with a keyboard alternative.
 
 ## Numbers
 
-463 unit tests and 79 Playwright tests (user flows, the AI assist with its route faked, and
-axe in light and dark) run in CI on every push.
+632 unit tests and 96 Playwright tests (user flows, the AI assist with its route faked, and
+axe in light and dark) run in CI on every push, with Lighthouse on 25 pages and board states
+(light and dark, phone and desktop), which must score 100 for Accessibility, Best Practices
+and SEO.
